@@ -33,6 +33,15 @@ The smart contracts included in the `/contracts` directory are solidity-based co
 4. No tests. This will change in the future; however, given our 4-week solidity development timeline, the Truffle mainnet fork + Remix was leveraged to test core functionality. The plan is to write automated tests in the `tests` directory post-internal and external audits and once the initial contracts have been tied-in and work properly with the 70% completed front-end (as of the time of this writing)
 
 
+## Important Deployment destinationTokens
+
+- Core.sol needs its staking contract and oracle contract updated to the deployed contracts for it to work properly
+
+- Oracle.sol needs to be updated with the "CORE" with the `updateDirectory` function in order for depositing and withdrawals to work
+
+- Example of a working deployment of Core connected to an oracle: https://etherscan.io/address/0x7a72b2c51670a3d77d4205c2db90f6ddb09e4303#code
+
+
 ## Individual Contract Overview (Ordered in a way to help best understand arhitecture)
 
 1. `Core.sol`
