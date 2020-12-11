@@ -29,3 +29,5 @@ The smart contracts included the `/contracts` directory are solidity-based contr
 2. Delegate calls were not used. Instead instances of third-part contracts are used to make the platform more modular and containerized.
 
 3. Most contracts within the ecosystem (wrapper.sol, tier1Staking.sol, rewards.sol) are built to work as stand-alone products. This makes testing easier and also means these features can be easily ported into other projects related to Plexus in the future very easily.
+
+4. No tests. This will change in the future; however, given our 4-week solidity development timeline, the Truffle mainnet fork + Remix was leveraged to test core functionality. The plan is to write automated tests in the `tests` directory post-internal and external audits and once the initial contracts have been tied-in and work properly with the 70% completed front-end (as of the time of this writing)
