@@ -31,3 +31,18 @@ The smart contracts included the `/contracts` directory are solidity-based contr
 3. Most contracts within the ecosystem (wrapper.sol, tier1Staking.sol, rewards.sol) are built to work as stand-alone products. This makes testing easier and also means these features can be easily ported into other projects related to Plexus in the future very easily.
 
 4. No tests. This will change in the future; however, given our 4-week solidity development timeline, the Truffle mainnet fork + Remix was leveraged to test core functionality. The plan is to write automated tests in the `tests` directory post-internal and external audits and once the initial contracts have been tied-in and work properly with the 70% completed front-end (as of the time of this writing)
+
+
+## Individual Contract Overview (Ordered in a way to help best understand arhitecture)
+
+1. Core.sol
+
+2. tier1Staking.sol
+
+3. oracle.sol
+
+4. tokenrewards.sol
+
+5. wrapper.sol
+
+6. tier2[...].sol Files
