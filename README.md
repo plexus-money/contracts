@@ -43,6 +43,7 @@ The smart contracts included in the `/contracts` directory are solidity-based co
 
 - Get APR is a placeholder for now and the front-end will likely use an API to get third-party platform APYs and APRs as they are variable and it is not easily identifiable what the APRs are given the emission schedules etc for various platforms (often these platfroms use their own APIs and not their smart contracts to determine this).
 
+- Tier 2 contracts need to be added by the owner to the Tier 1 contract. It comes with FARM working out of the box, but for example Pickle's Tier 2 contract and info should be added by owner to the Tier 1 contract. When new platforms are added they will be updated in the tier1Staking.sol contract. The oracle pulls its balances etc data from here.
 
 ## Individual Contract Overview (Ordered in a way to help best understand arhitecture)
 
