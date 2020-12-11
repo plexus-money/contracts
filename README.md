@@ -4,7 +4,7 @@
 
 ## Overview
 
-The smart contracts included the `/contracts` directory are solidity-based contracts which make up the Plexus Ecosystem v.0.1. These contracts all center around the `core.sol` contract. The primary user benefit of these contracts is to:
+The smart contracts included in the `/contracts` directory are solidity-based contracts which make up the Plexus Ecosystem v.0.1. These contracts all center around the `core.sol` contract. The primary user benefit of these contracts is to:
 
 - Deposit ERC-20 tokens into the Plexus ecosystem, either to collect interest from Aave or to be sent to a Yield Farm. Aave is pretty low risk, which staking FARM tokens on the Harvest.Finance platform is a bit riskier.
 
@@ -36,13 +36,30 @@ The smart contracts included the `/contracts` directory are solidity-based contr
 ## Individual Contract Overview (Ordered in a way to help best understand arhitecture)
 
 1. Core.sol
+This contract is the main point of contact will all areas of functionality. It was designed to be the contract of interface with the front-end for depositing, withdrawing, getting user balance info, and converting ETH or other ERC-20 tokens into stakable tokens or LP on various platforms.
+
+The hope of this contract is for it to be the one contract that never changes in address, at least until version 1 or 2, as it is highly upgradable. However, many of the contracts that creates instances of (oracle, and  wrapper) can be leveraged independently to save funds on gas. The main things you really want to do with this contract is deposit, see your balance and withdraw, and all of these functions are actually carried out using the below contract instances, separately deployed. Upon deployment there is an owner (msg.sender) and this can be changed at any time. The owner has the benefit of moving any accidentally sent ETH or ERC-20 tokens. This contract however does not store any of the staked funds. Those are all controlled by Tier2 contracts (referenced later).
 
 2. tier1Staking.sol
+The tier1Staking contract is the router between the modular tier2 contracts. Each "child" tier2 contract is tied to a a specific farm (Harvest, Pickle, etc). The tier2Staking contract has an admin and an owner. The admin should be set to the core contract address, as only that contract can call the deposit and withdraw functions (onlyAdmin modifier on those functions stipulate this). This is for security purposes to prevent all kinds of mayhem if users could interact directly. `onBehalfOf` variable is commonly used and is the msg.sender of the Core.sol contract, passed to the tier1Staking. There are reenetrancy guards on all deposit and withdraw function to prevent reentrancy attacks and other kinds of economic attacks powered by flashloans.
+The tier1Staking contract does not hold any funds, it just routes them. This contract can have the rewards contract set manually by the owner or the owner can specify an oracle for it to retrieve its information from that source.
+
 
 3. oracle.sol
+This contract is responsible for obtaining data from the tier1 and tier2 staking contracts and relaying them to the Core.sol contract, which relays balance and rewards information to the user.
 
 4. tokenrewards.sol
+This contract is responsible for calculating and distributing rewards to users based on their staking period. It is called by the tier1Staking contract when a deposit is made and a users staked balance is recorded then. Also upon withdrawal, this contract is updated to reflect that and disburse rewards.
 
 5. wrapper.sol
+This contract is pretty robust but fairly simple in use. It can convert a token into another token when there is only one element in the `address[] memory destinationTokens` array parameter of the `wrap` function, or if there are two elements, it converts the `sourceToken` into the `destinationTokens` evenly and then provides them as liquidity in the Uniswap AMM receiving LP tokens in return and remiting those tokens back to the user.
 
 6. tier2[...].sol Files
+These contracts generally do not store user funds, but act as the owner of tokens when they are sent to a third-party farm. When a user requests to withdraw their tokens, all the tokens are withdrawn from a given farm, and the users' proportion is calculated and sent, and the remainder of the funds are re-staked. The platform is designed this way for simplicity, but also becuase some farms such as Harvest.Finance do not have paramters to unstake a small amount of tokens, but only allows the unstaking of all. To keep thing constant and allow these to be easily replicated across any yield farming platform with only the requirement of a few parameter and interface changes, this design choice was made. If there are any big vulnerabilities, these are the contracts to really look out for for possible economic attacks.
+
+
+## Have questions or recommendations?
+
+Please leave an issue with any questions or suggestions.
+
+Thank you
