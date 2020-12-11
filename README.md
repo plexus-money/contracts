@@ -45,7 +45,7 @@ The smart contracts included in the `/contracts` directory are solidity-based co
 
 - Tier 2 contracts need to be added by the owner to the Tier 1 contract. It comes with FARM working out of the box, but for example Pickle's Tier 2 contract and info should be added by owner to the Tier 1 contract. When new platforms are added they will be updated in the tier1Staking.sol contract. The oracle pulls its balances etc data from here.
 
-## Individual Contract Overview (Ordered in a way to help best understand arhitecture)
+## Individual Contract Overview (Ordered in a way to help best understand architecture)
 
 1. `Core.sol` (https://etherscan.io/address/0x7a72b2c51670a3d77d4205c2db90f6ddb09e4303#code)
 
