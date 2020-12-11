@@ -16,6 +16,6 @@ The smart contracts included the `/contracts` directory are solidity-based contr
 
 - Convert popular ERC-20 tokens or ETH into Uniswap LP tokens to be used for staking on the Plexus platform (as an ease-of-use mechansism to onboard a wider audience might nto understand how to generate LP tokens. Previosuly, before these contracts (specifically the wrapper.sol contract)) a user had to perform over 6 transactions between ETH and obtaining and LP token. Also, this is currently the only platform which allows users to convert LP tokens to any other ERC-20 token (DAI, WETH, USDC) with a single transaction, instead of the 3+ transactions that is usually required.
 
-- View the Average APY of various tokens and farm. For now, these need to be manually intered by an owner as each third-party platform demonstrates this data on their dashboards but that data is not easily obtainable directly from their smart contracts as usually there is an undefined future emmissions drop that happens daily and alos depends on the number of stakers, time periods, etc.
+- View the Average APY of various third-party tokens and farms. For now, these need to be manually intered by an owner as each third-party platform demonstrates this data on their dashboards but that data is not easily obtainable directly from their smart contracts as usually there is an undefined future emmissions drop that happens daily and alos depends on the number of stakers, time periods, etc.
 
 - Retrieve user staking balances within the Plexus Ecosystem
