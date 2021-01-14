@@ -1,3 +1,9 @@
+//Current Deployment https://etherscan.io/address/0x090f5bd5f94e29f9bd855c5266c7c486c0889e50#code
+
+/**
+ *Submitted for verification at Etherscan.io on 2021-01-14
+*/
+
 /*
 _____  _
 |  __ \| |
@@ -31,7 +37,6 @@ _____  _
 
 
 //Github: https://github.com/stimuluspackage/PlexusContracts/blob/master/contracts/wrapper.sol
-
 
 pragma solidity 0.7.4;
 
@@ -317,52 +322,6 @@ contract WrapAndUnWrap{
         }
 
 
-       /* if(lpTokenAddressToPairs[sourceToken].length !=0){
-            sToken.approve(uniAddress, approvalAmount);
-          uniswapExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
-
-          ERC20 pToken1 = ERC20(lpTokenAddressToPairs[sourceToken][0]);
-          ERC20 pToken2 = ERC20(lpTokenAddressToPairs[sourceToken][1]);
-
-            address pStageToken1;
-            address pStageToken2;
-
-            uint256 pTokenBalance;
-            uint256 pTokenBalance2;
-            if(lpTokenAddressToPairs[sourceToken][0] == WETH_TOKEN_ADDRESS){
-                pStageToken1= ETH_TOKEN_ADDRESS;
-                pTokenBalance = address(this).balance;
-            }
-            else{
-                pStageToken1 =lpTokenAddressToPairs[sourceToken][0];
-                pTokenBalance = pToken1.balanceOf(address(this));
-            }
-            if(lpTokenAddressToPairs[sourceToken][1] == WETH_TOKEN_ADDRESS){
-                pStageToken2 = ETH_TOKEN_ADDRESS;
-                pTokenBalance2 = address(this).balance;
-            }
-            else{
-                 pStageToken2 =lpTokenAddressToPairs[sourceToken][1];
-                 pTokenBalance2 = pToken2.balanceOf(address(this));
-            }
-
-
-
-          pToken1.approve(uniAddress, approvalAmount);
-          pToken2.approve(uniAddress, approvalAmount);
-          if(lpTokenAddressToPairs[sourceToken][0] != destinationToken){
-              conductUniswap(pStageToken1, destinationToken, pTokenBalance);
-          }
-          if(lpTokenAddressToPairs[sourceToken][1] != destinationToken){
-              conductUniswap(pStageToken2, destinationToken, pTokenBalance2);
-          }
-
-
-          uint256 destinationTokenBalance = dToken.balanceOf(address(this));
-          dToken.transfer(msg.sender, destinationTokenBalance);
-          return destinationTokenBalance;
-
-        }*/
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             sToken.approve(uniAddress, approvalAmount);
@@ -623,15 +582,8 @@ contract WrapAndUnWrap{
 
   }
 
-
-
-
   function kill() virtual public onlyOwner {
          selfdestruct(owner);
   }
-
-
-
-
 
 }
