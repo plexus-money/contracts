@@ -1,8 +1,3 @@
-//Current Deployment https://etherscan.io/address/0x090f5bd5f94e29f9bd855c5266c7c486c0889e50#code
-
-/**
- *Submitted for verification at Etherscan.io on 2021-01-14
-*/
 
 /*
 _____  _
@@ -36,7 +31,6 @@ _____  _
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-//Github: https://github.com/stimuluspackage/PlexusContracts/blob/master/contracts/wrapper.sol
 
 pragma solidity 0.7.4;
 
@@ -574,16 +568,18 @@ contract WrapAndUnWrap{
       return true;
   }
 
+  function changeOwner(address payable newOwner) onlyOwner public returns (bool){
+    owner = newOwner;
+    return true;
+  }
 
-  //this function is here for easy testing in production on a sandbox
+
    function getUserTokenBalance(address userAddress, address tokenAddress) public view returns (uint256){
     ERC20 token = ERC20(tokenAddress);
     return token.balanceOf(userAddress);
 
   }
 
-  function kill() virtual public onlyOwner {
-         selfdestruct(owner);
-  }
+
 
 }
