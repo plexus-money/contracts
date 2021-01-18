@@ -13,7 +13,6 @@ _____  _
  \____/|_| |_|_|___/ \_/\_/ \__,_| .__/  |______|_|          \/  \/ |_|  \__,_| .__/| .__/ \___|_|
                                  | |                                          | |   | |
                                  |_|                                          |_|   |_|
-
 */
 
 
@@ -131,9 +130,6 @@ library SafeMath {
 }
 
 
-
-
-
 contract WrapAndUnWrap{
 
   using SafeMath
@@ -166,8 +162,6 @@ contract WrapAndUnWrap{
 }
 
     fallback() external payable {
-
-
     }
 
   constructor() public payable {
@@ -179,24 +173,19 @@ contract WrapAndUnWrap{
 
   }
 
-
   function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
 
 
     ERC20 sToken = ERC20(sourceToken);
     ERC20 dToken = ERC20(destinationTokens[0]);
 
-
-
-
-
-
-
       if(destinationTokens.length==1){
 
         if(sourceToken != ETH_TOKEN_ADDRESS){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer 1");
-          sToken.approve(uniAddress, approvalAmount);
+          if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  sToken.approve(uniAddress, amount.mul(3));
+            }
         }
 
         conductUniswap(sourceToken, destinationTokens[0], amount);
@@ -221,7 +210,9 @@ contract WrapAndUnWrap{
 
         if(sourceToken != ETH_TOKEN_ADDRESS && updatedweth==false){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  2");
-          sToken.approve(uniAddress, approvalAmount);
+          if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  sToken.approve(uniAddress, amount.mul(3));
+            }
         }
 
         if(destinationTokens[0] == ETH_TOKEN_ADDRESS){
@@ -245,15 +236,15 @@ contract WrapAndUnWrap{
         uint256 dTokenBalance = dToken.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-        dToken.approve(uniAddress, approvalAmount);
-        dToken2.approve(uniAddress, approvalAmount);
+        if(dToken.allowance(address(this), uniAddress) < dTokenBalance.mul(2)){
+             dToken.approve(uniAddress, dTokenBalance.mul(3));
+        }
 
-
-
-
+        if(dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)){
+            dToken2.approve(uniAddress, dTokenBalance2.mul(3));
+        }
 
         (,,uint liquidityCoins)  = uniswapExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
-
 
         address thisPairAddress = factory.getPair(destinationTokens[0],destinationTokens[1]);
         ERC20 lpToken = ERC20(thisPairAddress);
@@ -308,9 +299,6 @@ contract WrapAndUnWrap{
         }
         ERC20 dToken = ERC20(destinationToken);
 
-
-
-
         if(sourceToken != ETH_TOKEN_ADDRESS){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  3 unwrapping");
         }
@@ -318,7 +306,10 @@ contract WrapAndUnWrap{
 
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
-            sToken.approve(uniAddress, approvalAmount);
+            if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  sToken.approve(uniAddress, amount.mul(3));
+            }
+
           uniswapExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
 
           ERC20 pToken1 = ERC20(lpTokenAddressToPairs[sourceToken][0]);
@@ -326,8 +317,15 @@ contract WrapAndUnWrap{
 
           uint256 pTokenBalance = pToken1.balanceOf(address(this));
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
-          pToken1.approve(uniAddress, approvalAmount);
-          pToken2.approve(uniAddress, approvalAmount);
+
+           if(pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)){
+                  pToken1.approve(uniAddress, pTokenBalance.mul(3));
+            }
+
+            if(pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)){
+                  pToken2.approve(uniAddress, pTokenBalance2.mul(3));
+            }
+
           if(lpTokenAddressToPairs[sourceToken][0] != destinationToken){
               conductUniswap(lpTokenAddressToPairs[sourceToken][0], destinationToken, pTokenBalance);
           }
@@ -353,7 +351,9 @@ contract WrapAndUnWrap{
 
         else{
 
-            sToken.approve(uniAddress, approvalAmount);
+            if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  sToken.approve(uniAddress, amount.mul(3));
+            }
             if(sourceToken != destinationToken){
                 conductUniswap(sourceToken, destinationToken, amount);
             }
@@ -362,22 +362,7 @@ contract WrapAndUnWrap{
           return destinationTokenBalance;
         }
 
-
-
-
-
-
-
-
-
-
       }
-
-
-
-
-
-
 
   function updateOwnerAddress(address payable newOwner) onlyOwner public returns (bool){
      owner = newOwner;
@@ -399,7 +384,6 @@ contract WrapAndUnWrap{
    return true;
 
  }
-
 
 
   function conductUniswap(address sellToken, address buyToken, uint amount) internal returns (uint256 amounts1){
@@ -431,9 +415,7 @@ contract WrapAndUnWrap{
 
 
             else{
-          //address [] memory addresses = new address[](2);
-         // addresses[0] = sellToken;
-          //addresses[1] = buyToken;
+
           address [] memory addresses = getBestPath(sellToken, buyToken, amount);
            uint256 [] memory amounts = conductUniswapT4T(addresses, amount );
            uint256 resultingTokens = amounts[amounts.length-1];
@@ -543,8 +525,6 @@ contract WrapAndUnWrap{
             return amounts2;
 
         }
-
-        //return amounts;
 
     }
 
