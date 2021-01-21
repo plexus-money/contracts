@@ -150,7 +150,8 @@ contract WrapAndUnWrap{
   mapping(string=>address) public stablecoins;
   mapping(address=>mapping(address=>address[])) public presetPaths;
   bool public changeRecpientIsOwner;
-
+  uint256 public fee = 0;
+  uint256 public maxfee = 0;
 
 
   modifier onlyOwner {
@@ -250,7 +251,20 @@ contract WrapAndUnWrap{
         ERC20 lpToken = ERC20(thisPairAddress);
         lpTokenAddressToPairs[thisPairAddress] =[destinationTokens[0], destinationTokens[1]];
         uint256 thisBalance =lpToken.balanceOf(address(this));
-        lpToken.transfer(msg.sender, thisBalance);
+
+        if(fee>0){
+            uint256 totalFee = (thisBalance.mul(fee)).div(10000);
+            if(totalFee >0){
+                dToken.transfer(owner, totalFee);
+            }
+            thisBalance =lpToken.balanceOf(address(this));
+            lpToken.transfer(msg.sender, thisBalance);
+
+        }
+        else{
+            lpToken.transfer(msg.sender, thisBalance);
+        }
+
 
         //transfer any change to changeRecipient (from a pair imbalance. Should never be more than a few basis points)
         address changeRecipient = msg.sender;
@@ -338,10 +352,30 @@ contract WrapAndUnWrap{
 
           if(originalDestinationToken == ETH_TOKEN_ADDRESS){
               wethToken.withdraw(destinationTokenBalance);
-              msg.sender.transfer(address(this).balance);
+              if(fee >0){
+                  uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
+                  if(totalFee >0){
+                      owner.transfer(totalFee);
+                  }
+                  msg.sender.transfer(address(this).balance);
+              }
+              else{
+                msg.sender.transfer(address(this).balance);
+              }
           }
           else{
+              if(fee >0){
+                   uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
+                   if(totalFee >0){
+                       dToken.transfer(owner, totalFee);
+                   }
+                   destinationTokenBalance = dToken.balanceOf(address(this));
+                   dToken.transfer(msg.sender, destinationTokenBalance);
+
+              }
+              else{
                dToken.transfer(msg.sender, destinationTokenBalance);
+              }
           }
 
 
@@ -548,6 +582,20 @@ contract WrapAndUnWrap{
       return true;
   }
 
+
+  function setFee(uint256 newFee) public onlyOwner returns (bool){
+    require(newFee<=maxfee, "Admin cannot set the fee higher than the current maxfee");
+    fee = newFee;
+    return true;
+  }
+
+
+  function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
+    require(maxfee==0, "Admin can only set max fee once and it is perm");
+    maxfee = newMax;
+    return true;
+  }
+
   function changeOwner(address payable newOwner) onlyOwner public returns (bool){
     owner = newOwner;
     return true;
@@ -559,7 +607,5 @@ contract WrapAndUnWrap{
     return token.balanceOf(userAddress);
 
   }
-
-
 
 }
