@@ -77,6 +77,12 @@ interface UniswapFactory{
   function getPair(address tokenA, address tokenB) external view returns (address pair);
 }
 
+interface LPERC20{
+
+    function token0() external view returns(address);
+    function token1() external view returns(address);
+}
+
 
 
 interface UniswapV2{
@@ -317,7 +323,8 @@ contract WrapAndUnWrap{
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  3 unwrapping");
         }
 
-
+        LPERC20 thisLpInfo = LPERC20(sourceToken);
+        lpTokenAddressToPairs[sourceToken] = [thisLpInfo.token0(), thisLpInfo.token1()];
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
