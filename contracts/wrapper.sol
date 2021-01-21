@@ -601,6 +601,15 @@ contract WrapAndUnWrap{
     return true;
   }
 
+  function addLPPair(address lpAddress, address token1, address token2) onlyOwner public returns (bool){
+      lpTokenAddressToPairs[lpAddress] = [token1, token2];
+      return true;
+  }
+
+  function getLPTokenByPair(address token1, address token2) view public returns (address lpAddr){
+      address thisPairAddress = factory.getPair(token1,token2);
+      return thisPairAddress;
+  }
 
    function getUserTokenBalance(address userAddress, address tokenAddress) public view returns (uint256){
     ERC20 token = ERC20(tokenAddress);
