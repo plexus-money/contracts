@@ -1,24 +1,55 @@
 /**
- *Submitted for verification at Etherscan.io on 2021-01-19
- Current Version: https://etherscan.io/address/0x5c1009674ae77cb9d92e47d1bd4c10a8eaf5adf0
+ *Submitted for verification at Etherscan.io on 2021-01-27
 */
 
+/*                                                              
+                                                                                                    
+                                       `.-:+osyhhhhhhyso+:-.`                                       
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.                                   
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.                                
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`                             
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.                           
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`                         
+                        :dNNNNNNh/`                              `/hNNNNNNd:                        
+                      `oNNNNNNh:                     /-/.           :hNNNNNNo`                      
+                     `yNNNNNm+`                      mNNm-           `+mNNNNNy`                     
+                    `hNNNNNd-                        hNNNm.            -dNNNNNh`                    
+                    yNNNNNd.                         .ymNNh             .dNNNNNy                    
+                   /NNNNNm.                            -mNNys+.          .mNNNNN/                   
+                  `mNNNNN:                           `:hNNNNNNNs`         :NNNNNm`                  
+                  /NNNNNh                          `+dNNNNNNNNNNd.         hNNNNN/                  
+                  yNNNNN/               .:+syyhhhhhmNNNNNNNNNNNNNm`        /NNNNNy                  
+                  dNNNNN.            `+dNNNNNNNNNNNNNNNNNNNNNNNmd+         .NNNNNd                  
+                  mNNNNN`           -dNNNNNNNNNNNNNNNNNNNNNNm-             `NNNNNm                  
+                  dNNNNN.          -NNNNNNNNNNNNNNNNNNNNNNNN+              .NNNNNd                  
+                  yNNNNN/          dNNNNNNNNNNNNNNNNNNNNNNNN:              /NNNNNy                  
+                  /NNNNNh         .NNNNNNNNNNNNNNNNNNNNNNNNd`              hNNNNN/                  
+                  `mNNNNN:        -NNNNNNNNNNNNNNNNNNNNNNNh.              :NNNNNm`                  
+                   /NNNNNm.       `NNNNNNNNNNNNNNNNNNNNNh:               .mNNNNN/                   
+                    yNNNNNd.      .yNNNNNNNNNNNNNNNdmNNN/               .dNNNNNy                    
+                    `hNNNNNd-    `dmNNNNNNNNNNNNdo-`.hNNh              -dNNNNNh`                    
+                     `yNNNNNm+`   oNNmmNNNNNNNNNy.   `sNNdo.         `+mNNNNNy`                     
+                      `oNNNNNNh:   ....++///+++++.     -+++.        :hNNNNNNo`                      
+                        :dNNNNNNh/`                              `/hNNNNNNd:                        
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`                         
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.                           
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`                             
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.                                
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.                                   
+                                       `.-:+yourewelcome+:-.`                                       
+ /$$$$$$$  /$$                                               /$$      /$$                                        
+| $$__  $$| $$                                              | $$$    /$$$                                        
+| $$  \ $$| $$  /$$$$$$  /$$   /$$ /$$   /$$  /$$$$$$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$  /$$   /$$
+| $$$$$$$/| $$ /$$__  $$|  $$ /$$/| $$  | $$ /$$_____/      | $$ $$/$$ $$ /$$__  $$| $$__  $$ /$$__  $$| $$  | $$
+| $$____/ | $$| $$$$$$$$ \  $$$$/ | $$  | $$|  $$$$$$       | $$  $$$| $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  | $$
+| $$      | $$| $$_____/  >$$  $$ | $$  | $$ \____  $$      | $$\  $ | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$
+| $$      | $$|  $$$$$$$ /$$/\  $$|  $$$$$$/ /$$$$$$$/      | $$ \/  | $$|  $$$$$$/| $$  | $$|  $$$$$$$|  $$$$$$$
+|__/      |__/ \_______/|__/  \__/ \______/ |_______/       |__/     |__/ \______/ |__/  |__/ \_______/ \____  $$
+                                                                                                        /$$  | $$
+                                                                                                       |  $$$$$$/
+                                                                                                       \______/ 
 
-/*
-_____  _
-|  __ \| |
-| |__) | | _____  ___   _ ___
-|  ___/| |/ _ \ \/ / | | / __|
-| |    | |  __/>  <| |_| \__ \
-|_|   _|_|\___/_/\_\\__,_|___/            _      _____   __          __
-| |  | |     (_)                         | |    |  __ \  \ \        / /
-| |  | |_ __  _ _____      ____ _ _ __   | |    | |__) |  \ \  /\  / / __ __ _ _ __  _ __   ___ _ __
-| |  | | '_ \| / __\ \ /\ / / _` | '_ \  | |    |  ___/    \ \/  \/ / '__/ _` | '_ \| '_ \ / _ \ '__|
-| |__| | | | | \__ \\ V  V / (_| | |_) | | |____| |         \  /\  /| | | (_| | |_) | |_) |  __/ |
- \____/|_| |_|_|___/ \_/\_/ \__,_| .__/  |______|_|          \/  \/ |_|  \__,_| .__/| .__/ \___|_|
-                                 | |                                          | |   | |
-                                 |_|                                          |_|   |_|
-*/
+*/  
 
 
 // This program is free software: you can redistribute it and/or modify
@@ -266,7 +297,7 @@ contract WrapAndUnWrap{
         if(fee>0){
             uint256 totalFee = (thisBalance.mul(fee)).div(10000);
             if(totalFee >0){
-                dToken.transfer(owner, totalFee);
+                lpToken.transfer(owner, totalFee);
             }
             thisBalance =lpToken.balanceOf(address(this));
             lpToken.transfer(msg.sender, thisBalance);
@@ -605,11 +636,6 @@ contract WrapAndUnWrap{
   function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
     require(maxfee==0, "Admin can only set max fee once and it is perm");
     maxfee = newMax;
-    return true;
-  }
-
-  function changeOwner(address payable newOwner) onlyOwner public returns (bool){
-    owner = newOwner;
     return true;
   }
 
