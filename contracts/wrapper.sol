@@ -191,6 +191,10 @@ contract WrapAndUnWrap{
         if(sourceToken != ETH_TOKEN_ADDRESS){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer 1");
           if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  if(sToken.allowance(address(this), uniAddress) != 0){
+                    sToken.approve(uniAddress, 0);
+                  }
+
                   sToken.approve(uniAddress, amount.mul(3));
             }
         }
@@ -328,6 +332,10 @@ contract WrapAndUnWrap{
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  if(sToken.allowance(address(this), uniAddress) != 0){
+                    sToken.approve(uniAddress, 0);
+                  }
+
                   sToken.approve(uniAddress, amount.mul(3));
             }
 
@@ -340,10 +348,17 @@ contract WrapAndUnWrap{
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
            if(pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)){
+                 if(pToken1.allowance(address(this), uniAddress) != 0){
+                   pToken1.approve(uniAddress, 0);
+                 }
+
                   pToken1.approve(uniAddress, pTokenBalance.mul(3));
             }
 
             if(pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)){
+                  if(pToken2.allowance(address(this), uniAddress) != 0){
+                    pToken2.approve(uniAddress, 0);
+                  }
                   pToken2.approve(uniAddress, pTokenBalance2.mul(3));
             }
 
@@ -393,6 +408,10 @@ contract WrapAndUnWrap{
         else{
 
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
+                  if(sToken.allowance(address(this), uniAddress) != 0){
+                    sToken.approve(uniAddress, 0);
+                  }
+
                   sToken.approve(uniAddress, amount.mul(3));
             }
             if(sourceToken != destinationToken){
