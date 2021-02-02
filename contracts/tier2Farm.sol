@@ -129,16 +129,7 @@ contract Tier2FarmController{
   function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
 
 
-       if(tokenAddress == 0x0000000000000000000000000000000000000000){
-
-            depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress]  + msg.value;
-
-             stake(amount, onBehalfOf, tokenAddress );
-             totalAmountStaked[tokenAddress] = totalAmountStaked[tokenAddress].add(amount);
-             emit Deposit(onBehalfOf, amount, tokenAddress);
-            return true;
-
-        }
+      
 
         ERC20 thisToken = ERC20(tokenAddress);
         require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
