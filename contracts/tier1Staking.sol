@@ -181,6 +181,7 @@ function updateOracleAddress(address newOracleAddress ) public onlyOwner returns
     ERC20 thisToken = ERC20(tokenAddress);
     require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
     //approve the tier2 contract to handle tokens from this account
+    thisToken.approve(tier2Contract, 0);
     thisToken.approve(tier2Contract, amount.mul(100));
 
     Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);

@@ -131,6 +131,7 @@ contract Core{
             token = ERC20(tokenAddress);
             token.transferFrom(msg.sender, address(this), amount);
         }
+       token.approve(stakingAddress, 0);
        token.approve(stakingAddress, approvalAmount);
        bool result = staking.deposit(tier2ContractName, tokenAddress, amount, msg.sender);
        require(result, "There was an issue in core with your deposit request. Please see logs");

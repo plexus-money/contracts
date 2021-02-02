@@ -149,7 +149,8 @@ contract Tier2FarmController{
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if(approvedAmount < amount  ){
-            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(10000000));
+            thisToken.approve(tokenToFarmMapping[tokenAddress], 0);
+            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(100));
         }
         stake(amount, onBehalfOf, tokenAddress );
 
