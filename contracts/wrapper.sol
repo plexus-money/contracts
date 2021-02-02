@@ -1,18 +1,54 @@
+/**
+ *Submitted for verification at Etherscan.io on 2021-01-27
+*/
 
 /*
-_____  _
-|  __ \| |
-| |__) | | _____  ___   _ ___
-|  ___/| |/ _ \ \/ / | | / __|
-| |    | |  __/>  <| |_| \__ \
-|_|   _|_|\___/_/\_\\__,_|___/            _      _____   __          __
-| |  | |     (_)                         | |    |  __ \  \ \        / /
-| |  | |_ __  _ _____      ____ _ _ __   | |    | |__) |  \ \  /\  / / __ __ _ _ __  _ __   ___ _ __
-| |  | | '_ \| / __\ \ /\ / / _` | '_ \  | |    |  ___/    \ \/  \/ / '__/ _` | '_ \| '_ \ / _ \ '__|
-| |__| | | | | \__ \\ V  V / (_| | |_) | | |____| |         \  /\  /| | | (_| | |_) | |_) |  __/ |
- \____/|_| |_|_|___/ \_/\_/ \__,_| .__/  |______|_|          \/  \/ |_|  \__,_| .__/| .__/ \___|_|
-                                 | |                                          | |   | |
-                                 |_|                                          |_|   |_|
+
+                                       `.-:+osyhhhhhhyso+:-.`
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`
+                        :dNNNNNNh/`                              `/hNNNNNNd:
+                      `oNNNNNNh:                     /-/.           :hNNNNNNo`
+                     `yNNNNNm+`                      mNNm-           `+mNNNNNy`
+                    `hNNNNNd-                        hNNNm.            -dNNNNNh`
+                    yNNNNNd.                         .ymNNh             .dNNNNNy
+                   /NNNNNm.                            -mNNys+.          .mNNNNN/
+                  `mNNNNN:                           `:hNNNNNNNs`         :NNNNNm`
+                  /NNNNNh                          `+dNNNNNNNNNNd.         hNNNNN/
+                  yNNNNN/               .:+syyhhhhhmNNNNNNNNNNNNNm`        /NNNNNy
+                  dNNNNN.            `+dNNNNNNNNNNNNNNNNNNNNNNNmd+         .NNNNNd
+                  mNNNNN`           -dNNNNNNNNNNNNNNNNNNNNNNm-             `NNNNNm
+                  dNNNNN.          -NNNNNNNNNNNNNNNNNNNNNNNN+              .NNNNNd
+                  yNNNNN/          dNNNNNNNNNNNNNNNNNNNNNNNN:              /NNNNNy
+                  /NNNNNh         .NNNNNNNNNNNNNNNNNNNNNNNNd`              hNNNNN/
+                  `mNNNNN:        -NNNNNNNNNNNNNNNNNNNNNNNh.              :NNNNNm`
+                   /NNNNNm.       `NNNNNNNNNNNNNNNNNNNNNh:               .mNNNNN/
+                    yNNNNNd.      .yNNNNNNNNNNNNNNNdmNNN/               .dNNNNNy
+                    `hNNNNNd-    `dmNNNNNNNNNNNNdo-`.hNNh              -dNNNNNh`
+                     `yNNNNNm+`   oNNmmNNNNNNNNNy.   `sNNdo.         `+mNNNNNy`
+                      `oNNNNNNh:   ....++///+++++.     -+++.        :hNNNNNNo`
+                        :dNNNNNNh/`                              `/hNNNNNNd:
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
+                                       `.-:+yourewelcome+:-.`
+ /$$$$$$$  /$$                                               /$$      /$$
+| $$__  $$| $$                                              | $$$    /$$$
+| $$  \ $$| $$  /$$$$$$  /$$   /$$ /$$   /$$  /$$$$$$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$  /$$   /$$
+| $$$$$$$/| $$ /$$__  $$|  $$ /$$/| $$  | $$ /$$_____/      | $$ $$/$$ $$ /$$__  $$| $$__  $$ /$$__  $$| $$  | $$
+| $$____/ | $$| $$$$$$$$ \  $$$$/ | $$  | $$|  $$$$$$       | $$  $$$| $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  | $$
+| $$      | $$| $$_____/  >$$  $$ | $$  | $$ \____  $$      | $$\  $ | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$
+| $$      | $$|  $$$$$$$ /$$/\  $$|  $$$$$$/ /$$$$$$$/      | $$ \/  | $$|  $$$$$$/| $$  | $$|  $$$$$$$|  $$$$$$$
+|__/      |__/ \_______/|__/  \__/ \______/ |_______/       |__/     |__/ \______/ |__/  |__/ \_______/ \____  $$
+                                                                                                        /$$  | $$
+                                                                                                       |  $$$$$$/
+                                                                                                       \______/
+
 */
 
 
@@ -191,10 +227,6 @@ contract WrapAndUnWrap{
         if(sourceToken != ETH_TOKEN_ADDRESS){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer 1");
           if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  if(sToken.allowance(address(this), uniAddress) != 0){
-                    sToken.approve(uniAddress, 0);
-                  }
-
                   sToken.approve(uniAddress, amount.mul(3));
             }
         }
@@ -332,10 +364,6 @@ contract WrapAndUnWrap{
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  if(sToken.allowance(address(this), uniAddress) != 0){
-                    sToken.approve(uniAddress, 0);
-                  }
-
                   sToken.approve(uniAddress, amount.mul(3));
             }
 
@@ -348,17 +376,10 @@ contract WrapAndUnWrap{
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
            if(pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)){
-                 if(pToken1.allowance(address(this), uniAddress) != 0){
-                   pToken1.approve(uniAddress, 0);
-                 }
-
                   pToken1.approve(uniAddress, pTokenBalance.mul(3));
             }
 
             if(pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)){
-                  if(pToken2.allowance(address(this), uniAddress) != 0){
-                    pToken2.approve(uniAddress, 0);
-                  }
                   pToken2.approve(uniAddress, pTokenBalance2.mul(3));
             }
 
@@ -408,10 +429,6 @@ contract WrapAndUnWrap{
         else{
 
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  if(sToken.allowance(address(this), uniAddress) != 0){
-                    sToken.approve(uniAddress, 0);
-                  }
-
                   sToken.approve(uniAddress, amount.mul(3));
             }
             if(sourceToken != destinationToken){
