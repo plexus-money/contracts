@@ -203,16 +203,6 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
       ERC20 thisToken = ERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
 
-        if(tokenAddress == 0x0000000000000000000000000000000000000000){
-            require(depositBalances[msg.sender][tokenAddress] >= amount, "You didnt deposit enough eth");
-
-            totalAmountStaked[tokenAddress] = totalAmountStaked[tokenAddress].sub(depositBalances[onBehalfOf][tokenAddress]);
-            depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress]  - amount;
-            onBehalfOf.send(amount);
-            return true;
-
-        }
-
 
         require(depositBalances[onBehalfOf][tokenAddress] > 0, "You dont have any tokens deposited");
 
