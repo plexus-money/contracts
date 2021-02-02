@@ -1,4 +1,6 @@
-// Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
+// SPDX-License-Identifier: MIT
+//contract address mainnet: 0x618fDCFF3Cca243c12E6b508D9d8a6fF9018325c
+
 pragma solidity >=0.4.22 <0.8.0;
 
 interface ERC20 {
@@ -19,16 +21,14 @@ interface ERC20 {
 }
 
 
-
-
-interface StakingInterface  {
-
-  function deposit ( address asset, uint256 amount, address onBehalfOf, uint16 referralCode ) external;
-  function getReservesList (  ) external view returns ( address[] memory );
-  function getUserAccountData ( address user ) external view returns ( uint256 totalCollateralETH, uint256 totalDebtETH, uint256 availableBorrowsETH, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor );
-  function withdraw ( address asset, uint256 amount, address to ) external returns ( uint256 );
+interface StakingInterface {
+  function balanceOf ( address who ) external view returns ( uint256 );
+  //function controller (  ) external view returns ( address );
+  function exit (  ) external;
+  //function lpToken (  ) external view returns ( address );
+  function stake ( uint256 amount ) external;
+  //function valuePerShare (  ) external view returns ( uint256 );
 }
-
 
 
 library SafeMath {
@@ -71,23 +71,20 @@ contract Tier2FarmController{
 
 
   address payable public owner;
-  address payable public admin;
-  address public platformToken = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
-  address public tokenStakingContract = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+  address public platformToken = 0xa0246c9032bC3A600820415aE600c6388619A14D;
+  address public tokenStakingContract = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
   mapping (string => address) public stakingContractsStakingToken;
   mapping (address => mapping (address => uint256)) public depositBalances;
-  mapping (address => address) public tokenToAToken;
-    mapping (address => address) public aTokenToToken;
   uint256 public commission  = 400; // Default is 4 percent
 
 
-  string public farmName = 'Aave';
+  string public farmName = 'Harvest.Finance';
   mapping (address => uint256) public totalAmountStaked;
 
-   modifier onlyOwner {
+  modifier onlyOwner {
          require(
              msg.sender == owner,
              "Only owner can call this function."
@@ -95,24 +92,15 @@ contract Tier2FarmController{
          _;
  }
 
-  modifier onlyAdmin {
-         require(
-             msg.sender == admin,
-             "Only admin can call this function."
-         );
-         _;
- }
-
-
-
 
 
 
 
   constructor() public payable {
-
+        stakingContracts["FARM"] = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
+        stakingContractsStakingToken ["FARM"] = 0xa0246c9032bC3A600820415aE600c6388619A14D;
+        tokenToFarmMapping[stakingContractsStakingToken ["FARM"]] =  stakingContracts["FARM"];
         owner= msg.sender;
-        admin = msg.sender;
 
   }
 
@@ -123,18 +111,12 @@ contract Tier2FarmController{
   }
 
 
-function updateATokens(address tokenAddress, address aTokenAddress) public onlyAdmin returns (bool){
-    tokenToAToken[tokenAddress] = aTokenAddress;
-    aTokenToToken[aTokenAddress] = tokenAddress;
-    return true;
-}
 
   function addOrEditStakingContract(string memory name, address stakingAddress, address stakingToken ) public onlyOwner returns (bool){
 
     stakingContracts[name] = stakingAddress;
     stakingContractsStakingToken[name] = stakingToken;
     tokenToFarmMapping[stakingToken] = stakingAddress;
-
     return true;
 
   }
@@ -147,12 +129,21 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
   function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
 
 
+       if(tokenAddress == 0x0000000000000000000000000000000000000000){
 
+            depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress]  + msg.value;
+
+             stake(amount, onBehalfOf, tokenAddress );
+             totalAmountStaked[tokenAddress] = totalAmountStaked[tokenAddress].add(amount);
+             emit Deposit(onBehalfOf, amount, tokenAddress);
+            return true;
+
+        }
 
         ERC20 thisToken = ERC20(tokenAddress);
         require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
 
-        depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress].add(amount);
+        depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress]  + amount;
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if(approvedAmount < amount  ){
@@ -169,15 +160,14 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
 
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
-      staker.deposit(tokenAddress, amount, address(this), 0);
+      staker.stake(amount);
       return true;
 
    }
 
    function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
-      ERC20 aToken  = ERC20(tokenToAToken[tokenAddress]);
       StakingInterface staker  =  StakingInterface(tokenToFarmMapping[tokenAddress]);
-      staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
+      staker.exit();
       return true;
 
    }
@@ -185,8 +175,8 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
    function getStakedPoolBalanceByUser(address _owner, address tokenAddress) public view returns(uint256){
         StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
-        ERC20 aToken  = ERC20(tokenToAToken[tokenAddress]);
-        uint256 numberTokens = aToken.balanceOf(address(this));
+
+        uint256 numberTokens = staker.balanceOf(address(this));
 
         uint256 usersBalancePercentage = (depositBalances[_owner][tokenAddress].mul(1000000)).div(totalAmountStaked[tokenAddress]);
         uint256 numberTokensPlusRewardsForUser= (numberTokens.mul(1000).mul(usersBalancePercentage)).div(1000000000);
@@ -260,21 +250,15 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
      return commissionForDAO;
    }
 
-   function changeOwner(address payable newAdmin) onlyOwner public returns (bool){
-     owner = newAdmin;
+   function changeOwner(address payable newOwner) onlyOwner public returns (bool){
+     owner = newOwner;
      return true;
    }
-
-   function changeAdmin(address payable newOwner) onlyAdmin public returns (bool){
-     admin = newOwner;
-     return true;
-   }
-
 
 
    function getStakedBalance(address _owner, address tokenAddress) public view returns(uint256){
 
-       ERC20 staker  = ERC20(tokenToAToken[tokenAddress]);
+       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
        return staker.balanceOf(_owner);
    }
 

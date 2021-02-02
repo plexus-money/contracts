@@ -110,7 +110,12 @@ contract Tier2FarmController{
 
 
   constructor() public payable {
-
+        stakingContracts["DAI"] =0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9 ;
+        stakingContracts["ALL"] =0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9 ;
+        stakingContractsStakingToken ["DAI"] = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
+        tokenToAToken[0x6B175474E89094C44Da98b954EedeAC495271d0F]= 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
+        aTokenToToken[0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50]= 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        tokenToFarmMapping[stakingContractsStakingToken ["DAI"]] =  stakingContracts["DAI"];
         owner= msg.sender;
         admin = msg.sender;
 
