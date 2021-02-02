@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 //contract address mainnet: 0x618fDCFF3Cca243c12E6b508D9d8a6fF9018325c
 //This contract will not support rebasing tokens
+//transferfroms are required, and thus they must return a bool, therefore USDT is not supported.
 
 pragma solidity >=0.4.22 <0.8.0;
 
