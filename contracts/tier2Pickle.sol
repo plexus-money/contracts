@@ -73,8 +73,8 @@ contract Tier2FarmController{
 
 
   address payable public owner;
-  address public platformToken = 0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852;
-  address public tokenStakingContract = 0x09FC573c502037B149ba87782ACC81cF093EC6ef;
+  //address public platformToken = 0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852;
+  //address public tokenStakingContract = 0x09FC573c502037B149ba87782ACC81cF093EC6ef;
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
@@ -125,7 +125,7 @@ contract Tier2FarmController{
   }
 
   function updateCommission(uint amount) public onlyOwner returns(bool){
-      require(amount < 2000, "Commission too high")
+      require(amount < 2000, "Commission too high");
       commission = amount;
       return true;
   }

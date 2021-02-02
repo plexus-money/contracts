@@ -72,8 +72,8 @@ contract Tier2FarmController{
 
 
   address payable public owner;
-  address public platformToken = 0xa0246c9032bC3A600820415aE600c6388619A14D;
-  address public tokenStakingContract = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
+  //address public platformToken = 0xa0246c9032bC3A600820415aE600c6388619A14D;
+  //address public tokenStakingContract = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
