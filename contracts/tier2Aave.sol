@@ -168,7 +168,9 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
    }
 
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
-
+      ERC20 tokenStaked = ERC20(tokenAddress);
+      tokenStaked.approve(tokenToFarmMapping[tokenAddress], 0);
+      tokenStaked.approve(tokenToFarmMapping[tokenAddress], amount.mul(2));
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.deposit(tokenAddress, amount, address(this), 0);
       return true;
