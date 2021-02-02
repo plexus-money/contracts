@@ -1,6 +1,6 @@
 // Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
 pragma solidity >=0.4.22 <0.8.0;
-
+//This contract will not support rebasing tokens
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 //Contract Address: 0xA320c4442542E6CD793Fb5F46c18fB7A6213615C
 //PICKLE-UNI-USDT/ETH contract name for parent tier 1
+//This contract will not support rebasing tokens
 
 pragma solidity >=0.4.22 <0.8.0;
 

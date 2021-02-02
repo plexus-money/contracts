@@ -158,9 +158,7 @@ contract Tier2FarmController{
    }
 
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
-       ERC20 tokenStaked = ERC20(tokenAddress);
-       tokenStaked.approve(tokenToFarmMapping[tokenAddress], 0);
-       tokenStaked.approve(tokenToFarmMapping[tokenAddress], amount.mul(2));
+
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.stake(amount);
       return true;
