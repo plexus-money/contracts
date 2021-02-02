@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 //contract address mainnet: 0x618fDCFF3Cca243c12E6b508D9d8a6fF9018325c
+//This contract will not support rebasing tokens
 
 pragma solidity >=0.4.22 <0.8.0;
 
@@ -150,6 +151,9 @@ contract Tier2FarmController{
    }
 
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
+      ERC20 tokenStaked = ERC20(tokenAddress);
+      tokenStaked.approve(tokenToFarmMapping[tokenAddress], 0);
+      tokenStaked.approve(tokenToFarmMapping[tokenAddress], amount.mul(2));
 
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.stake(amount);
@@ -226,6 +230,7 @@ contract Tier2FarmController{
 
 
         uint256 remainingBalance = thisToken.balanceOf(address(this));
+
         if(remainingBalance>0){
             stake(remainingBalance, address(this), tokenAddress);
         }
