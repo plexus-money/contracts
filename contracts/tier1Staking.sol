@@ -299,11 +299,7 @@ function getDepositBalanceByUser(string calldata tier2ContractName, address _own
 }
 
 
- function kill() virtual public onlyOwner {
 
-         selfdestruct(owner);
-
- }
 
 
 

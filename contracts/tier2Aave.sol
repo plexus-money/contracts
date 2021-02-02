@@ -291,11 +291,6 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
 
 
- function kill() virtual public onlyOwner {
-
-         selfdestruct(owner);
-
- }
 
 
     event Deposit(address indexed user, uint256 amount, address token);

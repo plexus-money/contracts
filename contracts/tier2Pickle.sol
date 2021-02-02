@@ -278,11 +278,6 @@ contract Tier2FarmController{
 
 
 
- function kill() virtual public onlyOwner {
-
-         selfdestruct(owner);
-
- }
 
 
     event Deposit(address indexed user, uint256 amount, address token);
