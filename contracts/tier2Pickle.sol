@@ -125,6 +125,7 @@ contract Tier2FarmController{
   }
 
   function updateCommission(uint amount) public onlyOwner returns(bool){
+      require(amount < 2000, "Commission too high")
       commission = amount;
       return true;
   }
