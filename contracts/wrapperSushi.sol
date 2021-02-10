@@ -1,4 +1,4 @@
-
+/*
 
                                        `.-:+osyhhhhhhyso+:-.`
                                    .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
@@ -117,7 +117,7 @@ interface LPERC20{
 
 
 
-interface UniswapV2{
+interface SushiV2{
 
 
    function addLiquidity ( address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline ) external returns ( uint256 amountA, uint256 amountB, uint256 liquidity );
@@ -180,9 +180,9 @@ contract WrapAndUnWrap{
   WrappedETH wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
   uint256 approvalAmount = 1000000000000000000000000000000;
   uint256 longTimeFromNow = 1000000000000000000000000000;
-  address uniAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+  address sushiAddress = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
   address uniFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-  UniswapV2 uniswapExchange = UniswapV2(uniAddress);
+  SushiV2 sushiExchange = SushiV2(sushiAddress);
   UniswapFactory factory = UniswapFactory(uniFactoryAddress);
   mapping (address => address[]) public lpTokenAddressToPairs;
   mapping(string=>address) public stablecoins;
@@ -222,8 +222,8 @@ contract WrapAndUnWrap{
 
         if(sourceToken != ETH_TOKEN_ADDRESS){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer 1");
-          if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.approve(uniAddress, amount.mul(3));
+          if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
+                  sToken.approve(sushiAddress, amount.mul(3));
             }
         }
 
@@ -249,8 +249,8 @@ contract WrapAndUnWrap{
 
         if(sourceToken != ETH_TOKEN_ADDRESS && updatedweth==false){
           require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  2");
-          if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.approve(uniAddress, amount.mul(3));
+          if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
+                  sToken.approve(sushiAddress, amount.mul(3));
             }
         }
 
@@ -275,15 +275,15 @@ contract WrapAndUnWrap{
         uint256 dTokenBalance = dToken.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-        if(dToken.allowance(address(this), uniAddress) < dTokenBalance.mul(2)){
-             dToken.approve(uniAddress, dTokenBalance.mul(3));
+        if(dToken.allowance(address(this), sushiAddress) < dTokenBalance.mul(2)){
+             dToken.approve(sushiAddress, dTokenBalance.mul(3));
         }
 
-        if(dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)){
-            dToken2.approve(uniAddress, dTokenBalance2.mul(3));
+        if(dToken2.allowance(address(this), sushiAddress) < dTokenBalance2.mul(2)){
+            dToken2.approve(sushiAddress, dTokenBalance2.mul(3));
         }
 
-        (,,uint liquidityCoins)  = uniswapExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
+        (,,uint liquidityCoins)  = sushiExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
 
         address thisPairAddress = factory.getPair(destinationTokens[0],destinationTokens[1]);
         ERC20 lpToken = ERC20(thisPairAddress);
@@ -359,11 +359,11 @@ contract WrapAndUnWrap{
         lpTokenAddressToPairs[sourceToken] = [thisLpInfo.token0(), thisLpInfo.token1()];
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
-            if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.approve(uniAddress, amount.mul(3));
+            if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
+                  sToken.approve(sushiAddress, amount.mul(3));
             }
 
-          uniswapExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
+          sushiExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
 
           ERC20 pToken1 = ERC20(lpTokenAddressToPairs[sourceToken][0]);
           ERC20 pToken2 = ERC20(lpTokenAddressToPairs[sourceToken][1]);
@@ -371,12 +371,12 @@ contract WrapAndUnWrap{
           uint256 pTokenBalance = pToken1.balanceOf(address(this));
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
-           if(pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)){
-                  pToken1.approve(uniAddress, pTokenBalance.mul(3));
+           if(pToken1.allowance(address(this), sushiAddress) < pTokenBalance.mul(2)){
+                  pToken1.approve(sushiAddress, pTokenBalance.mul(3));
             }
 
-            if(pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)){
-                  pToken2.approve(uniAddress, pTokenBalance2.mul(3));
+            if(pToken2.allowance(address(this), sushiAddress) < pTokenBalance2.mul(2)){
+                  pToken2.approve(sushiAddress, pTokenBalance2.mul(3));
             }
 
           if(lpTokenAddressToPairs[sourceToken][0] != destinationToken){
@@ -424,8 +424,8 @@ contract WrapAndUnWrap{
 
         else{
 
-            if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.approve(uniAddress, amount.mul(3));
+            if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
+                  sToken.approve(sushiAddress, amount.mul(3));
             }
             if(sourceToken != destinationToken){
                 conductUniswap(sourceToken, destinationToken, amount);
@@ -442,10 +442,10 @@ contract WrapAndUnWrap{
      return true;
    }
 
-   function updateUniswapExchange(address newAddress ) public onlyOwner returns (bool){
+   function updateSushiExchange(address newAddress ) public onlyOwner returns (bool){
 
-    uniswapExchange = UniswapV2( newAddress);
-    uniAddress = newAddress;
+    sushiExchange = SushiV2( newAddress);
+    sushiAddress = newAddress;
     return true;
 
   }
@@ -470,7 +470,7 @@ contract WrapAndUnWrap{
                address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
                 //addresses[0] = WETH_TOKEN_ADDRESS;
                 //addresses[1] = buyToken;
-                uniswapExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
+                sushiExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
 
             }
 
@@ -481,7 +481,7 @@ contract WrapAndUnWrap{
                 address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
                 //addresses[0] = WETH_TOKEN_ADDRESS;
                 //addresses[1] = buyToken;
-                uniswapExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
+                sushiExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
 
             }
 
@@ -588,7 +588,7 @@ contract WrapAndUnWrap{
     function getPriceFromUniswap(address  [] memory theAddresses, uint amount) public view returns (uint256[] memory amounts1){
 
 
-        try uniswapExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts){
+        try sushiExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts){
             return amounts;
         }
         catch  {
@@ -604,7 +604,7 @@ contract WrapAndUnWrap{
     function conductUniswapT4T(address  [] memory theAddresses, uint amount) internal returns (uint256[] memory amounts1){
 
            uint256 deadline = 1000000000000000;
-           uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
+           uint256 [] memory amounts =  sushiExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
            return amounts;
 
     }
