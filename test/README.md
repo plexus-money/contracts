@@ -1,6 +1,12 @@
-## Plexus Smart Contracts Tests
+# Plexus Smart Contracts Tests
 
 The testing for the plexus contracts is done using Truffle for sandbox deployment, Mocha for unit-testing and Chai for assertions.
+
+## Run The Tests
+
+To run the tests, make sure you install the latest version of [node.js](https://nodejs.org/en/) and then install `truffle` globally i.e. `npm install -g truffle`
+
+
 
 ### Test Setup
 

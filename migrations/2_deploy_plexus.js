@@ -28,6 +28,7 @@ module.exports = async (deployer) => {
     const tier1StakingInstance = await tier1Staking.deployed();
     const coreInstance = await core.deployed();
 
+    // setup the needed txns
     await tokenRewardsInstance.updateOracleAddress(oracleInstance.address);
 
     await oracleInstance.updateRewardAddress(tokenRewardsInstance.address);

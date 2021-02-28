@@ -12,7 +12,7 @@ contract('CoreContract', async accounts => {
 
         console.log(coreContract.address);
 
-        assert(ampContract.address != '');
+        assert(coreContract.address != '');
 
     });
 
