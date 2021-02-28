@@ -4,8 +4,9 @@ The testing for the plexus contracts is done using Truffle for sandbox deploymen
 
 ## Run The Tests
 
-To run the tests, make sure you install the latest version of [node.js](https://nodejs.org/en/) and then install `truffle` globally i.e. `npm install -g truffle`
+To run the tests, make sure you install the latest version of [node.js](https://nodejs.org/en/), [yarn](https://yarnpkg.com/getting-started/install) and then finally install `truffle` globally i.e. `npm install -g truffle`
 
+Then install the required node dependencies i.e. `yarn install` and then finally run the tests via the command `truffle test --network teams`
 
 
 ### Test Setup

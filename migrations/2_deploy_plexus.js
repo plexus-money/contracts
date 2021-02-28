@@ -10,7 +10,7 @@ const Tier2Pickle = artifacts.require("tier2Pickle");
 
 module.exports = async (deployer) => {
 
-    // deploy all the contracts
+    // Deploy all the contracts
     const wrapper = await deployer.deploy(Wrapper, {overwrite: false});
     const tokenRewards = await deployer.deploy(TokenRewards, {overwrite: false});
     const oracle = await deployer.deploy(Oracle, {overwrite: false});
@@ -21,14 +21,14 @@ module.exports = async (deployer) => {
     await deployer.deploy(Tier2Aggregator, {overwrite: false});
     await deployer.deploy(Tier2Pickle, {overwrite: false});
 
-    // run the setup txns
+    // Run the setup txns
     const wrapperInstance = await wrapper.deployed();
     const tokenRewardsInstance = await tokenRewards.deployed();
     const oracleInstance = await oracle.deployed();
     const tier1StakingInstance = await tier1Staking.deployed();
     const coreInstance = await core.deployed();
 
-    // setup the needed txns
+    // Setup the needed txns
     await tokenRewardsInstance.updateOracleAddress(oracleInstance.address);
 
     await oracleInstance.updateRewardAddress(tokenRewardsInstance.address);
