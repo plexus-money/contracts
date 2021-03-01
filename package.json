@@ -1,0 +1,26 @@
+{
+    "name": "plexuscontracts",
+    "version": "1.0.0",
+    "description": "Yield Farming Aggregator and Plexus Rewards Ecosystem",
+    "main": "truffle-config.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/stimuluspackage/PlexusContracts.git"
+    },
+    "keywords": [
+      "Plexus"
+    ],
+    "author": "terminator0x",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/plexus-money/contracts/issues"
+    },
+    "homepage": "https://github.com/plexus-money/contracts#README",
+    "dependencies": {
+      "@openzeppelin/contracts": "^3.1.0",
+      "solidity-util": "willitscale/solidity-util"
+    }
+} 

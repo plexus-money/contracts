@@ -255,10 +255,6 @@ contract Oracle{
   }
 
 
-
-
-
-
   function setPlatformContract(string memory name, address farmAddress, address farmToken, address platformAddress) public onlyOwner returns(bool){
     farmTokenPlusFarmNames.push(name);
     farmAddresses.push(farmAddress);
