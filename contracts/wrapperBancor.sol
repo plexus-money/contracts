@@ -1274,6 +1274,32 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
 
 
 
+ function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+
+      if (address(token) == ETH_TOKEN_ADDRESS) {
+          destination.transfer(amount);
+      }
+      else {
+          IERC20 tokenToken = IERC20(token);
+          require(tokenToken.transfer(destination, amount));
+      }
+      return true;
+  }
+
+
+  function setFee(uint256 newFee) public onlyOwner returns (bool){
+    require(newFee<=maxfee, "Admin cannot set the fee higher than the current maxfee");
+    fee = newFee;
+    return true;
+  }
+
+
+  function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
+    require(maxfee==0, "Admin can only set max fee once and it is perm");
+    maxfee = newMax;
+    return true;
+  }
+
   function updateUniswapFactory(address newAddress ) public onlyOwner returns (bool){
 
    factory = UniswapFactory( newAddress);
@@ -1298,6 +1324,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         changeRecpientIsOwner = changeRecpientIsOwnerBool;
         return true;
     }
+
 
 
 
