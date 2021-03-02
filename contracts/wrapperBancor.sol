@@ -1314,7 +1314,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
 
     }
 
-    function updatePresetPaths(address sellToken, address buyToken, address[] memory newPath ) public onlyOwner returns(bool){
+  function updatePresetPaths(address sellToken, address buyToken, address[] memory newPath ) public onlyOwner returns(bool){
         presetPaths[sellToken][buyToken] = newPath;
         return true;
     }
@@ -1324,10 +1324,5 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         changeRecpientIsOwner = changeRecpientIsOwnerBool;
         return true;
     }
-
-
-
-
-
 
 }
