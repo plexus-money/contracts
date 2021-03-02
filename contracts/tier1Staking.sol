@@ -49,9 +49,9 @@ interface Oracle {
 }
 
 interface Rewards {
-  function unstakeAndClaimDelegated(uint256 amount, address onBehalfOf, address tokenAddress, address recipient) external returns (uint256);
+  function unstakeAndClaimDelegated(address onBehalfOf, address tokenAddress, address recipient) external returns (uint256);
   function stakeDelegated(uint256 amount, address tokenAddress, address onBehalfOf) external returns(bool);
-
+  function checkIfTokenIsWhitelistedForStaking(address tokenAddress) external view returns(bool);
 }
 
 
@@ -86,10 +86,6 @@ library SafeMath {
 
 }
 
-
-
-
-
 contract Tier1FarmController{
 
   using SafeMath
@@ -101,8 +97,8 @@ contract Tier1FarmController{
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public tier2StakingContracts;
   uint256 public commission  = 400; // Default is 4 percent
-    Oracle oracle;
-    address oracleAddress;
+  Oracle oracle;
+  address public oracleAddress;
 
   string public farmName = 'Tier1Aggregator';
   mapping (address => uint256) totalAmountStaked;
@@ -113,7 +109,7 @@ contract Tier1FarmController{
              "Only owner can call this function."
          );
          _;
- }
+  }
 
  modifier onlyAdmin {
          require(
@@ -142,7 +138,7 @@ contract Tier1FarmController{
 
   }
 
-function updateOracleAddress(address newOracleAddress ) public onlyOwner returns (bool){
+ function updateOracleAddress(address newOracleAddress ) public onlyOwner returns (bool){
     oracleAddress= newOracleAddress;
     oracle = Oracle(newOracleAddress);
     return true;
@@ -188,27 +184,18 @@ function updateOracleAddress(address newOracleAddress ) public onlyOwner returns
 
     tier2Con.deposit(tokenAddress, amount, onBehalfOf);
 
-    address  rewardsContract = oracle.getAddress("REWARDS");
+    address rewardsContract = oracle.getAddress("REWARDS");
 
     if(rewardsContract != address(0x0)){
-        Rewards rewards = Rewards(rewardsContract);
-         try rewards.stakeDelegated(amount, tokenAddress, onBehalfOf) {
-
-        }
-        catch{
-
-        }
+      Rewards rewards = Rewards(rewardsContract);
+      if(rewards.checkIfTokenIsWhitelistedForStaking(tokenAddress)) {
+          rewards.stakeDelegated(amount, tokenAddress, onBehalfOf);
+      }
+     
     }
+    return true;
 
-
-
-      return true;
-   }
-
-
-
-
-
+  }
 
   function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) onlyAdmin payable public returns(bool){
 
@@ -217,17 +204,13 @@ function updateOracleAddress(address newOracleAddress ) public onlyOwner returns
         Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
         tier2Con.withdraw(tokenAddress, amount, onBehalfOf);
         address rewardsContract = oracle.getAddress("REWARDS");
-          if(rewardsContract != address(0x0)){
-            Rewards rewards = Rewards(rewardsContract);
-
-           try rewards.unstakeAndClaimDelegated(amount, onBehalfOf, tokenAddress, onBehalfOf){
-
-           }
-           catch{
-
-           }
-
+        if(rewardsContract != address(0x0)){
+          Rewards rewards = Rewards(rewardsContract);
+          if(rewards.checkIfTokenIsWhitelistedForStaking(tokenAddress)) {
+            rewards.unstakeAndClaimDelegated(onBehalfOf, tokenAddress, onBehalfOf);
           }
+
+        }
      return true;
    }
 
@@ -238,21 +221,10 @@ function updateOracleAddress(address newOracleAddress ) public onlyOwner returns
      return true;
    }
 
-   function changeOwner(address payable newOwner) onlyOwner public returns (bool){
-     owner = newOwner;
-     return true;
-   }
-
-   //admin can deposit and withdraw and should be the core contract
-
-   /*
-   function changeAdmin(address payable newAdmin) onlyAdmin public returns (bool){
-     admin = newAdmin;
-     return true;
-   }
-   */
-
-
+  function changeOwner(address payable newOwner) onlyOwner public returns (bool){
+    owner = newOwner;
+    return true;
+  }
 
 
   function adminEmergencyWithdrawTokensTier2(address payable tier2Contract, address token, uint amount, address payable destination) public onlyOwner returns(bool) {

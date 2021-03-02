@@ -166,7 +166,7 @@ library SafeMath {
 }
 
 
-contract WrapAndUnWrap{
+contract WrapAndUnWrapSushi{
 
   using SafeMath
     for uint256;
@@ -196,18 +196,17 @@ contract WrapAndUnWrap{
             "Only owner can call this function."
         );
         _;
-}
+  }
 
-    fallback() external payable {
-    }
+  fallback() external payable {
+  }
 
-  constructor() public payable {
+  constructor() payable {
          stablecoins["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
          stablecoins["USDT"] = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
          stablecoins["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
          changeRecpientIsOwner = false;
         owner= msg.sender;
-
   }
 
   function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
@@ -340,7 +339,7 @@ contract WrapAndUnWrap{
 
 
 
-      function unwrap(address sourceToken, address destinationToken, uint256 amount) public payable returns( uint256){
+    function unwrap(address sourceToken, address destinationToken, uint256 amount) public payable returns( uint256){
 
         address originalDestinationToken = destinationToken;
         ERC20 sToken = ERC20(sourceToken);

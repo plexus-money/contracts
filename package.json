@@ -1,26 +1,46 @@
 {
-    "name": "plexuscontracts",
-    "version": "1.0.0",
-    "description": "Yield Farming Aggregator and Plexus Rewards Ecosystem",
-    "main": "truffle-config.js",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/stimuluspackage/PlexusContracts.git"
-    },
-    "keywords": [
-      "Plexus"
-    ],
-    "author": "terminator0x",
-    "license": "MIT",
-    "bugs": {
-      "url": "https://github.com/plexus-money/contracts/issues"
-    },
-    "homepage": "https://github.com/plexus-money/contracts#README",
-    "dependencies": {
-      "@openzeppelin/contracts": "^3.1.0",
-      "solidity-util": "willitscale/solidity-util"
-    }
-} 
+  "name": "plexuscontracts",
+  "version": "1.0.0",
+  "description": "Yield Farming Aggregator and Plexus Rewards Ecosystem",
+  "main": "hardhat.config.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "build": "hardhat compile",
+    "console": "hardhat console",
+    "verify": "yarn hint && yarn test",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
+    "format": "yarn prettier --write contracts/*.sol && yarn prettier --write test/*.js",
+    "hint": "solhint \"contracts/**/*.sol\"",
+    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stimuluspackage/PlexusContracts.git"
+  },
+  "keywords": [
+    "Plexus"
+  ],
+  "author": "terminator0x",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/plexus-money/contracts/issues"
+  },
+  "homepage": "https://github.com/plexus-money/contracts#README",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.1.0"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-solhint": "^2.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.3",
+    "dotenv": "^8.2.0",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.0.31",
+    "hardhat": "^2.1.1",
+    "human-standard-token-abi": "^2.0.0",
+    "prettier": "^2.2.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.6",
+    "solidity-coverage": "^0.7.16"
+  }
+}

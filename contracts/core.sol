@@ -58,7 +58,7 @@ contract Core{
     uint256 approvalAmount = 1000000000000000000000000000000;
 
     //Reeentrancy
-     uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
 
@@ -121,13 +121,13 @@ contract Core{
 
   function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns (bool){
 
-        ERC20 token;
-       if(tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS){
-                wethToken.deposit{value:msg.value}();
-                tokenAddress=WETH_TOKEN_ADDRESS;
-                token = ERC20(tokenAddress);
-        }
-        else{
+      ERC20 token;
+      if(tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS){
+            wethToken.deposit{value:msg.value}();
+            tokenAddress=WETH_TOKEN_ADDRESS;
+            token = ERC20(tokenAddress);
+      }
+      else{
             token = ERC20(tokenAddress);
             token.transferFrom(msg.sender, address(this), amount);
         }
@@ -174,8 +174,6 @@ contract Core{
         return (stakableAddresses, stakableTokenNames);
 
   }
-
-
 
   function getAPR(address tier2Address, address tokenAddress) public view returns(uint256){
 
