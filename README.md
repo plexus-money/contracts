@@ -67,7 +67,7 @@ This contract is responsible for obtaining data from the tier1 and tier2 staking
 
 This contract is responsible for calculating and distributing rewards to users based on their staking period. It is called by the tier1Staking contract when a deposit is made and a users staked balance is recorded then. Also upon withdrawal, this contract is updated to reflect that and disburse rewards.
 
-5. `wrapper.sol` (https://etherscan.io/address/0x090f5bd5f94e29f9bd855c5266c7c486c0889e50#code)
+5. `wrapper.sol` (https://etherscan.io/address/0x95DE267b94130B1AA6Dd664247433212B9a27286#code)
 
 This contract is pretty robust but fairly simple in use. It can convert a token into another token when there is only one element in the `address[] memory destinationTokens` array parameter of the `wrap` function, or if there are two elements, it converts the `sourceToken` into the `destinationTokens` evenly and then provides them as liquidity in the Uniswap AMM receiving LP tokens in return and remiting those tokens back to the user.
 
