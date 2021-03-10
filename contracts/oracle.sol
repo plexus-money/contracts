@@ -1,4 +1,10 @@
 /**
+_____  _
+|  __ \| |
+| |__) | | _____  ___   _ ___
+|  ___/| |/ _ \ \/ / | | / __|
+| |    | |  __/>  <| |_| \__ \
+|_|   _|_|\___/_/\_\\__,_|___/ 
  *Submitted for verification at Etherscan.io on 2020-12-11
 */
 
@@ -247,10 +253,6 @@ contract Oracle{
     platformDirectory[name] = theAddress;
     return true;
   }
-
-
-
-
 
 
   function setPlatformContract(string memory name, address farmAddress, address farmToken, address platformAddress) public onlyOwner returns(bool){

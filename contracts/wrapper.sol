@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 
                                        `.-:+osyhhhhhhyso+:-.`
@@ -45,7 +46,60 @@
                                                                                                        |  $$$$$$/
                                                                                                        \______/
 
+=======
+/**
+ *Submitted for verification at Etherscan.io on 2021-01-27
+>>>>>>> fe32581f1a7be9cc6b9005e2ceb908464190ec99
 */
+
+/*                                                              
+                                                                                                    
+                                       `.-:+osyhhhhhhyso+:-.`                                       
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.                                   
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.                                
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`                             
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.                           
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`                         
+                        :dNNNNNNh/`                              `/hNNNNNNd:                        
+                      `oNNNNNNh:                     /-/.           :hNNNNNNo`                      
+                     `yNNNNNm+`                      mNNm-           `+mNNNNNy`                     
+                    `hNNNNNd-                        hNNNm.            -dNNNNNh`                    
+                    yNNNNNd.                         .ymNNh             .dNNNNNy                    
+                   /NNNNNm.                            -mNNys+.          .mNNNNN/                   
+                  `mNNNNN:                           `:hNNNNNNNs`         :NNNNNm`                  
+                  /NNNNNh                          `+dNNNNNNNNNNd.         hNNNNN/                  
+                  yNNNNN/               .:+syyhhhhhmNNNNNNNNNNNNNm`        /NNNNNy                  
+                  dNNNNN.            `+dNNNNNNNNNNNNNNNNNNNNNNNmd+         .NNNNNd                  
+                  mNNNNN`           -dNNNNNNNNNNNNNNNNNNNNNNm-             `NNNNNm                  
+                  dNNNNN.          -NNNNNNNNNNNNNNNNNNNNNNNN+              .NNNNNd                  
+                  yNNNNN/          dNNNNNNNNNNNNNNNNNNNNNNNN:              /NNNNNy                  
+                  /NNNNNh         .NNNNNNNNNNNNNNNNNNNNNNNNd`              hNNNNN/                  
+                  `mNNNNN:        -NNNNNNNNNNNNNNNNNNNNNNNh.              :NNNNNm`                  
+                   /NNNNNm.       `NNNNNNNNNNNNNNNNNNNNNh:               .mNNNNN/                   
+                    yNNNNNd.      .yNNNNNNNNNNNNNNNdmNNN/               .dNNNNNy                    
+                    `hNNNNNd-    `dmNNNNNNNNNNNNdo-`.hNNh              -dNNNNNh`                    
+                     `yNNNNNm+`   oNNmmNNNNNNNNNy.   `sNNdo.         `+mNNNNNy`                     
+                      `oNNNNNNh:   ....++///+++++.     -+++.        :hNNNNNNo`                      
+                        :dNNNNNNh/`                              `/hNNNNNNd:                        
+                         `omNNNNNNdo-`                        `-odNNNNNNmo`                         
+                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.                           
+                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`                             
+                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.                                
+                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.                                   
+                                       `.-:+yourewelcome+:-.`                                       
+ /$$$$$$$  /$$                                               /$$      /$$                                        
+| $$__  $$| $$                                              | $$$    /$$$                                        
+| $$  \ $$| $$  /$$$$$$  /$$   /$$ /$$   /$$  /$$$$$$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$  /$$   /$$
+| $$$$$$$/| $$ /$$__  $$|  $$ /$$/| $$  | $$ /$$_____/      | $$ $$/$$ $$ /$$__  $$| $$__  $$ /$$__  $$| $$  | $$
+| $$____/ | $$| $$$$$$$$ \  $$$$/ | $$  | $$|  $$$$$$       | $$  $$$| $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  | $$
+| $$      | $$| $$_____/  >$$  $$ | $$  | $$ \____  $$      | $$\  $ | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$
+| $$      | $$|  $$$$$$$ /$$/\  $$|  $$$$$$/ /$$$$$$$/      | $$ \/  | $$|  $$$$$$/| $$  | $$|  $$$$$$$|  $$$$$$$
+|__/      |__/ \_______/|__/  \__/ \______/ |_______/       |__/     |__/ \______/ |__/  |__/ \_______/ \____  $$
+                                                                                                        /$$  | $$
+                                                                                                       |  $$$$$$/
+                                                                                                       \______/ 
+
+*/  
 
 
 // This program is free software: you can redistribute it and/or modify
@@ -625,9 +679,28 @@ contract WrapAndUnWrap{
   function setFee(uint256 newFee) public onlyOwner returns (bool){
     require(newFee<=maxfee, "Admin cannot set the fee higher than the current maxfee");
     fee = newFee;
+<<<<<<< HEAD
     return true;
   }
 
+
+  function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
+    require(maxfee==0, "Admin can only set max fee once and it is perm");
+    maxfee = newMax;
+=======
+>>>>>>> fe32581f1a7be9cc6b9005e2ceb908464190ec99
+    return true;
+  }
+
+  function addLPPair(address lpAddress, address token1, address token2) onlyOwner public returns (bool){
+      lpTokenAddressToPairs[lpAddress] = [token1, token2];
+      return true;
+  }
+
+  function getLPTokenByPair(address token1, address token2) view public returns (address lpAddr){
+      address thisPairAddress = factory.getPair(token1,token2);
+      return thisPairAddress;
+  }
 
   function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
     require(maxfee==0, "Admin can only set max fee once and it is perm");
@@ -651,4 +724,8 @@ contract WrapAndUnWrap{
 
   }
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> fe32581f1a7be9cc6b9005e2ceb908464190ec99

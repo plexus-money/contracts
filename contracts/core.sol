@@ -119,7 +119,7 @@ contract Core{
     return true;
   }
 
-   function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns (bool){
+  function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns (bool){
 
         ERC20 token;
        if(tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS){
@@ -137,15 +137,15 @@ contract Core{
        require(result, "There was an issue in core with your deposit request. Please see logs");
         return result;
 
-   }
+  }
 
-   function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns(bool){
+  function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns(bool){
       bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request. Please see logs");
         return result;
-    }
+  }
 
-    function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
+  function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
 
         if(sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS){
             ERC20 token = ERC20(sourceToken);
@@ -158,26 +158,26 @@ contract Core{
         token.transfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
 
-    }
+  }
 
     //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
-   function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256){
+  function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256){
        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
        ERC20 token = ERC20(destinationToken);
         token.transfer(msg.sender, _amount);
        return _amount;
-    }
+  }
 
-    function getStakableTokens() view public  returns (address[] memory, string[] memory){
+  function getStakableTokens() view public  returns (address[] memory, string[] memory){
 
         (address [] memory stakableAddresses, string [] memory stakableTokenNames) = oracle.getStakableTokens();
         return (stakableAddresses, stakableTokenNames);
 
-    }
+  }
 
 
 
-   function getAPR(address tier2Address, address tokenAddress) public view returns(uint256){
+  function getAPR(address tier2Address, address tokenAddress) public view returns(uint256){
 
      uint256 result = oracle.getAPR(tier2Address, tokenAddress);
      return result;

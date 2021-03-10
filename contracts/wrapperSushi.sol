@@ -1,5 +1,4 @@
 /*
-
                                        `.-:+osyhhhhhhyso+:-.`
                                    .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
                                 .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.
@@ -44,7 +43,6 @@
                                                                                                         /$$  | $$
                                                                                                        |  $$$$$$/
                                                                                                        \______/
-
 */
 
 
