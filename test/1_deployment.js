@@ -17,10 +17,13 @@ describe('Deploying the plexus contracts', () => {
       expect(await plexusOracle.owner()).to.equal(owner.address);
       expect(await tier1Staking.owner()).to.equal(owner.address);
       expect(await core.owner()).to.equal(owner.address);
-      expect(await tier2Farm.owner()).to.equal(owner.address);
-      expect(await tier2Aave.owner()).to.equal(owner.address);
-      expect(await tier2Pickle.owner()).to.equal(owner.address);
       expect(await plexusCoin.owner()).to.equal(owner.address);
+    });
+
+    it('Should set the tier1Staking contract as the owner of the deployed tier2 contracts', async function () {
+      expect(await tier2Farm.owner()).to.equal(tier1Staking.address);
+      expect(await tier2Aave.owner()).to.equal(tier1Staking.address);
+      expect(await tier2Pickle.owner()).to.equal(tier1Staking.address);
     });
 
     it('Should setup the contracts addresses correctly after deployment', async function () {

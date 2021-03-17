@@ -52,6 +52,11 @@ const setupContracts = async() => {
     await tier1Staking.addOrEditTier2ChildStakingContract("DAI", tier2Aave.address);
     await tier1Staking.addOrEditTier2ChildStakingContract("PICKLE", tier2Pickle.address);
 
+    // setup ownership of tier2 contracts ownership
+    await tier2Farm.changeOwner(tier1Staking.address);
+    await tier2Aave.changeOwner(tier1Staking.address);
+    await tier2Pickle.changeOwner(tier1Staking.address);
+
     return [wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1];
 };
 

@@ -144,7 +144,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
       return true;
   }
 
-  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable public returns (bool){
+  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
 
         ERC20 thisToken = ERC20(tokenAddress);
         require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
@@ -197,7 +197,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
 
       ERC20 thisToken = ERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);

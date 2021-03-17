@@ -183,9 +183,9 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
       // Do the transfer as owner
       const erc20 = new ethers.Contract(plexusCoin.address, abi, owner);
       const transferAmount = ethers.utils.parseEther("950000")
-      const {status} = await(await erc20.transfer(tokenRewards.address, transferAmount)).wait();
+      const { status } = await(await erc20.transfer(tokenRewards.address, transferAmount)).wait();
 
-      // Check if the withdraw txn is successful
+      // Check if the transfer txn is successful
       expect(status).to.equal(1);
     });
 
@@ -386,7 +386,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
         log("User Plexus Reward Token balance, AFTER withdrawal is: ", currUserPlexusTokenBalance);
            
-        // Check that the initial user Farm Token balance is less than the current token balance
+        // Check that the initial user Plexus Token balance is less than the current token balance
         expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
 
       }

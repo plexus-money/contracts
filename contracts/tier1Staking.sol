@@ -120,10 +120,6 @@ contract Tier1FarmController{
  }
 
 
-
-
-
-
   constructor() public payable {
         tier2StakingContracts["FARM"] = 0x618fDCFF3Cca243c12E6b508D9d8a6fF9018325c;
 
@@ -269,13 +265,6 @@ function getDepositBalanceByUser(string calldata tier2ContractName, address _own
   uint balance = tier2Con.depositBalances(_owner, token);
   return balance;
 }
-
-
-
-
-
-
-
 
 
 

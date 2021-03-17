@@ -37,7 +37,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
 
     it('tier2Farm contract should have the correct Token and Token Staking Addresses', async () => {
 
-        const { status } = await (await tier2Farm.addOrEditStakingContract(tier2ContractName, process.env.FARM_STAKING_MAINNET_ADDRESS, process.env.FARM_TOKEN_MAINNET_ADDRESS)).wait();
+        const { status } = await (await tier1Staking.addOrEditTier2ChildsChildStakingContract(tier2Farm.address, tier2ContractName, process.env.FARM_STAKING_MAINNET_ADDRESS, process.env.FARM_TOKEN_MAINNET_ADDRESS)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -152,7 +152,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
       // Check if the withdraw txn is successful
       expect(status).to.equal(1);
 
-      // Check sif txn is successful
+      // Check if txn is successful
       if (status) {
 
         // Check the user farm token balance in the contract account after deposit

@@ -104,9 +104,7 @@ library SafeMath {
 
 contract PlexusOracle{
 
-  using SafeMath
-    for uint256;
-
+  using SafeMath for uint256;
 
   address payable public owner;
   address burnaddress  = address(0x0);
@@ -217,7 +215,7 @@ contract PlexusOracle{
 
 //BELOW is other (admin and otherwise)
 
-    function updateTVLAddress(address theAddress) onlyOwner public returns(bool){
+  function updateTVLAddress(address theAddress) onlyOwner public returns(bool){
     tvlOracleAddress = theAddress;
     tvlOracle = TVLOracle(theAddress);
     updateDirectory("TVLORACLE", theAddress);

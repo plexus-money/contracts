@@ -35,7 +35,7 @@ describe('Re-deploying the plexus ecosystem for Pickle test', () => {
     });
 
     it('tier2Pickle contract should have the correct Token and Token Staking Addresses', async () => {
-        const { status } = await (await tier2Pickle.addOrEditStakingContract("PICKLE", process.env.PICKLE_STAKING_MAINNET_ADDRESS, process.env.PICKLE_TOKEN_MAINNET_ADDRESS)).wait();
+        const { status } = await (await tier1Staking.addOrEditTier2ChildsChildStakingContract(tier2Pickle.address, tier2ContractName, process.env.PICKLE_STAKING_MAINNET_ADDRESS, process.env.PICKLE_TOKEN_MAINNET_ADDRESS)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
