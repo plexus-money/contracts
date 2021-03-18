@@ -92,11 +92,7 @@ contract Tier2FarmController{
              "Only owner can call this function."
          );
          _;
- }
-
-
-
-
+  }
 
   constructor() public payable {
         stakingContracts["FARM"] = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
@@ -185,7 +181,7 @@ contract Tier2FarmController{
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) onlyOwner payable public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
 
       ERC20 thisToken = ERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
@@ -281,15 +277,6 @@ contract Tier2FarmController{
       return true;
   }
 
-
-
-
-
-
     event Deposit(address indexed user, uint256 amount, address token);
     event Withdrawal(address indexed user, uint256 amount, address token);
-
-
-
-
 }

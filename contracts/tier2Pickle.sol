@@ -27,8 +27,9 @@ interface StakingInterface {
   function approve ( address spender, uint256 amount ) external returns ( bool );
   function balanceOf ( address account ) external view returns ( uint256 );
   function deposit ( uint256 _amount ) external;
+  function stake ( uint256 _amount ) external;
   function depositAll (  ) external;
-  function withdraw ( uint256 _shares ) external;
+  function withdraw  ( uint256 _amount ) external;
   function withdrawAll (  ) external;
 }
 
@@ -66,15 +67,15 @@ library SafeMath {
 
 
 
-contract Tier2FarmController{
+contract Tier2PickleFarmController{
 
   using SafeMath
     for uint256;
 
 
   address payable public owner;
-  //address public platformToken = 0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852;
-  //address public tokenStakingContract = 0x09FC573c502037B149ba87782ACC81cF093EC6ef;
+  address public platformToken = 0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5;
+  address public tokenStakingContract = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
@@ -92,7 +93,7 @@ contract Tier2FarmController{
              "Only owner can call this function."
          );
          _;
- }
+  }
 
 
 
@@ -100,19 +101,15 @@ contract Tier2FarmController{
 
 
   constructor() public payable {
-        stakingContracts["USDTPICKLEJAR"] = 0x09FC573c502037B149ba87782ACC81cF093EC6ef;
-        stakingContractsStakingToken ["USDTPICKLEJAR"] = 0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852;
-        tokenToFarmMapping[stakingContractsStakingToken ["USDTPICKLEJAR"]] =  stakingContracts["USDTPICKLEJAR"];
+        stakingContracts["PICKLE"] = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;
+        stakingContractsStakingToken ["PICKLE"] = 0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5;
+        tokenToFarmMapping[stakingContractsStakingToken ["PICKLE"]] =  stakingContracts["PICKLE"];
         owner= msg.sender;
 
   }
 
 
-  fallback() external payable {
-
-
-  }
-
+  fallback() external payable {}
 
 
   function addOrEditStakingContract(string memory name, address stakingAddress, address stakingToken ) public onlyOwner returns (bool){
@@ -155,15 +152,14 @@ contract Tier2FarmController{
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
 
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
-      staker.deposit(amount);
+      staker.stake(amount);
       return true;
 
    }
 
    function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
       StakingInterface staker  =  StakingInterface(tokenToFarmMapping[tokenAddress]);
-      staker.approve(tokenToFarmMapping[tokenAddress], 1000000000000000000000000000000);
-      staker.withdrawAll();
+      staker.withdraw(amount);
       return true;
 
    }
@@ -183,10 +179,10 @@ contract Tier2FarmController{
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) onlyOwner payable public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
 
-      ERC20 thisToken = ERC20(tokenAddress);
-      //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
+        ERC20 thisToken = ERC20(tokenAddress);
+        //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
 
         if(tokenAddress == 0x0000000000000000000000000000000000000000){
             require(depositBalances[msg.sender][tokenAddress] >= amount, "You didnt deposit enough eth");

@@ -64,7 +64,7 @@ library SafeMath {
 
 
 
-contract Tier2FarmController{
+contract Tier2AaveFarmController{
 
   using SafeMath
     for uint256;
@@ -103,14 +103,13 @@ contract Tier2FarmController{
          _;
  }
 
-
-
-
-
-
-
-  constructor() public payable {
-
+constructor() public payable {
+        stakingContracts["DAI"] =0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9 ;
+        stakingContracts["ALL"] =0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9 ;
+        stakingContractsStakingToken ["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        tokenToAToken[0x6B175474E89094C44Da98b954EedeAC495271d0F]= 0x028171bCA77440897B824Ca71D1c56caC55b68A3;
+        aTokenToToken[0x028171bCA77440897B824Ca71D1c56caC55b68A3]= 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        tokenToFarmMapping[stakingContractsStakingToken ["DAI"]] =  stakingContracts["DAI"];
         owner= msg.sender;
         admin = msg.sender;
 
@@ -146,9 +145,6 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
   }
 
   function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
-
-
-
 
         ERC20 thisToken = ERC20(tokenAddress);
         require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
@@ -201,7 +197,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) onlyOwner payable public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
 
       ERC20 thisToken = ERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);

@@ -93,7 +93,7 @@ contract TokenRewards{
   address ETH_TOKEN_ADDRESS  = address(0x0);
 
   Oracle oracle;
-    address oracleAddress;
+  address public oracleAddress;
 
 
   address payable public owner;
@@ -117,7 +117,7 @@ contract TokenRewards{
 
 
   constructor() public payable {
-        owner= msg.sender;
+      owner= msg.sender;
 
   }
 
@@ -148,6 +148,11 @@ contract TokenRewards{
     stakingTokenWhitelist[tokenAddress] =false;
     return true;
   }
+
+  function checkIfTokenIsWhitelistedForStaking(address tokenAddress) external view returns(bool){
+    return stakingTokenWhitelist[tokenAddress];
+  }
+
 
 
 
@@ -294,11 +299,6 @@ contract TokenRewards{
       uint256 decimalDiff = principalTokenDecimals.sub(rewardTokenDecimals);
       rewards = rewards.div(10**decimalDiff);
     }
-
-
-
-
-
 
     rewardToken.transfer(recipient, rewards);
 
