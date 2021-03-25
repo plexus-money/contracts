@@ -18,7 +18,20 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
-    [wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1 ] = await setupContracts();
+    
+    [ wrapper, 
+      wrapperSushi, 
+      tokenRewards, 
+      plexusOracle, 
+      tier1Staking, 
+      core, 
+      tier2Farm, 
+      tier2Aave, 
+      tier2Pickle, 
+      plexusCoin, 
+      owner, 
+      addr1] = await setupContracts();
+ 
   });
 
   describe('Test Plexus Sushiswap wrapper', () => {
