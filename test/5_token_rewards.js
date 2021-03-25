@@ -20,7 +20,18 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
   // Deploy and setup the contracts
   before(async () => {
 
-    [wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1 ] = await setupContracts();
+    [ wrapper, 
+      wrapperSushi, 
+      tokenRewards, 
+      plexusOracle, 
+      tier1Staking, 
+      core, 
+      tier2Farm, 
+      tier2Aave, 
+      tier2Pickle, 
+      plexusCoin, 
+      owner, 
+      addr1 ] = await setupContracts();
 
     // Use contract as user/addr1
     coreAsSigner1 = core.connect(addr1);

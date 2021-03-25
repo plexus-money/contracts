@@ -60,7 +60,7 @@ const setupContracts = async() => {
     return [wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1];
 };
 
-const log = (message, params) =>{
+const log = (message, params) => {
     if(process.env.CONSOLE_LOG === 'true') {
        console.log(message, params);
     }
