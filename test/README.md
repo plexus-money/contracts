@@ -49,5 +49,8 @@ After deploying the contracts, run these transactions to setup the plexus ecosys
 4. Call the function `setOracleAddress` in `core.sol` and then set it to the address of the `oracle.sol` contract.
 5. Call the function `setStakingAddress` in `core.sol` and then set it to the address of the `tier1Staking.sol` contract.
 6. Call the function `setConverterAddress` in `core.sol` and then set it to the address of the `wrapper.sol` contract.
-7. Call the function `updateOracleAddress` in `tier1Staking.sol` and with the address of the `oracle.sol` contract.
-8. Call the function `addOrEditTier2ChildStakingContract` in `tier1Staking.sol` and with the address of the `tier2Farm.sol` contract.
+7. Call the function `updateOracleAddress` in `tier1Staking.sol` and then set it to the address of the `oracle.sol` contract.
+8. Call the function `addOrEditTier2ChildStakingContract` in `tier1Staking.sol` and then set it to the address of the `tier2Farm.sol` contract.
+9. Call the function `addOrEditTier2ChildStakingContract` in `tier1Staking.sol` and then set it to the address of the `tier2Aave.sol` contract.
+10. Call the function `addOrEditTier2ChildStakingContract` in `tier1Staking.sol` and then set it to the address of the `tier2Pickle.sol` contract.
+11. Call the function `changeOwner` in all of the `tier2...` contracts and then set it to the address of the `core.sol` contract.

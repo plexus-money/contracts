@@ -20,7 +20,18 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
   // Deploy and setup the contracts
   before(async () => {
 
-    [wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1 ] = await setupContracts();
+    [ wrapper, 
+      wrapperSushi, 
+      tokenRewards, 
+      plexusOracle, 
+      tier1Staking, 
+      core, 
+      tier2Farm, 
+      tier2Aave, 
+      tier2Pickle, 
+      plexusCoin, 
+      owner, 
+      addr1] = await setupContracts();
 
     // Use contract as user/addr1
     coreAsSigner1 = core.connect(addr1);
@@ -364,7 +375,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Check the user's Plexus Coin Reward Token balance in the token contract before withdrawal
       const initialUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
-      log("User's Plexus Token balance, BEFORE withdrawal is: ", initialUserPlexusTokenBalance);
+      log("User's Plexus Token balance, BEFORE Farm Token withdrawal is: ", initialUserPlexusTokenBalance);
 
       // We withdraw Farm Tokens from the core contract as addr1/user
       const { status } = await (await coreAsSigner1.withdraw(tier2ContractName, farmTokenAddress, farmTokenWithdrawAmount)).wait();
@@ -384,7 +395,93 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
         // Check the user Plexus Reward Token balance in the contract account after withdrawal
         const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
-        log("User Plexus Reward Token balance, AFTER withdrawal is: ", currUserPlexusTokenBalance);
+        log("User Plexus Reward Token balance, AFTER Farm Token withdrawal is: ", currUserPlexusTokenBalance);
+           
+        // Check that the initial user Plexus Token balance is less than the current token balance
+        expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
+
+      }
+    
+    });
+
+     // Withdraw tokens from Plexus + Token Rewards based on the set APR
+    it('User should be able to withdraw deposited DAI tokens + PLX Token Rewards via the Core Contract', async () => {
+  
+      const daiTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
+      const erc20Farm = new ethers.Contract(daiTokenAddress, abi, provider);
+      const erc20PlexusCoin = new ethers.Contract(plexusCoin.address, abi, provider);
+      const tier2ContractName = "DAI";
+
+      // Check the user's DAI Token balance in the token contract before withdrawal
+      const initialUserDAITokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
+      log("User's DAI Token balance, BEFORE withdrawal is: ", initialUserDAITokenBalance);
+
+      // Check the user's Plexus Coin Reward Token balance in the token contract before withdrawal
+      const initialUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
+      log("User's Plexus Token balance, BEFORE DAI Token withdrawal is: ", initialUserPlexusTokenBalance);
+
+      // We withdraw DAI Tokens from the core contract as addr1/user
+      const { status } = await (await coreAsSigner1.withdraw(tier2ContractName, daiTokenAddress, daiTokenWithdrawAmount)).wait();
+
+      // Check if the withdraw txn is successful
+      expect(status).to.equal(1);
+
+      // Check if txn is successful
+      if (status) {
+
+        // Check the user DAI token balance in the contract account after withdrawal
+        const currUserDAITokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
+        log("User DAI Token balance, AFTER withdrawal is: ", currUserDAITokenBalance);
+          
+        // Check that the initial user DAI Token balance is less than the current token balance
+        expect(currUserDAITokenBalance).to.be.gte(initialUserDAITokenBalance);
+
+        // Check the user Plexus Reward Token balance in the contract account after withdrawal
+        const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
+        log("User Plexus Reward Token balance, AFTER DAI Token withdrawal is: ", currUserPlexusTokenBalance);
+           
+        // Check that the initial user Plexus Token balance is less than the current token balance
+        expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
+
+      }
+    
+    });
+
+     // Withdraw tokens from Plexus + Token Rewards based on the set APR
+     it('User should be able to withdraw deposited DAI tokens + PLX Token Rewards via the Core Contract', async () => {
+  
+      const pickleTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
+      const erc20Farm = new ethers.Contract(pickleTokenAddress, abi, provider);
+      const erc20PlexusCoin = new ethers.Contract(plexusCoin.address, abi, provider);
+      const tier2ContractName = "PICKLE";
+
+      // Check the user's Pickle Token balance in the token contract before withdrawal
+      const initialUserPickleTokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
+      log("User's Pickle Token balance, BEFORE withdrawal is: ", initialUserPickleTokenBalance);
+
+      // Check the user's Plexus Coin Reward Token balance in the token contract before withdrawal
+      const initialUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
+      log("User's Plexus Token balance, BEFORE Pickle Token withdrawal is: ", initialUserPlexusTokenBalance);
+
+      // We withdraw Pickle Tokens from the core contract as addr1/user
+      const { status } = await (await coreAsSigner1.withdraw(tier2ContractName, pickleTokenAddress, pickleTokenWithdrawAmount)).wait();
+
+      // Check if the withdraw txn is successful
+      expect(status).to.equal(1);
+
+      // Check if txn is successful
+      if (status) {
+
+        // Check the user Pickle token balance in the contract account after withdrawal
+        const currUserPickleTokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
+        log("User Pickle Token balance, AFTER withdrawal is: ", currUserPickleTokenBalance);
+          
+        // Check that the initial user Pickle Token balance is less than the current token balance
+        expect(currUserPickleTokenBalance).to.be.gte(initialUserPickleTokenBalance);
+
+        // Check the user Plexus Reward Token balance in the contract account after withdrawal
+        const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
+        log("User Plexus Reward Token balance, AFTER Pickle Token withdrawal is: ", currUserPlexusTokenBalance);
            
         // Check that the initial user Plexus Token balance is less than the current token balance
         expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
