@@ -6,7 +6,7 @@ created: 2021-04-02
 
 ## Summary
 
-This spec is a detailed write-up of how to get Plexus eco-system contracts working with the Optimistic Ethereum (OE) is a Layer 2 scaling solution.
+This spec is a detailed write-up of how to get the Plexus eco-system contracts working with the Optimistic Ethereum (OE), Layer 2 scaling solution.
 
 ## Overview
 
