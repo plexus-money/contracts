@@ -122,13 +122,70 @@ library SafeMath {
 
 }
 
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
 
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 
 contract LP2LP{
 
-  using SafeMath
-    for uint256;
+  using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address payable public owner;
   //placehodler token address for specifying eth tokens
@@ -152,7 +209,7 @@ contract LP2LP{
   function lpTolp(uint256 platformFrom, uint256 platformTo, address fromLPByAddress, address[] memory toLPTokensByTokens, uint256 amountFrom) public returns(uint256){
 
       ERC20 tokenFrom = ERC20(fromLPByAddress);
-      require(tokenFrom.transferFrom(msg.sender, address(this), amountFrom), "You need to approve this contract and have the appropriate balance to do this");
+      tokenFrom.safeTransferFrom(msg.sender, address(this), amountFrom);
       require(platforms[platformFrom] != address(0x0), "The platform does not exist. Was it created by admin with updatePlatforms?");
       wrapper fromWrapper = wrapper(platforms[platformFrom]);
       wrapper toWrapper = wrapper(platforms[platformTo]);
@@ -163,7 +220,7 @@ contract LP2LP{
       if(platformTo !=3){
           ERC20 tokensRecieved = ERC20(lpRec);
           currentTokenBalance = tokensRecieved.balanceOf(address(this));
-            tokensRecieved.transfer(msg.sender, currentTokenBalance );
+          tokensRecieved.safeTransfer(msg.sender, currentTokenBalance );
       }
 
       else{

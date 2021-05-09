@@ -60,15 +60,72 @@ library SafeMath {
 
 }
 
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
+
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 
 
 
 contract Tier2AaveFarmController{
 
-  using SafeMath
-    for uint256;
-
+  using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address payable public owner;
   address payable public admin;
@@ -147,7 +204,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
   function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
 
         ERC20 thisToken = ERC20(tokenAddress);
-        require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
+        thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress].add(amount);
 
@@ -227,9 +284,9 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
         depositBalances[onBehalfOf][tokenAddress] = 0;
         require(numberTokensPlusRewardsForUserMinusCommission >0, "For some reason numberTokensPlusRewardsForUserMinusCommission is zero");
 
-        require(thisToken.transfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission), "You dont have enough tokens inside this contract to withdraw from deposits");
+        thisToken.safeTransfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission);
         if(numberTokensPlusRewardsForUserMinusCommission >0){
-            thisToken.transfer(owner, commissionForDAO1);
+            thisToken.safeTransfer(owner, commissionForDAO1);
         }
 
 
@@ -279,7 +336,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
       }
       else {
           ERC20 tokenToken = ERC20(token);
-          require(tokenToken.transfer(destination, amount));
+          tokenToken.safeTransfer(destination, amount);
       }
 
 

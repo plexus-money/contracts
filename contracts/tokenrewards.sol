@@ -63,15 +63,72 @@ library SafeMath {
   }
 
 }
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
 
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 
 
 
 contract TokenRewards{
 
-  using SafeMath
-    for uint256;
+  using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address public stakingTokensAddress;
   address public stakingLPTokensAddress;
@@ -172,7 +229,7 @@ contract TokenRewards{
 
       ERC20 token = ERC20(tokenAddress);
 
-      require(token.transferFrom(msg.sender, address(this), amount), "The msg.sender does not have enough tokens or has not approved token transfers from this address");
+      token.safeTransferFrom(msg.sender, address(this), amount);
 
       bool redepositing=false;
 
@@ -260,10 +317,10 @@ contract TokenRewards{
 
 
 
-    require(principalToken.transfer(recipient, tokenDeposits[onBehalfOf][tokenAddress]), "There are not enough tokens in the pool to return principal. Contact the pool owner.");
+    principalToken.safeTransfer(recipient, tokenDeposits[onBehalfOf][tokenAddress]);
 
     //not requiring this below, as we need to ensure at the very least the user gets their deposited tokens above back.
-    rewardToken.transfer(recipient, rewards);
+    rewardToken.safeTransfer(recipient, rewards);
 
     tokenDeposits[onBehalfOf][tokenAddress] = 0;
     depositBalances[onBehalfOf][tokenAddress]= [block.timestamp, 0];
@@ -300,7 +357,7 @@ contract TokenRewards{
       rewards = rewards.div(10**decimalDiff);
     }
 
-    rewardToken.transfer(recipient, rewards);
+    rewardToken.safeTransfer(recipient, rewards);
 
     tokenDepositsDelegated[onBehalfOf][tokenAddress] = 0;
     depositBalancesDelegated[onBehalfOf][tokenAddress]= [block.timestamp, 0];
@@ -318,7 +375,7 @@ contract TokenRewards{
       }
       else {
           ERC20 tokenToken = ERC20(token);
-          require(tokenToken.transfer(destination, amount));
+          tokenToken.safeTransfer(destination, amount);
       }
 
 

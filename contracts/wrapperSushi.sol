@@ -164,12 +164,69 @@ library SafeMath {
   }
 
 }
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
 
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 contract WrapAndUnWrapSushi{
 
-  using SafeMath
-    for uint256;
+  using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address payable public owner;
   //placehodler token address for specifying eth tokens
@@ -218,7 +275,7 @@ contract WrapAndUnWrapSushi{
       if(destinationTokens.length==1){
 
         if(sourceToken != ETH_TOKEN_ADDRESS){
-          require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer 1");
+          sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
                   sToken.approve(sushiAddress, amount.mul(3));
             }
@@ -226,7 +283,7 @@ contract WrapAndUnWrapSushi{
 
         conductUniswap(sourceToken, destinationTokens[0], amount);
         uint256 thisBalance = dToken.balanceOf(address(this));
-        dToken.transfer(msg.sender, thisBalance);
+        dToken.safeTransfer(msg.sender, thisBalance);
         return (destinationTokens[0], thisBalance);
 
       }
@@ -245,7 +302,7 @@ contract WrapAndUnWrapSushi{
 
 
         if(sourceToken != ETH_TOKEN_ADDRESS && updatedweth==false){
-          require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  2");
+          sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
                   sToken.approve(sushiAddress, amount.mul(3));
             }
@@ -290,14 +347,14 @@ contract WrapAndUnWrapSushi{
         if(fee>0){
             uint256 totalFee = (thisBalance.mul(fee)).div(10000);
             if(totalFee >0){
-                lpToken.transfer(owner, totalFee);
+                lpToken.safeTransfer(owner, totalFee);
             }
             thisBalance =lpToken.balanceOf(address(this));
-            lpToken.transfer(msg.sender, thisBalance);
+            lpToken.safeTransfer(msg.sender, thisBalance);
 
         }
         else{
-            lpToken.transfer(msg.sender, thisBalance);
+            lpToken.safeTransfer(msg.sender, thisBalance);
         }
 
 
@@ -307,10 +364,10 @@ contract WrapAndUnWrapSushi{
             changeRecipient = owner;
         }
         if(dToken.balanceOf(address(this)) >0){
-            dToken.transfer(changeRecipient, dToken.balanceOf(address(this)));
+            dToken.safeTransfer(changeRecipient, dToken.balanceOf(address(this)));
         }
         if(dToken2.balanceOf(address(this)) >0){
-            dToken2.transfer(changeRecipient, dToken2.balanceOf(address(this)));
+            dToken2.safeTransfer(changeRecipient, dToken2.balanceOf(address(this)));
         }
 
         return (thisPairAddress,thisBalance) ;
@@ -349,7 +406,7 @@ contract WrapAndUnWrapSushi{
         ERC20 dToken = ERC20(destinationToken);
 
         if(sourceToken != ETH_TOKEN_ADDRESS){
-          require(sToken.transferFrom(msg.sender, address(this), amount), "You have not approved this contract or do not have enough token for this transfer  3 unwrapping");
+          sToken.safeTransferFrom(msg.sender, address(this), amount);
         }
 
         LPERC20 thisLpInfo = LPERC20(sourceToken);
@@ -403,14 +460,14 @@ contract WrapAndUnWrapSushi{
               if(fee >0){
                    uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                    if(totalFee >0){
-                       dToken.transfer(owner, totalFee);
+                       dToken.safeTransfer(owner, totalFee);
                    }
                    destinationTokenBalance = dToken.balanceOf(address(this));
-                   dToken.transfer(msg.sender, destinationTokenBalance);
+                   dToken.safeTransfer(msg.sender, destinationTokenBalance);
 
               }
               else{
-               dToken.transfer(msg.sender, destinationTokenBalance);
+               dToken.safeTransfer(msg.sender, destinationTokenBalance);
               }
           }
 
@@ -428,7 +485,7 @@ contract WrapAndUnWrapSushi{
                 conductUniswap(sourceToken, destinationToken, amount);
             }
           uint256 destinationTokenBalance = dToken.balanceOf(address(this));
-          dToken.transfer(msg.sender, destinationTokenBalance);
+          dToken.safeTransfer(msg.sender, destinationTokenBalance);
           return destinationTokenBalance;
         }
 
@@ -613,7 +670,7 @@ contract WrapAndUnWrapSushi{
       }
       else {
           ERC20 tokenToken = ERC20(token);
-          require(tokenToken.transfer(destination, amount));
+          tokenToken.safeTransfer(destination, amount);
       }
       return true;
   }

@@ -41,8 +41,95 @@ interface ERC20 {
     function withdraw(uint256 wad) external;
 }
 
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal view returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
+
+  function div(uint256 a, uint256 b) internal view returns (uint256) {
+    assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return c;
+  }
+
+
+
+  function sub(uint256 a, uint256 b) internal view returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function add(uint256 a, uint256 b) internal view returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+
+}
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
+
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 contract Core{
+  using SafeERC20 for ERC20;
 
     //globals
     address public oracleAddress;
@@ -129,7 +216,7 @@ contract Core{
       }
       else{
             token = ERC20(tokenAddress);
-            token.transferFrom(msg.sender, address(this), amount);
+            token.safeTransferFrom(msg.sender, address(this), amount);
         }
        token.approve(stakingAddress, 0);
        token.approve(stakingAddress, approvalAmount);
@@ -149,13 +236,13 @@ contract Core{
 
         if(sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS){
             ERC20 token = ERC20(sourceToken);
-            require(token.transferFrom(msg.sender, address(this), amount), "You must approve this contract or have enough tokens to do this conversion");
+            token.safeTransferFrom(msg.sender, address(this), amount);
         }
 
         ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount);
 
         ERC20 token = ERC20(destinationTokenAddress);
-        token.transfer(msg.sender, _amount);
+        token.safeTransfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
 
   }
@@ -164,7 +251,7 @@ contract Core{
   function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256){
        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
        ERC20 token = ERC20(destinationToken);
-        token.transfer(msg.sender, _amount);
+        token.safeTransfer(msg.sender, _amount);
        return _amount;
   }
 
@@ -223,7 +310,7 @@ contract Core{
          }
          else {
              ERC20 tokenToken = ERC20(token);
-             require(tokenToken.transfer(destination, amount));
+             tokenToken.safeTransfer(destination, amount);
          }
 
          return true;

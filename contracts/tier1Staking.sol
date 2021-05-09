@@ -85,12 +85,69 @@ library SafeMath {
   }
 
 }
+library SafeERC20 {
+  using SafeMath for uint256;
+    
+  function safeTransfer(
+    ERC20 token,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transfer(to, value));
+  }
+
+  function safeTransferFrom(
+    ERC20 token,
+    address from,
+    address to,
+    uint256 value
+  )
+    internal
+  {
+    require(token.transferFrom(from, to, value), 
+    "You must approve this contract or have enough tokens to do this conversion");
+  }
+
+  function safeApprove(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
+    require(token.approve(spender, value));
+  }
+  
+  function safeIncreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).add(value);
+    require(token.approve(spender, newAllowance));
+  }
+  
+  function safeDecreaseAllowance(
+    ERC20 token,
+    address spender,
+    uint256 value
+  )
+    internal
+  {
+    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+    require(token.approve(spender, newAllowance));
+  }
+}
 
 contract Tier1FarmController{
 
-  using SafeMath
-    for uint256;
-
+  using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address payable public owner;
   address payable public admin;
@@ -171,7 +228,7 @@ contract Tier1FarmController{
 
     address tier2Contract = tier2StakingContracts[tier2ContractName];
     ERC20 thisToken = ERC20(tokenAddress);
-    require(thisToken.transferFrom(msg.sender, address(this), amount), "Not enough tokens to transferFrom or no approval");
+    thisToken.safeTransferFrom(msg.sender, address(this), amount);
     //approve the tier2 contract to handle tokens from this account
     thisToken.approve(tier2Contract, 0);
     thisToken.approve(tier2Contract, amount.mul(100));
@@ -238,7 +295,7 @@ contract Tier1FarmController{
       }
       else {
           ERC20 tokenToken = ERC20(token);
-          require(tokenToken.transfer(destination, amount));
+          tokenToken.safeTransfer(destination, amount);
       }
 
 
