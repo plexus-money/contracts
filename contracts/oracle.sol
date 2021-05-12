@@ -9,15 +9,13 @@ _____  _
 */
 
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.8.0;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-interface ERC20 {
-    function balanceOf(address _owner) external view returns(uint balance);
-    function allowance(address _owner, address _spender) external view returns(uint remaining);
-    function decimals() external view returns(uint digits);
-}
 
 interface externalPlatformContract{
     function getAPR(address _farmAddress, address _tokenAddress) external view returns(uint apy);
@@ -66,45 +64,10 @@ interface TVLOracle{
     function getTotalValueLockedAggregated(uint256 optionIndex) external view returns (uint256);
 }
 
-
-
-
-library SafeMath {
-  function mul(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a * b;
-    assert(a == 0 || c / a == b);
-    return c;
-  }
-
-  function div(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-
-
-  function sub(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  function add(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
-
-}
-
-
-
-
-
 contract PlexusOracle{
 
   using SafeMath for uint256;
+  using SafeERC20 for ERC20;
 
   address payable public owner;
   address burnaddress  = address(0x0);
@@ -137,7 +100,7 @@ contract PlexusOracle{
 
 
   constructor() public payable {
-        owner= msg.sender;
+        owner= payable(msg.sender);
   }
 
 

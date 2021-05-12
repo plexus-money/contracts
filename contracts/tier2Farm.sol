@@ -3,25 +3,11 @@
 //This contract will not support rebasing tokens
 //transferfroms are required, and thus they must return a bool, therefore USDT is not supported.
 
-pragma solidity >=0.4.22 <0.8.0;
+pragma solidity ^0.8.0;
 
-interface ERC20 {
-    function totalSupply() external view returns(uint supply);
-
-    function balanceOf(address _owner) external view returns(uint balance);
-
-    function transfer(address _to, uint _value) external returns(bool success);
-
-    function transferFrom(address _from, address _to, uint _value) external returns(bool success);
-
-    function approve(address _spender, uint _value) external returns(bool success);
-
-    function allowance(address _owner, address _spender) external view returns(uint remaining);
-
-    function decimals() external view returns(uint digits);
-    event Approval(address indexed _owner, address indexed _spender, uint _value);
-}
-
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 interface StakingInterface {
   function balanceOf ( address who ) external view returns ( uint256 );
@@ -31,97 +17,6 @@ interface StakingInterface {
   function stake ( uint256 amount ) external;
   //function valuePerShare (  ) external view returns ( uint256 );
 }
-
-
-library SafeMath {
-  function mul(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a * b;
-    assert(a == 0 || c / a == b);
-    return c;
-  }
-
-  function div(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-
-
-  function sub(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  function add(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
-
-}
-library SafeERC20 {
-  using SafeMath for uint256;
-    
-  function safeTransfer(
-    ERC20 token,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transfer(to, value));
-  }
-
-  function safeTransferFrom(
-    ERC20 token,
-    address from,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transferFrom(from, to, value), 
-    "You must approve this contract or have enough tokens to do this conversion");
-  }
-
-  function safeApprove(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
-    require(token.approve(spender, value));
-  }
-  
-  function safeIncreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).add(value);
-    require(token.approve(spender, newAllowance));
-  }
-  
-  function safeDecreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
-    require(token.approve(spender, newAllowance));
-  }
-}
-
-
-
 
 contract Tier2FarmController{
 
@@ -155,7 +50,7 @@ contract Tier2FarmController{
         stakingContracts["FARM"] = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
         stakingContractsStakingToken ["FARM"] = 0xa0246c9032bC3A600820415aE600c6388619A14D;
         tokenToFarmMapping[stakingContractsStakingToken ["FARM"]] =  stakingContracts["FARM"];
-        owner= msg.sender;
+        owner= payable(msg.sender);
 
   }
 

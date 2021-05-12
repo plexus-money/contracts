@@ -1,25 +1,9 @@
 // Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
-pragma solidity >=0.4.22 <0.8.0;
+pragma solidity ^0.8.0;
 //This contract will not support rebasing tokens
-interface ERC20 {
-    function totalSupply() external view returns(uint supply);
-
-    function balanceOf(address _owner) external view returns(uint balance);
-
-    function transfer(address _to, uint _value) external returns(bool success);
-
-    function transferFrom(address _from, address _to, uint _value) external returns(bool success);
-
-    function approve(address _spender, uint _value) external returns(bool success);
-
-    function allowance(address _owner, address _spender) external view returns(uint remaining);
-
-    function decimals() external view returns(uint digits);
-    event Approval(address indexed _owner, address indexed _spender, uint _value);
-}
-
-
-
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 interface StakingInterface  {
 
@@ -28,99 +12,6 @@ interface StakingInterface  {
   function getUserAccountData ( address user ) external view returns ( uint256 totalCollateralETH, uint256 totalDebtETH, uint256 availableBorrowsETH, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor );
   function withdraw ( address asset, uint256 amount, address to ) external returns ( uint256 );
 }
-
-
-
-library SafeMath {
-  function mul(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a * b;
-    assert(a == 0 || c / a == b);
-    return c;
-  }
-
-  function div(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-
-
-  function sub(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  function add(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
-
-}
-
-library SafeERC20 {
-  using SafeMath for uint256;
-    
-  function safeTransfer(
-    ERC20 token,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transfer(to, value));
-  }
-
-  function safeTransferFrom(
-    ERC20 token,
-    address from,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transferFrom(from, to, value), 
-    "You must approve this contract or have enough tokens to do this conversion");
-  }
-
-  function safeApprove(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
-    require(token.approve(spender, value));
-  }
-  
-  function safeIncreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).add(value);
-    require(token.approve(spender, newAllowance));
-  }
-  
-  function safeDecreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
-    require(token.approve(spender, newAllowance));
-  }
-}
-
-
-
 
 contract Tier2AaveFarmController{
 
@@ -167,8 +58,8 @@ constructor() public payable {
         tokenToAToken[0x6B175474E89094C44Da98b954EedeAC495271d0F]= 0x028171bCA77440897B824Ca71D1c56caC55b68A3;
         aTokenToToken[0x028171bCA77440897B824Ca71D1c56caC55b68A3]= 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenToFarmMapping[stakingContractsStakingToken ["DAI"]] =  stakingContracts["DAI"];
-        owner= msg.sender;
-        admin = msg.sender;
+        owner= payable(msg.sender);
+        admin = payable(msg.sender);
 
   }
 

@@ -1,6 +1,11 @@
-pragma solidity 0.7.4;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 //Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 interface Oracle {
   function getTotalValueLockedInternalByToken(address tokenAddress, address tier2Address) external view returns (uint256);
@@ -21,7 +26,8 @@ interface Converter {
   function unwrap ( address sourceToken, address destinationToken, uint256 amount ) external payable returns ( uint256 );
   function wrap ( address sourceToken, address[] memory destinationTokens, uint256 amount ) external payable returns ( address, uint256 );
 }
-interface ERC20 {
+
+interface WrappedETH {
     function totalSupply() external view returns(uint supply);
 
     function balanceOf(address _owner) external view returns(uint balance);
@@ -36,97 +42,13 @@ interface ERC20 {
 
     function decimals() external view returns(uint digits);
     event Approval(address indexed _owner, address indexed _spender, uint _value);
+
     function deposit() external payable;
 
     function withdraw(uint256 wad) external;
-}
-
-library SafeMath {
-  function mul(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a * b;
-    assert(a == 0 || c / a == b);
-    return c;
-  }
-
-  function div(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b > 0); // Solidity automatically throws when dividing by 0
-    uint256 c = a / b;
-    assert(a == b * c + a % b); // There is no case in which this doesn't hold
-    return c;
-  }
-
-
-
-  function sub(uint256 a, uint256 b) internal view returns (uint256) {
-    assert(b <= a);
-    return a - b;
-  }
-
-  function add(uint256 a, uint256 b) internal view returns (uint256) {
-    uint256 c = a + b;
-    assert(c >= a);
-    return c;
-  }
 
 }
-library SafeERC20 {
-  using SafeMath for uint256;
-    
-  function safeTransfer(
-    ERC20 token,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transfer(to, value));
-  }
 
-  function safeTransferFrom(
-    ERC20 token,
-    address from,
-    address to,
-    uint256 value
-  )
-    internal
-  {
-    require(token.transferFrom(from, to, value), 
-    "You must approve this contract or have enough tokens to do this conversion");
-  }
-
-  function safeApprove(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    require((value == 0) || (token.allowance(msg.sender, spender) == 0));
-    require(token.approve(spender, value));
-  }
-  
-  function safeIncreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).add(value);
-    require(token.approve(spender, newAllowance));
-  }
-  
-  function safeDecreaseAllowance(
-    ERC20 token,
-    address spender,
-    uint256 value
-  )
-    internal
-  {
-    uint256 newAllowance = token.allowance(address(this), spender).sub(value);
-    require(token.approve(spender, newAllowance));
-  }
-}
 
 contract Core{
   using SafeERC20 for ERC20;
@@ -141,7 +63,7 @@ contract Core{
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
     address payable public owner;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
+    WrappedETH wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
 
     //Reeentrancy
@@ -174,7 +96,7 @@ contract Core{
 
 
   constructor() public payable {
-        owner= msg.sender;
+        owner= payable(msg.sender);
         setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
         _status = _NOT_ENTERED;
   }
@@ -300,7 +222,7 @@ contract Core{
 
     function updateWETHAddress(address newAddress) onlyOwner public returns(bool){
         WETH_TOKEN_ADDRESS = newAddress;
-        wethToken= ERC20(newAddress);
+        wethToken= WrappedETH(newAddress);
     }
 
     function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {

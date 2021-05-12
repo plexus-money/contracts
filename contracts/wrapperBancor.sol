@@ -432,7 +432,7 @@ library Address {
         pure
         returns (address payable)
     {
-        return address(uint160(account));
+        return payable(account);
     }
 
     /**
@@ -661,7 +661,7 @@ contract Context {
     // solhint-disable-previous-line no-empty-blocks
 
     function _msgSender() internal view returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view returns (bytes memory) {
@@ -727,7 +727,7 @@ contract Ownable is Context {
      */
     function renounceOwnership() public onlyOwner {
         emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
+        _owner = payable(address(0));
     }
 
     /**
@@ -820,7 +820,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
     address
         private constant wethTokenAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address payable
-        private constant zgoodwillAddress = 0x3CE37278de6388532C3949ce4e886F365B14fB56;
+        private constant zgoodwillAddress = payable(0x3CE37278de6388532C3949ce4e886F365B14fB56);
 
     bytes32 private constant liquidityProtectionName = "LiquidityProtection";
     bytes32
@@ -841,7 +841,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
     constructor() public {
 
         goodwill = 1;
-        _owner = msg.sender;
+        _owner = payable(msg.sender);
     }
 
     // circuit breaker modifiers
