@@ -175,7 +175,7 @@ contract WrapAndUnWrap{
         if(sourceToken != ETH_TOKEN_ADDRESS){
           sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.safeApprove(uniAddress, amount.mul(3));
+                  sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
         }
 
@@ -202,7 +202,7 @@ contract WrapAndUnWrap{
         if(sourceToken != ETH_TOKEN_ADDRESS && updatedweth==false){
           sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.safeApprove(uniAddress, amount.mul(3));
+                  sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
         }
 
@@ -228,11 +228,11 @@ contract WrapAndUnWrap{
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
         if(dToken.allowance(address(this), uniAddress) < dTokenBalance.mul(2)){
-             dToken.safeApprove(uniAddress, dTokenBalance.mul(3));
+             dToken.safeIncreaseAllowance(uniAddress, dTokenBalance.mul(3));
         }
 
         if(dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)){
-            dToken2.safeApprove(uniAddress, dTokenBalance2.mul(3));
+            dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2.mul(3));
         }
 
         (,,uint liquidityCoins)  = uniswapExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
@@ -312,7 +312,7 @@ contract WrapAndUnWrap{
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.safeApprove(uniAddress, amount.mul(3));
+                  sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
 
           uniswapExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
@@ -324,11 +324,11 @@ contract WrapAndUnWrap{
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
            if(pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)){
-                  pToken1.safeApprove(uniAddress, pTokenBalance.mul(3));
+                  pToken1.safeIncreaseAllowance(uniAddress, pTokenBalance.mul(3));
             }
 
             if(pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)){
-                  pToken2.safeApprove(uniAddress, pTokenBalance2.mul(3));
+                  pToken2.safeIncreaseAllowance(uniAddress, pTokenBalance2.mul(3));
             }
 
           if(lpTokenAddressToPairs[sourceToken][0] != destinationToken){
@@ -377,7 +377,7 @@ contract WrapAndUnWrap{
         else{
 
             if(sToken.allowance(address(this), uniAddress) < amount.mul(2)){
-                  sToken.safeApprove(uniAddress, amount.mul(3));
+                  sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
             if(sourceToken != destinationToken){
                 conductUniswap(sourceToken, destinationToken, amount);

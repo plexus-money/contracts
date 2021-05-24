@@ -89,8 +89,8 @@ contract Tier2FarmController{
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if(approvedAmount < amount  ){
-            thisToken.safeApprove(tokenToFarmMapping[tokenAddress], 0);
-            thisToken.safeApprove(tokenToFarmMapping[tokenAddress], amount.mul(100));
+            thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
+            thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(100));
         }
         stake(amount, onBehalfOf, tokenAddress );
 
@@ -102,8 +102,8 @@ contract Tier2FarmController{
 
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
       IERC20 tokenStaked = IERC20(tokenAddress);
-      tokenStaked.safeApprove(tokenToFarmMapping[tokenAddress], 0);
-      tokenStaked.safeApprove(tokenToFarmMapping[tokenAddress], amount.mul(2));
+      tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
+      tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
 
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.stake(amount);

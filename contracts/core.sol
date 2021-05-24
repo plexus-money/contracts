@@ -139,8 +139,8 @@ contract Core{
             token = IERC20(tokenAddress);
             token.safeTransferFrom(msg.sender, address(this), amount);
         }
-       token.safeApprove(stakingAddress, 0);
-       token.safeApprove(stakingAddress, approvalAmount);
+       token.safeIncreaseAllowance(stakingAddress, 0);
+       token.safeIncreaseAllowance(stakingAddress, approvalAmount);
        bool result = staking.deposit(tier2ContractName, tokenAddress, amount, msg.sender);
        require(result, "There was an issue in core with your deposit request. Please see logs");
         return result;
