@@ -172,7 +172,7 @@ contract WrapAndUnWrapSushi{
         if(sourceToken != ETH_TOKEN_ADDRESS){
           sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
-                  sToken.approve(sushiAddress, amount.mul(3));
+                  sToken.safeApprove(sushiAddress, amount.mul(3));
             }
         }
 
@@ -199,7 +199,7 @@ contract WrapAndUnWrapSushi{
         if(sourceToken != ETH_TOKEN_ADDRESS && updatedweth==false){
           sToken.safeTransferFrom(msg.sender, address(this), amount);
           if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
-                  sToken.approve(sushiAddress, amount.mul(3));
+                  sToken.safeApprove(sushiAddress, amount.mul(3));
             }
         }
 
@@ -225,11 +225,11 @@ contract WrapAndUnWrapSushi{
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
         if(dToken.allowance(address(this), sushiAddress) < dTokenBalance.mul(2)){
-             dToken.approve(sushiAddress, dTokenBalance.mul(3));
+             dToken.safeApprove(sushiAddress, dTokenBalance.mul(3));
         }
 
         if(dToken2.allowance(address(this), sushiAddress) < dTokenBalance2.mul(2)){
-            dToken2.approve(sushiAddress, dTokenBalance2.mul(3));
+            dToken2.safeApprove(sushiAddress, dTokenBalance2.mul(3));
         }
 
         (,,uint liquidityCoins)  = sushiExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
@@ -309,7 +309,7 @@ contract WrapAndUnWrapSushi{
 
           if(lpTokenAddressToPairs[sourceToken].length !=0){
             if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
-                  sToken.approve(sushiAddress, amount.mul(3));
+                  sToken.safeApprove(sushiAddress, amount.mul(3));
             }
 
           sushiExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
@@ -321,11 +321,11 @@ contract WrapAndUnWrapSushi{
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
            if(pToken1.allowance(address(this), sushiAddress) < pTokenBalance.mul(2)){
-                  pToken1.approve(sushiAddress, pTokenBalance.mul(3));
+                  pToken1.safeApprove(sushiAddress, pTokenBalance.mul(3));
             }
 
             if(pToken2.allowance(address(this), sushiAddress) < pTokenBalance2.mul(2)){
-                  pToken2.approve(sushiAddress, pTokenBalance2.mul(3));
+                  pToken2.safeApprove(sushiAddress, pTokenBalance2.mul(3));
             }
 
           if(lpTokenAddressToPairs[sourceToken][0] != destinationToken){
@@ -374,7 +374,7 @@ contract WrapAndUnWrapSushi{
         else{
 
             if(sToken.allowance(address(this), sushiAddress) < amount.mul(2)){
-                  sToken.approve(sushiAddress, amount.mul(3));
+                  sToken.safeApprove(sushiAddress, amount.mul(3));
             }
             if(sourceToken != destinationToken){
                 conductUniswap(sourceToken, destinationToken, amount);

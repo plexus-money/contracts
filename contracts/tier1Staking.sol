@@ -127,8 +127,8 @@ contract Tier1FarmController{
     IERC20 thisToken = IERC20(tokenAddress);
     thisToken.safeTransferFrom(msg.sender, address(this), amount);
     //approve the tier2 contract to handle tokens from this account
-    thisToken.approve(tier2Contract, 0);
-    thisToken.approve(tier2Contract, amount.mul(100));
+    thisToken.safeApprove(tier2Contract, 0);
+    thisToken.safeApprove(tier2Contract, amount.mul(100));
 
     Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
 

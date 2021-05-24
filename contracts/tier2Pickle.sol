@@ -90,8 +90,8 @@ contract Tier2PickleFarmController{
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if(approvedAmount < amount  ){
-            thisToken.approve(tokenToFarmMapping[tokenAddress], 0);
-            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(100));
+            thisToken.safeApprove(tokenToFarmMapping[tokenAddress], 0);
+            thisToken.safeApprove(tokenToFarmMapping[tokenAddress], amount.mul(100));
         }
         stake(amount, onBehalfOf, tokenAddress );
 

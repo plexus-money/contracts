@@ -100,7 +100,7 @@ contract Tier2AggregatorFarmController{
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if(approvedAmount < amount  ){
-            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(10000000));
+            thisToken.safeApprove(tokenToFarmMapping[tokenAddress], amount.mul(10000000));
         }
         stake(amount, onBehalfOf, tokenAddress );
 
