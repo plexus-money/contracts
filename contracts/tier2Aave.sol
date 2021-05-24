@@ -1,7 +1,7 @@
 // Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
 pragma solidity ^0.8.0;
 //This contract will not support rebasing tokens
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -16,7 +16,7 @@ interface StakingInterface  {
 contract Tier2AaveFarmController{
 
   using SafeMath for uint256;
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
   address payable public owner;
   address payable public admin;
@@ -94,7 +94,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
   function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
 
-        ERC20 thisToken = ERC20(tokenAddress);
+        IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress].add(amount);
@@ -113,7 +113,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
    }
 
    function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
-      ERC20 tokenStaked = ERC20(tokenAddress);
+      IERC20 tokenStaked = IERC20(tokenAddress);
       tokenStaked.approve(tokenToFarmMapping[tokenAddress], 0);
       tokenStaked.approve(tokenToFarmMapping[tokenAddress], amount.mul(2));
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
@@ -123,7 +123,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
    }
 
    function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
-      ERC20 aToken  = ERC20(tokenToAToken[tokenAddress]);
+      IERC20 aToken  = IERC20(tokenToAToken[tokenAddress]);
       StakingInterface staker  =  StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
       return true;
@@ -133,7 +133,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
    function getStakedPoolBalanceByUser(address _owner, address tokenAddress) public view returns(uint256){
         StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
-        ERC20 aToken  = ERC20(tokenToAToken[tokenAddress]);
+        IERC20 aToken  = IERC20(tokenToAToken[tokenAddress]);
         uint256 numberTokens = aToken.balanceOf(address(this));
 
         uint256 usersBalancePercentage = (depositBalances[_owner][tokenAddress].mul(1000000)).div(totalAmountStaked[tokenAddress]);
@@ -147,7 +147,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
   function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
 
-      ERC20 thisToken = ERC20(tokenAddress);
+      IERC20 thisToken = IERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
 
 
@@ -212,7 +212,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
    function getStakedBalance(address _owner, address tokenAddress) public view returns(uint256){
 
-       ERC20 staker  = ERC20(tokenToAToken[tokenAddress]);
+       IERC20 staker  = IERC20(tokenToAToken[tokenAddress]);
        return staker.balanceOf(_owner);
    }
 
@@ -226,7 +226,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
           destination.transfer(amount);
       }
       else {
-          ERC20 tokenToken = ERC20(token);
+          IERC20 tokenToken = IERC20(token);
           tokenToken.safeTransfer(destination, amount);
       }
 

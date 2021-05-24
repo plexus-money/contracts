@@ -63,7 +63,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -121,7 +121,7 @@ interface SushiV2{
 contract WrapAndUnWrapSushi{
 
   using SafeMath for uint256;
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
   address payable public owner;
   //placehodler token address for specifying eth tokens
@@ -164,8 +164,8 @@ contract WrapAndUnWrapSushi{
   function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
 
 
-    ERC20 sToken = ERC20(sourceToken);
-    ERC20 dToken = ERC20(destinationTokens[0]);
+    IERC20 sToken = IERC20(sourceToken);
+    IERC20 dToken = IERC20(destinationTokens[0]);
 
       if(destinationTokens.length==1){
 
@@ -189,7 +189,7 @@ contract WrapAndUnWrapSushi{
         if(sourceToken == ETH_TOKEN_ADDRESS){
           WrappedETH sToken1 = WrappedETH(WETH_TOKEN_ADDRESS);
           sToken1.deposit{value:msg.value}();
-          sToken = ERC20(WETH_TOKEN_ADDRESS);
+          sToken = IERC20(WETH_TOKEN_ADDRESS);
           amount = msg.value;
           sourceToken = WETH_TOKEN_ADDRESS;
           updatedweth =true;
@@ -220,7 +220,7 @@ contract WrapAndUnWrapSushi{
             conductUniswap(sourceToken, destinationTokens[1], amount.div(2));
         }
 
-        ERC20 dToken2 = ERC20(destinationTokens[1]);
+        IERC20 dToken2 = IERC20(destinationTokens[1]);
         uint256 dTokenBalance = dToken.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
@@ -235,7 +235,7 @@ contract WrapAndUnWrapSushi{
         (,,uint liquidityCoins)  = sushiExchange.addLiquidity(destinationTokens[0],destinationTokens[1], dTokenBalance, dTokenBalance2, 1,1, address(this), longTimeFromNow);
 
         address thisPairAddress = factory.getPair(destinationTokens[0],destinationTokens[1]);
-        ERC20 lpToken = ERC20(thisPairAddress);
+        IERC20 lpToken = IERC20(thisPairAddress);
         lpTokenAddressToPairs[thisPairAddress] =[destinationTokens[0], destinationTokens[1]];
         uint256 thisBalance =lpToken.balanceOf(address(this));
 
@@ -294,11 +294,11 @@ contract WrapAndUnWrapSushi{
     function unwrap(address sourceToken, address destinationToken, uint256 amount) public payable returns( uint256){
 
         address originalDestinationToken = destinationToken;
-        ERC20 sToken = ERC20(sourceToken);
+        IERC20 sToken = IERC20(sourceToken);
         if(destinationToken == ETH_TOKEN_ADDRESS){
             destinationToken = WETH_TOKEN_ADDRESS;
         }
-        ERC20 dToken = ERC20(destinationToken);
+        IERC20 dToken = IERC20(destinationToken);
 
         if(sourceToken != ETH_TOKEN_ADDRESS){
           sToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -314,8 +314,8 @@ contract WrapAndUnWrapSushi{
 
           sushiExchange.removeLiquidity(lpTokenAddressToPairs[sourceToken][0], lpTokenAddressToPairs[sourceToken][1], amount, 0,0, address(this), longTimeFromNow);
 
-          ERC20 pToken1 = ERC20(lpTokenAddressToPairs[sourceToken][0]);
-          ERC20 pToken2 = ERC20(lpTokenAddressToPairs[sourceToken][1]);
+          IERC20 pToken1 = IERC20(lpTokenAddressToPairs[sourceToken][0]);
+          IERC20 pToken2 = IERC20(lpTokenAddressToPairs[sourceToken][1]);
 
           uint256 pTokenBalance = pToken1.balanceOf(address(this));
           uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
@@ -564,7 +564,7 @@ contract WrapAndUnWrapSushi{
           destination.transfer(amount);
       }
       else {
-          ERC20 tokenToken = ERC20(token);
+          IERC20 tokenToken = IERC20(token);
           tokenToken.safeTransfer(destination, amount);
       }
       return true;
@@ -595,7 +595,7 @@ contract WrapAndUnWrapSushi{
   }
 
    function getUserTokenBalance(address userAddress, address tokenAddress) public view returns (uint256){
-    ERC20 token = ERC20(tokenAddress);
+    IERC20 token = IERC20(tokenAddress);
     return token.balanceOf(userAddress);
 
   }

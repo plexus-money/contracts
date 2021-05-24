@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
 //Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -51,7 +50,7 @@ interface WrappedETH {
 
 
 contract Core{
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
     //globals
     address public oracleAddress;
@@ -130,14 +129,14 @@ contract Core{
 
   function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns (bool){
 
-      ERC20 token;
+      IERC20 token;
       if(tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS){
             wethToken.deposit{value:msg.value}();
             tokenAddress=WETH_TOKEN_ADDRESS;
-            token = ERC20(tokenAddress);
+            token = IERC20(tokenAddress);
       }
       else{
-            token = ERC20(tokenAddress);
+            token = IERC20(tokenAddress);
             token.safeTransferFrom(msg.sender, address(this), amount);
         }
        token.approve(stakingAddress, 0);
@@ -157,13 +156,13 @@ contract Core{
   function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
 
         if(sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS){
-            ERC20 token = ERC20(sourceToken);
+            IERC20 token = IERC20(sourceToken);
             token.safeTransferFrom(msg.sender, address(this), amount);
         }
 
         ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount);
 
-        ERC20 token = ERC20(destinationTokenAddress);
+        IERC20 token = IERC20(destinationTokenAddress);
         token.safeTransfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
 
@@ -172,7 +171,7 @@ contract Core{
     //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
   function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256){
        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
-       ERC20 token = ERC20(destinationToken);
+       IERC20 token = IERC20(destinationToken);
         token.safeTransfer(msg.sender, _amount);
        return _amount;
   }
@@ -231,7 +230,7 @@ contract Core{
              destination.transfer(amount);
          }
          else {
-             ERC20 tokenToken = ERC20(token);
+             IERC20 tokenToken = IERC20(token);
              tokenToken.safeTransfer(destination, amount);
          }
 

@@ -65,7 +65,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -77,7 +77,7 @@ interface wrapper{
 contract LP2LP{
 
   using SafeMath for uint256;
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
   address payable public owner;
   //placehodler token address for specifying eth tokens
@@ -100,7 +100,7 @@ contract LP2LP{
 
   function lpTolp(uint256 platformFrom, uint256 platformTo, address fromLPByAddress, address[] memory toLPTokensByTokens, uint256 amountFrom) public returns(uint256){
 
-      ERC20 tokenFrom = ERC20(fromLPByAddress);
+      IERC20 tokenFrom = IERC20(fromLPByAddress);
       tokenFrom.safeTransferFrom(msg.sender, address(this), amountFrom);
       require(platforms[platformFrom] != address(0x0), "The platform does not exist. Was it created by admin with updatePlatforms?");
       wrapper fromWrapper = wrapper(platforms[platformFrom]);
@@ -110,13 +110,13 @@ contract LP2LP{
       (address lpRec,uint256 recAmount)= toWrapper.wrap{value:thisETHBalance}(ETH_TOKEN_ADDRESS, toLPTokensByTokens, thisETHBalance);
       uint256 currentTokenBalance;
       if(platformTo !=3){
-          ERC20 tokensRecieved = ERC20(lpRec);
+          IERC20 tokensRecieved = IERC20(lpRec);
           currentTokenBalance = tokensRecieved.balanceOf(address(this));
           tokensRecieved.safeTransfer(msg.sender, currentTokenBalance );
       }
 
       else{
-          ERC20 tokensRecieved = ERC20(bancorLPTokenAddress);
+          IERC20 tokensRecieved = IERC20(bancorLPTokenAddress);
           currentTokenBalance = tokensRecieved.balanceOf(msg.sender);
       }
 

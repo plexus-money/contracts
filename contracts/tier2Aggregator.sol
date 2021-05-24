@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -19,7 +19,7 @@ interface StakingInterface {
 contract Tier2AggregatorFarmController{
 
   using SafeMath for uint256;
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
 
   address payable public owner;
@@ -93,7 +93,7 @@ contract Tier2AggregatorFarmController{
 
         }
 
-        ERC20 thisToken = ERC20(tokenAddress);
+        IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress]  + amount;
@@ -143,7 +143,7 @@ contract Tier2AggregatorFarmController{
 
   function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) onlyOwner payable public returns(bool){
 
-      ERC20 thisToken = ERC20(tokenAddress);
+      IERC20 thisToken = IERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
 
         if(tokenAddress == 0x0000000000000000000000000000000000000000){
@@ -226,7 +226,7 @@ contract Tier2AggregatorFarmController{
           destination.transfer(amount);
       }
       else {
-          ERC20 tokenToken = ERC20(token);
+          IERC20 tokenToken = IERC20(token);
           tokenToken.safeTransfer(destination, amount);
       }
 

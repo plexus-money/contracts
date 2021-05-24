@@ -2,7 +2,7 @@
 //Mainnet: 0x97b00db19bAe93389ba652845150CAdc597C6B2F
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -44,7 +44,7 @@ interface Rewards {
 contract Tier1FarmController{
 
   using SafeMath for uint256;
-  using SafeERC20 for ERC20;
+  using SafeERC20 for IERC20;
 
   address payable public owner;
   address payable public admin;
@@ -124,7 +124,7 @@ contract Tier1FarmController{
   function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) onlyAdmin payable public returns (bool){
 
     address tier2Contract = tier2StakingContracts[tier2ContractName];
-    ERC20 thisToken = ERC20(tokenAddress);
+    IERC20 thisToken = IERC20(tokenAddress);
     thisToken.safeTransferFrom(msg.sender, address(this), amount);
     //approve the tier2 contract to handle tokens from this account
     thisToken.approve(tier2Contract, 0);
@@ -150,7 +150,7 @@ contract Tier1FarmController{
   function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) onlyAdmin payable public returns(bool){
 
         address tier2Contract = tier2StakingContracts[tier2ContractName];
-        ERC20 thisToken = ERC20(tokenAddress);
+        IERC20 thisToken = IERC20(tokenAddress);
         Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
         tier2Con.withdraw(tokenAddress, amount, onBehalfOf);
         address rewardsContract = oracle.getAddress("REWARDS");
@@ -191,7 +191,7 @@ contract Tier1FarmController{
           destination.transfer(amount);
       }
       else {
-          ERC20 tokenToken = ERC20(token);
+          IERC20 tokenToken = IERC20(token);
           tokenToken.safeTransfer(destination, amount);
       }
 
@@ -205,7 +205,7 @@ contract Tier1FarmController{
 
 function getStakedPoolBalanceByUser(string memory tier2ContractName, address _owner, address tokenAddress) public view returns(uint256){
   address tier2Contract = tier2StakingContracts[tier2ContractName];
-  ERC20 thisToken = ERC20(tokenAddress);
+  IERC20 thisToken = IERC20(tokenAddress);
   Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
   uint balance = tier2Con.getStakedPoolBalanceByUser(_owner, tokenAddress);
   return balance;
@@ -214,7 +214,7 @@ function getStakedPoolBalanceByUser(string memory tier2ContractName, address _ow
 
 function getDepositBalanceByUser(string calldata tier2ContractName, address _owner, address token) external view returns(uint256 ){
   address tier2Contract = tier2StakingContracts[tier2ContractName];
-  ERC20 thisToken = ERC20(token);
+  IERC20 thisToken = IERC20(token);
   Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
   uint balance = tier2Con.depositBalances(_owner, token);
   return balance;
