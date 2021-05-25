@@ -70,7 +70,13 @@ contract Core{
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
 
-
+	modifier allowanceCheck(address tokenAddress, uint256 amt) {
+		require(amt > 0, "Amount specified is zero");
+		IERC20 token = IERC20(tokenAddress);
+		require(token.allowance(msg.sender, stakingAddress) > amt,
+		"Token allowance lesser than amount specified");
+		_;
+	}
 
     modifier onlyOwner {
            require(
@@ -127,7 +133,10 @@ contract Core{
     return true;
   }
 
-  function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns (bool){
+  function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) 
+  nonReentrant() 
+  allowanceCheck(tokenAddress, amount)
+  payable public returns (bool) {
 
       IERC20 token;
       if(tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS){
