@@ -140,7 +140,11 @@ contract WrapAndUnWrapSushi{
   bool public changeRecpientIsOwner;
   uint256 public fee = 0;
   uint256 public maxfee = 0;
-
+  
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
 
   modifier onlyOwner {
         require(
@@ -161,7 +165,10 @@ contract WrapAndUnWrapSushi{
         owner= payable(msg.sender);
   }
 
-  function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
+  function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) 
+  public payable
+  nonZeroAmount(amount) 
+  returns(address, uint256){
 
 
     IERC20 sToken = IERC20(sourceToken);
@@ -408,7 +415,10 @@ contract WrapAndUnWrapSushi{
  }
 
 
-  function conductUniswap(address sellToken, address buyToken, uint amount) internal returns (uint256 amounts1){
+  function conductUniswap(address sellToken, address buyToken, uint amount) 
+  internal 
+  nonZeroAmount(amount)
+  returns (uint256 amounts1){
 
             if(sellToken ==ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS){
                 wethToken.deposit{value:msg.value}();

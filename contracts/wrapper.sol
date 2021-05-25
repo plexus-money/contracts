@@ -143,6 +143,10 @@ contract WrapAndUnWrap{
   uint256 public fee = 0;
   uint256 public maxfee = 0;
 
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
 
   modifier onlyOwner {
         require(
@@ -164,7 +168,10 @@ contract WrapAndUnWrap{
 
   }
 
-  function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
+  function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) 
+  public payable
+  nonZeroAmount(amount) 
+  returns(address, uint256){
 
 
     IERC20 sToken = IERC20(sourceToken);
@@ -294,7 +301,10 @@ contract WrapAndUnWrap{
 
 
 
-    function unwrap(address sourceToken, address destinationToken, uint256 amount) public payable returns( uint256){
+    function unwrap(address sourceToken, address destinationToken, uint256 amount) 
+    public payable
+    nonZeroAmount(amount) 
+    returns( uint256){
 
         address originalDestinationToken = destinationToken;
         IERC20 sToken = IERC20(sourceToken);
@@ -411,7 +421,10 @@ contract WrapAndUnWrap{
  }
 
 
-  function conductUniswap(address sellToken, address buyToken, uint amount) internal returns (uint256 amounts1){
+  function conductUniswap(address sellToken, address buyToken, uint amount) 
+  internal
+  nonZeroAmount(amount) 
+  returns (uint256 amounts1){
 
             if(sellToken ==ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS){
                 wethToken.deposit{value:msg.value}();
@@ -537,7 +550,10 @@ contract WrapAndUnWrap{
 
     }
 
-    function getPriceFromUniswap(address  [] memory theAddresses, uint amount) public view returns (uint256[] memory amounts1){
+    function getPriceFromUniswap(address  [] memory theAddresses, uint amount) 
+    public view
+    nonZeroAmount(amount) 
+    returns (uint256[] memory amounts1){
 
 
         try uniswapExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts){
@@ -553,7 +569,10 @@ contract WrapAndUnWrap{
 
     }
 
-    function conductUniswapT4T(address  [] memory theAddresses, uint amount) internal returns (uint256[] memory amounts1){
+    function conductUniswapT4T(address  [] memory theAddresses, uint amount) 
+    internal
+    nonZeroAmount(amount) 
+    returns (uint256[] memory amounts1){
 
            uint256 deadline = 1000000000000000;
            uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
@@ -561,7 +580,11 @@ contract WrapAndUnWrap{
 
     }
 
-    function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+    function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) 
+    public 
+    onlyOwner 
+    nonZeroAmount(amount)
+    returns(bool) {
 
       if (address(token) == ETH_TOKEN_ADDRESS) {
           destination.transfer(amount);

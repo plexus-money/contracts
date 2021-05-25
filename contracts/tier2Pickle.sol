@@ -39,6 +39,11 @@ contract Tier2PickleFarmController{
   string public farmName = 'Pickle.Finance';
   mapping (address => uint256) public totalAmountStaked;
 
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
+
   modifier onlyOwner {
          require(
              msg.sender == owner,
@@ -79,7 +84,11 @@ contract Tier2PickleFarmController{
       return true;
   }
 
-  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
+  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) 
+  public payable 
+  onlyOwner
+  nonZeroAmount(amount) 
+  returns (bool) {
 
 
 
@@ -101,7 +110,7 @@ contract Tier2PickleFarmController{
         return true;
    }
 
-   function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
+   function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal nonZeroAmount(amount) returns(bool){
 
       StakingInterface staker  = StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.stake(amount);
@@ -109,7 +118,7 @@ contract Tier2PickleFarmController{
 
    }
 
-   function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
+   function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal nonZeroAmount(amount) returns(bool){
       StakingInterface staker  =  StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.withdraw(amount);
       return true;
@@ -131,7 +140,11 @@ contract Tier2PickleFarmController{
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) 
+  public payable 
+  onlyOwner 
+  nonZeroAmount(amount)
+  returns(bool) {
 
         IERC20 thisToken = IERC20(tokenAddress);
         //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
@@ -208,7 +221,11 @@ contract Tier2PickleFarmController{
 
 
 
-  function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+  function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) 
+  public 
+  onlyOwner 
+  nonZeroAmount(amount)
+  returns(bool) {
 
 
 

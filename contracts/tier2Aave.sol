@@ -35,6 +35,11 @@ contract Tier2AaveFarmController{
   string public farmName = 'Aave';
   mapping (address => uint256) public totalAmountStaked;
 
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
+
    modifier onlyOwner {
          require(
              msg.sender == owner,
@@ -92,7 +97,11 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
       return true;
   }
 
-  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) payable onlyOwner public returns (bool){
+  function deposit(address tokenAddress, uint256 amount, address onBehalfOf) 
+  public payable 
+  onlyOwner
+  nonZeroAmount(amount)
+  returns (bool){
 
         IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -112,7 +121,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
         return true;
    }
 
-   function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
+   function stake(uint256 amount, address onBehalfOf, address tokenAddress) internal nonZeroAmount(amount) returns(bool){
       IERC20 tokenStaked = IERC20(tokenAddress);
       tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
       tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
@@ -122,7 +131,7 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
 
    }
 
-   function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal returns(bool){
+   function unstake(uint256 amount, address onBehalfOf, address tokenAddress) internal nonZeroAmount(amount) returns(bool){
       IERC20 aToken  = IERC20(tokenToAToken[tokenAddress]);
       StakingInterface staker  =  StakingInterface(tokenToFarmMapping[tokenAddress]);
       staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
@@ -145,7 +154,11 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
     }
 
 
-  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) payable onlyOwner public returns(bool){
+  function withdraw(address tokenAddress, uint256 amount, address payable onBehalfOf) 
+  public payable 
+  onlyOwner 
+  nonZeroAmount(amount)
+  returns(bool) {
 
       IERC20 thisToken = IERC20(tokenAddress);
       //uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
@@ -216,11 +229,11 @@ function updateATokens(address tokenAddress, address aTokenAddress) public onlyA
        return staker.balanceOf(_owner);
    }
 
-
-
-  function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
-
-
+function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) 
+  public 
+  onlyOwner 
+  nonZeroAmount(amount)
+  returns(bool) {
 
       if (address(token) == ETH_TOKEN_ADDRESS) {
           destination.transfer(amount);

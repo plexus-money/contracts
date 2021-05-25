@@ -85,6 +85,11 @@ contract LP2LP{
   mapping (uint256 => address) public platforms;
   address bancorLPTokenAddress = 0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94;
 
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
+
     modifier onlyOwner {
         require(
             msg.sender == owner,
@@ -98,7 +103,10 @@ contract LP2LP{
 
 
 
-  function lpTolp(uint256 platformFrom, uint256 platformTo, address fromLPByAddress, address[] memory toLPTokensByTokens, uint256 amountFrom) public returns(uint256){
+  function lpTolp(uint256 platformFrom, uint256 platformTo, address fromLPByAddress, address[] memory toLPTokensByTokens, uint256 amountFrom) 
+  public
+  nonZeroAmount(amountFrom)
+  returns(uint256){
 
       IERC20 tokenFrom = IERC20(fromLPByAddress);
       tokenFrom.safeTransferFrom(msg.sender, address(this), amountFrom);

@@ -48,6 +48,10 @@ contract TokenRewards{
 
   address payable public owner;
 
+   modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
 
   modifier onlyOwner {
          require(
@@ -116,7 +120,7 @@ contract TokenRewards{
   }
 
 
-  function stake(uint256 amount, address tokenAddress, address onBehalfOf) public returns(bool){
+  function stake(uint256 amount, address tokenAddress, address onBehalfOf) public nonZeroAmount(amount) returns(bool){
 
       require(stakingTokenWhitelist[tokenAddress] ==true, "The token you are staking is not whitelisted to earn rewards");
 
@@ -149,7 +153,11 @@ contract TokenRewards{
   }
 
 
-  function stakeDelegated(uint256 amount, address tokenAddress, address onBehalfOf) public onlyTier1 returns(bool){
+  function stakeDelegated(uint256 amount, address tokenAddress, address onBehalfOf) 
+  public 
+  onlyTier1 
+  nonZeroAmount(amount)
+  returns(bool) {
 
       require(stakingTokenWhitelist[tokenAddress] ==true, "The token you are staking is not whitelisted to earn rewards");
 
@@ -259,7 +267,11 @@ contract TokenRewards{
     return rewards;
   }
 
-    function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+    function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) 
+    public 
+    onlyOwner 
+    nonZeroAmount(amount)
+    returns(bool) {
 
 
 

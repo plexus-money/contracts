@@ -57,6 +57,11 @@ contract Tier1FarmController{
   string public farmName = 'Tier1Aggregator';
   mapping (address => uint256) totalAmountStaked;
 
+  modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
+		_;
+	}
+
   modifier onlyOwner {
          require(
              msg.sender == owner,
@@ -121,7 +126,11 @@ contract Tier1FarmController{
 
 
 
-  function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) onlyAdmin payable public returns (bool){
+  function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) 
+  public payable
+  onlyAdmin
+  nonZeroAmount(amount) 
+  returns (bool){
 
     address tier2Contract = tier2StakingContracts[tier2ContractName];
     IERC20 thisToken = IERC20(tokenAddress);
@@ -147,7 +156,11 @@ contract Tier1FarmController{
 
   }
 
-  function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) onlyAdmin payable public returns(bool){
+  function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount, address payable onBehalfOf) 
+  public payable
+  onlyAdmin
+  nonZeroAmount(amount) 
+  returns(bool){
 
         address tier2Contract = tier2StakingContracts[tier2ContractName];
         IERC20 thisToken = IERC20(tokenAddress);
@@ -177,13 +190,21 @@ contract Tier1FarmController{
   }
 
 
-  function adminEmergencyWithdrawTokensTier2(address payable tier2Contract, address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+  function adminEmergencyWithdrawTokensTier2(address payable tier2Contract, address token, uint amount, address payable destination) 
+  public
+  onlyOwner
+  nonZeroAmount(amount)
+  returns(bool) {
     Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
     tier2Con.adminEmergencyWithdrawTokens(token, amount, destination);
     return true;
   }
 
-  function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+  function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) 
+  public
+  onlyOwner
+  nonZeroAmount(amount) 
+  returns(bool) {
 
 
 

@@ -70,11 +70,8 @@ contract Core{
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
 
-	modifier allowanceCheck(address tokenAddress, uint256 amt) {
-		require(amt > 0, "Amount specified is zero");
-		IERC20 token = IERC20(tokenAddress);
-		require(token.allowance(msg.sender, stakingAddress) > amt,
-		"Token allowance lesser than amount specified");
+	modifier nonZeroAmount(uint256 amount) {
+		require(amount > 0, "Amount specified is zero");
 		_;
 	}
 
@@ -135,7 +132,7 @@ contract Core{
 
   function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) 
   nonReentrant() 
-  allowanceCheck(tokenAddress, amount)
+  nonZeroAmount(amount)
   payable public returns (bool) {
 
       IERC20 token;
@@ -156,13 +153,20 @@ contract Core{
 
   }
 
-  function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns(bool){
+  function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount) 
+  public payable
+  nonReentrant()
+  nonZeroAmount(amount) 
+  returns(bool){
       bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request. Please see logs");
         return result;
   }
 
-  function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
+  function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) 
+  public payable
+  nonZeroAmount(amount)
+  returns(address, uint256){
 
         if(sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS){
             IERC20 token = IERC20(sourceToken);
@@ -177,8 +181,11 @@ contract Core{
 
   }
 
-    //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
-  function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256){
+  //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
+  function deconvert(address sourceToken, address destinationToken, uint256 amount) 
+  public payable
+  nonZeroAmount(amount)
+  returns(uint256){
        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
        IERC20 token = IERC20(destinationToken);
         token.safeTransfer(msg.sender, _amount);
