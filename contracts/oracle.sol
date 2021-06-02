@@ -58,15 +58,12 @@ interface Reward{
   function updateLPStakingTokenAddress ( address newAddress ) external returns ( bool );
   function updateStakingTokenAddress ( address newAddress ) external returns ( bool );
 
-
 }
 
 interface TVLOracle{
     function getTotalValueLockedInternalByToken(address tokenAddress, address tier2Address) external view returns (uint256);
     function getTotalValueLockedAggregated(uint256 optionIndex) external view returns (uint256);
 }
-
-
 
 
 library SafeMath {
