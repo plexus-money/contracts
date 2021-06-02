@@ -198,7 +198,7 @@ contract WrapAndUnWrap{
             "Only owner can call this function."
         );
         _;
-}
+  }
 
     fallback() external payable {
     }
@@ -339,8 +339,6 @@ contract WrapAndUnWrap{
         changeRecpientIsOwner = changeRecpientIsOwnerBool;
         return true;
     }
-
-
 
     function unwrap(address sourceToken, address destinationToken, uint256 amount) public payable returns( uint256){
 

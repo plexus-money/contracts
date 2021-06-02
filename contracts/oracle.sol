@@ -99,10 +99,7 @@ library SafeMath {
 }
 
 
-
-
-
-contract PlexusOracle{
+contract PlexusOracle {
 
   using SafeMath for uint256;
 
