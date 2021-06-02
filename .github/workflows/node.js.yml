@@ -1,0 +1,42 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.16.0]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: yarn install 
+    - run: yarn build
+      env:
+        RPC_NODE_URL: https://eth-mainnet.alchemyapi.io/v2/STWBB1frs6EimLSFzCILfzIVGqHZfpnN
+    - run: yarn test 
+      env:
+        RPC_NODE_URL: https://eth-mainnet.alchemyapi.io/v2/STWBB1frs6EimLSFzCILfzIVGqHZfpnN 
+        CONSOLE_LOG: "true"
+        ZERO_ADDRESS: "0x0000000000000000000000000000000000000000"
+        FARM_TOKEN_MAINNET_ADDRESS: "0xa0246c9032bC3A600820415aE600c6388619A14D"
+        DAI_TOKEN_MAINNET_ADDRESS: "0x6b175474e89094c44da98b954eedeac495271d0f"
+        PICKLE_TOKEN_MAINNET_ADDRESS: "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+        FARM_STAKING_MAINNET_ADDRESS: "0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50"
+        AAVE_STAKING_MAINNET_ADDRESS: "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9" 
+        PICKLE_STAKING_MAINNET_ADDRESS: "0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F"
