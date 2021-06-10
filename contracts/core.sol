@@ -1,5 +1,6 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
+import "./upgradeable.sol";
 //Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
 interface Oracle {
@@ -41,8 +42,7 @@ interface ERC20 {
     function withdraw(uint256 wad) external;
 }
 
-
-contract Core{
+contract Core is Upgradeable {
 
     //globals
     address public oracleAddress;
@@ -61,8 +61,6 @@ contract Core{
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
-
-
 
     modifier onlyOwner {
            require(
@@ -228,6 +226,5 @@ contract Core{
 
          return true;
      }
-
 
 }
