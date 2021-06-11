@@ -23,15 +23,15 @@ const setupContracts = async() => {
     [owner, addr1, ...addrs] = await ethers.getSigners();
 
     // then deploy the contracts and wait for them to be mined
-    const wrapper = await deployWithProxy(Wrapper, OwnableProxy);
-    const wrapperSushi = await deployWithProxy(WrapperSushi, OwnableProxy);
-    const tokenRewards = await deployWithProxy(TokenRewards, OwnableProxy);
-    const plexusOracle = await deployWithProxy(PlexusOracle, OwnableProxy);
-    const tier1Staking = await deployWithProxy(Tier1Staking, OwnableProxy);
-    const core = await deployWithProxy(Core, OwnableProxy);
-    const tier2Farm = await deployWithProxy(Tier2Farm, OwnableProxy);
-    const tier2Aave = await deployWithProxy(Tier2Aave, OwnableProxy);
-    const tier2Pickle = await deployWithProxy(Tier2Pickle, OwnableProxy);
+    const wrapper = await deployWithProxy(Wrapper, OwnableProxy, 'WrapAndUnWrap');
+    const wrapperSushi = await deployWithProxy(WrapperSushi, OwnableProxy, 'WrapAndUnWrapSushi');
+    const tokenRewards = await deployWithProxy(TokenRewards, OwnableProxy, 'TokenRewards');
+    const plexusOracle = await deployWithProxy(PlexusOracle, OwnableProxy, 'PlexusOracle');
+    const tier1Staking = await deployWithProxy(Tier1Staking, OwnableProxy, 'Tier1FarmController');
+    const core = await deployWithProxy(Core, OwnableProxy, 'Core');
+    const tier2Farm = await deployWithProxy(Tier2Farm, OwnableProxy, 'Tier2FarmController');
+    const tier2Aave = await deployWithProxy(Tier2Aave, OwnableProxy, 'Tier2AaveFarmController');
+    const tier2Pickle = await deployWithProxy(Tier2Pickle, OwnableProx, 'Tier2PickleFarmControllery');
 
     // plexus reward token
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();
@@ -68,11 +68,11 @@ const log = (message, params) =>{
     }
 }
 
-const deployWithProxy = async(contractFactory, proxyFactory) => {
+const deployWithProxy = async(contractFactory, proxyFactory, factoryName) => {
     let deployedContract = await (await contractFactory.deploy()).deployed();
     const deployedProxy = await (await proxyFactory.deploy(deployedContract.address)).deployed();
     await deployedContract.setProxy(deployedProxy.address);
-    deployedContract = await ethers.getContractAt('TokenRewards', deployedProxy.address);
+    deployedContract = await ethers.getContractAt(factoryName, deployedProxy.address);
     return deployedContract
 }
 
