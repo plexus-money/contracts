@@ -31,7 +31,7 @@ const setupContracts = async() => {
     const core = await deployWithProxy(Core, OwnableProxy, 'Core');
     const tier2Farm = await deployWithProxy(Tier2Farm, OwnableProxy, 'Tier2FarmController');
     const tier2Aave = await deployWithProxy(Tier2Aave, OwnableProxy, 'Tier2AaveFarmController');
-    const tier2Pickle = await deployWithProxy(Tier2Pickle, OwnableProx, 'Tier2PickleFarmControllery');
+    const tier2Pickle = await deployWithProxy(Tier2Pickle, OwnableProxy, 'Tier2PickleFarmController');
 
     // plexus reward token
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();

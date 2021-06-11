@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
  * @author https://github.com/OpenZeppelin/zeppelin-solidity
  */
 contract Ownable {
-  address public owner;
+  address payable public owner;
 
 
   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -35,7 +35,7 @@ contract Ownable {
    * @dev Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
-  function transferOwnership(address newOwner) public onlyOwner {
+  function transferOwnership(address payable newOwner) public onlyOwner {
     require(newOwner != address(0));
     emit OwnershipTransferred(owner, newOwner);
     owner = newOwner;
