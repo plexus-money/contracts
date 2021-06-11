@@ -1,6 +1,6 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
-import "./upgradeable.sol";
+import "./proxyLib/Upgradable.sol";
 //Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
 interface Oracle {
@@ -52,7 +52,6 @@ contract Core is Upgradeable {
     Tier1Staking staking;
     Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
-    address public proxy;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
@@ -70,14 +69,6 @@ contract Core is Upgradeable {
            _;
    }
 
-    modifier onlyProxy {
-        require(
-            msg.sender == proxy,
-            "Only owner can call this function."
-        );
-        _;
-    }
-
    modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
         require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
@@ -93,7 +84,7 @@ contract Core is Upgradeable {
     }
 
 
-  constructor() public payable {
+  constructor(bytes32 componentUid) Upgradable(componentUid) public payable {
       owner = msg.sender;
       setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
       _status = _NOT_ENTERED;
@@ -106,10 +97,6 @@ contract Core is Upgradeable {
       //for the converter to unwrap ETH when delegate calling. The contract has to be able to accept ETH for this reason. The emergency withdrawal call is to pick any change up for these conversions.
   }
 
-function setProxyAddress(address theAddress) public onlyOwner returns(bool){
-    proxy = theAddress;
-    return true;
-}
   function setOracleAddress(address theAddress) public onlyOwner returns(bool){
     oracleAddress = theAddress;
     oracle = Oracle(theAddress);

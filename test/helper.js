@@ -10,7 +10,7 @@ const setupContracts = async() => {
     const PlexusOracle = await ethers.getContractFactory('PlexusOracle');
     const Tier1Staking = await ethers.getContractFactory('Tier1FarmController');
     const Core = await ethers.getContractFactory('Core');
-    const Dispatcher = await ethers.getContractFactory('Dispatcher');
+    const Proxy = await ethers.getContractFactory('Proxy');
     const Tier2Farm = await ethers.getContractFactory('Tier2FarmController');
     const Tier2Aave = await ethers.getContractFactory('Tier2AaveFarmController');
     const Tier2Pickle = await ethers.getContractFactory('Tier2PickleFarmController');
@@ -28,8 +28,13 @@ const setupContracts = async() => {
     const tokenRewards = await (await TokenRewards.deploy()).deployed();
     const plexusOracle = await (await PlexusOracle.deploy()).deployed();
     const tier1Staking = await (await  Tier1Staking.deploy()).deployed();
-    let core = await (await Core.deploy()).deployed();
-    const coreProxy = await (await Dispatcher.deploy(core.address)).deployed();
+    const coreProxy = await (await Proxy.deploy()).deployed();
+
+    const registryAddress = coreProxy.registryAddress();
+    const registry = await ethers.getContractAt('Registry', registryAddress)
+    const componentUid = registry.componentUid();
+
+    const core = await (await Core.deploy(componentUid)).deployed();
     const tier2Farm = await (await Tier2Farm.deploy()).deployed();
     const tier2Aave = await (await Tier2Aave.deploy()).deployed();
     const tier2Pickle = await (await Tier2Pickle.deploy()).deployed();
@@ -46,9 +51,6 @@ const setupContracts = async() => {
     await core.setOracleAddress(plexusOracle.address);
     await core.setStakingAddress(tier1Staking.address);
     await core.setConverterAddress(wrapper.address);
-    await core.setProxyAddress(coreProxy.address)
-    core = await ethers.getContractAt('Core', coreProxy.address)
-
     await tier1Staking.updateOracleAddress(plexusOracle.address);
 
     // setup tier 1 staking
