@@ -10,7 +10,8 @@ const setupContracts = async() => {
     const PlexusOracle = await ethers.getContractFactory('PlexusOracle');
     const Tier1Staking = await ethers.getContractFactory('Tier1FarmController');
     const Core = await ethers.getContractFactory('Core');
-    const Proxy = await ethers.getContractFactory('Proxy');
+    const Core2 = await ethers.getContractFactory('Core2');
+    const OwnableProxy = await ethers.getContractFactory('OwnableProxy');
     const Tier2Farm = await ethers.getContractFactory('Tier2FarmController');
     const Tier2Aave = await ethers.getContractFactory('Tier2AaveFarmController');
     const Tier2Pickle = await ethers.getContractFactory('Tier2PickleFarmController');
@@ -28,18 +29,15 @@ const setupContracts = async() => {
     const tokenRewards = await (await TokenRewards.deploy()).deployed();
     const plexusOracle = await (await PlexusOracle.deploy()).deployed();
     const tier1Staking = await (await  Tier1Staking.deploy()).deployed();
-    const coreProxy = await (await Proxy.deploy()).deployed();
-
-    const registryAddress = coreProxy.registryAddress();
-    const registry = await ethers.getContractAt('Registry', registryAddress)
-    const componentUid = registry.componentUid();
-
-    const core = await (await Core.deploy(componentUid)).deployed();
+    let core = await (await Core.deploy()).deployed();
+    const coreProxy = await (await OwnableProxy.deploy(core.address)).deployed();
     const tier2Farm = await (await Tier2Farm.deploy()).deployed();
     const tier2Aave = await (await Tier2Aave.deploy()).deployed();
     const tier2Pickle = await (await Tier2Pickle.deploy()).deployed();
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();
 
+    await core.setProxy(coreProxy.address);
+    core = await ethers.getContractAt('Core', coreProxy.address);
     // then setup the contracts
     await tokenRewards.updateOracleAddress(plexusOracle.address);
     await tokenRewards.updateStakingTokenAddress(plexusCoin.address);
@@ -52,6 +50,12 @@ const setupContracts = async() => {
     await core.setStakingAddress(tier1Staking.address);
     await core.setConverterAddress(wrapper.address);
     await tier1Staking.updateOracleAddress(plexusOracle.address);
+
+    //test new core
+
+    const core2 = await (await Core2.deploy()).deployed();
+    await core2.setProxy(coreProxy.address);
+    await coreProxy.upgradeTo(core2.address);
 
     // setup tier 1 staking
     await tier1Staking.addOrEditTier2ChildStakingContract("FARM", tier2Farm.address);

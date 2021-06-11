@@ -1,6 +1,6 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
-import "./proxyLib/Upgradable.sol";
+import "./proxyLib/OwnableUpgradeable.sol";
 //Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
 interface Oracle {
@@ -42,7 +42,7 @@ interface ERC20 {
     function withdraw(uint256 wad) external;
 }
 
-contract Core is Upgradable {
+contract Core is OwnableUpgradeable {
 
     //globals
     address public oracleAddress;
@@ -52,7 +52,8 @@ contract Core is Upgradable {
     Tier1Staking staking;
     Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
-    address payable public owner;
+    //address payable public owner;
+    address public proxy;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
@@ -62,13 +63,13 @@ contract Core is Upgradable {
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
 
-    modifier onlyOwner {
-           require(
-               msg.sender == owner,
-               "Only owner can call this function."
-           );
-           _;
-   }
+  //   modifier onlyOwner {
+  //          require(
+  //              msg.sender == owner,
+  //              "Only owner can call this function."
+  //          );
+  //          _;
+  //  }
 
    modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
@@ -85,7 +86,7 @@ contract Core is Upgradable {
     }
 
 
-  constructor(bytes32 componentUid) Upgradable(componentUid) public payable {
+  constructor() public payable {
       owner = msg.sender;
       setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
       _status = _NOT_ENTERED;
@@ -93,6 +94,15 @@ contract Core is Upgradable {
 
   fallback() external payable {
       //for the converter to unwrap ETH when delegate calling. The contract has to be able to accept ETH for this reason. The emergency withdrawal call is to pick any change up for these conversions.
+  }
+
+  modifier onlyProxy() {
+    require(msg.sender == proxy);
+    _;
+  }
+
+  function setProxy(address theAddress) public onlyOwner {
+    proxy = theAddress;
   }
 
   function setOracleAddress(address theAddress) public onlyOwner returns(bool){
