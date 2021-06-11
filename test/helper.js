@@ -25,18 +25,22 @@ const setupContracts = async() => {
     // then deploy the contracts and wait for them to be mined
     const wrapper = await (await Wrapper.deploy()).deployed();
     const wrapperSushi = await (await WrapperSushi.deploy()).deployed();
-    const tokenRewards = await (await TokenRewards.deploy()).deployed();
+    let tokenRewards = await (await TokenRewards.deploy()).deployed();
+    const tokenRewardsProxy = await (await OwnableProxy.deploy(tokenRewards.address)).deployed();
+    await tokenRewards.setProxy(tokenRewardsProxy.address);
+    tokenRewards = await ethers.getContractAt('TokenRewards', tokenRewardsProxy.address);
+
     const plexusOracle = await (await PlexusOracle.deploy()).deployed();
     const tier1Staking = await (await  Tier1Staking.deploy()).deployed();
     let core = await (await Core.deploy()).deployed();
     const coreProxy = await (await OwnableProxy.deploy(core.address)).deployed();
+    await core.setProxy(coreProxy.address);
+    core = await ethers.getContractAt('Core', coreProxy.address);
     const tier2Farm = await (await Tier2Farm.deploy()).deployed();
     const tier2Aave = await (await Tier2Aave.deploy()).deployed();
     const tier2Pickle = await (await Tier2Pickle.deploy()).deployed();
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();
 
-    await core.setProxy(coreProxy.address);
-    core = await ethers.getContractAt('Core', coreProxy.address);
     // then setup the contracts
     await tokenRewards.updateOracleAddress(plexusOracle.address);
     await tokenRewards.updateStakingTokenAddress(plexusCoin.address);

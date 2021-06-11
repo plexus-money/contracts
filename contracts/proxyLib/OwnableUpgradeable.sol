@@ -7,6 +7,7 @@ contract OwnableUpgradeable is OwnableProxied {
     /*
      * @notice Modifier to make body of function only execute if the contract has not already been initialized.
      */
+    address public proxy;
     modifier initializeOnceOnly() {
          if(!initialized[target]) {
              initialized[target] = true;
@@ -14,6 +15,11 @@ contract OwnableUpgradeable is OwnableProxied {
              _;
          } else revert();
      }
+
+    modifier onlyProxy() {
+        require(msg.sender == proxy);
+        _;
+    }
 
     /**
      * @notice Will always fail if called. This is used as a placeholder for the contract ABI.
@@ -35,5 +41,9 @@ contract OwnableUpgradeable is OwnableProxied {
      */
     function initialize() initializeOnceOnly public {
         // initialize contract state variables here
+    }
+
+    function setProxy(address theAddress) public onlyOwner {
+        proxy = theAddress;
     }
 }

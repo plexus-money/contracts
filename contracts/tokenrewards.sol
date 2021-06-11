@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
+import "./proxyLib/OwnableUpgradeable.sol";
 //https://etherscan.io/address/0x2ae7b37ab144b5f8c803546b83e81ad297d8c2c4#code
 
 interface ERC20 {
@@ -68,7 +69,7 @@ library SafeMath {
 
 
 
-contract TokenRewards{
+contract TokenRewards is OwnableUpgradeable {
 
   using SafeMath
     for uint256;
@@ -94,18 +95,6 @@ contract TokenRewards{
 
   Oracle oracle;
   address public oracleAddress;
-
-
-  address payable public owner;
-
-
-  modifier onlyOwner {
-         require(
-             msg.sender == owner,
-             "Only owner can call this function."
-         );
-         _;
- }
 
  modifier onlyTier1 {
         require(

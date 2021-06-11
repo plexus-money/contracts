@@ -53,7 +53,6 @@ contract Core is OwnableUpgradeable {
     Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
     //address payable public owner;
-    address public proxy;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
@@ -94,15 +93,6 @@ contract Core is OwnableUpgradeable {
 
   fallback() external payable {
       //for the converter to unwrap ETH when delegate calling. The contract has to be able to accept ETH for this reason. The emergency withdrawal call is to pick any change up for these conversions.
-  }
-
-  modifier onlyProxy() {
-    require(msg.sender == proxy);
-    _;
-  }
-
-  function setProxy(address theAddress) public onlyOwner {
-    proxy = theAddress;
   }
 
   function setOracleAddress(address theAddress) public onlyOwner returns(bool){
