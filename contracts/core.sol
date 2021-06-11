@@ -52,7 +52,7 @@ contract Core is Upgradeable {
     Tier1Staking staking;
     Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
-    address payable public owner;
+    address public proxy;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
@@ -69,6 +69,15 @@ contract Core is Upgradeable {
            );
            _;
    }
+
+    modifier onlyProxy {
+        require(
+            msg.sender == proxy,
+            "Only owner can call this function."
+        );
+        _;
+    }
+
    modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
         require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
@@ -85,15 +94,22 @@ contract Core is Upgradeable {
 
 
   constructor() public payable {
-        owner= msg.sender;
-        setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
-        _status = _NOT_ENTERED;
+      owner = msg.sender;
+      setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
+      _status = _NOT_ENTERED;
+  }
+
+  function initialize() override public {
   }
 
   fallback() external payable {
       //for the converter to unwrap ETH when delegate calling. The contract has to be able to accept ETH for this reason. The emergency withdrawal call is to pick any change up for these conversions.
   }
 
+function setProxyAddress(address theAddress) public onlyOwner returns(bool){
+    proxy = theAddress;
+    return true;
+}
   function setOracleAddress(address theAddress) public onlyOwner returns(bool){
     oracleAddress = theAddress;
     oracle = Oracle(theAddress);
@@ -209,12 +225,12 @@ contract Core is Upgradeable {
 
     }
 
-    function updateWETHAddress(address newAddress) onlyOwner public returns(bool){
+    function updateWETHAddress(address newAddress) onlyProxy public returns(bool){
         WETH_TOKEN_ADDRESS = newAddress;
         wethToken= ERC20(newAddress);
     }
 
-    function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+    function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyProxy returns(bool) {
 
          if (address(token) == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
              destination.transfer(amount);

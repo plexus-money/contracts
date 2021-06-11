@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 abstract contract Upgradeable {
     address _dest;
-
+    address payable public owner;
     function initialize() virtual public;
     
     function replace(address target) public {
@@ -16,6 +16,7 @@ abstract contract Upgradeable {
 contract Dispatcher is Upgradeable {
     constructor (address target) {
         replace(target);
+        owner = msg.sender;
     }
     
     function initialize() override public{
