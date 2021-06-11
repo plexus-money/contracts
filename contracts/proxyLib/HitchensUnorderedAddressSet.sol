@@ -13,7 +13,8 @@ library HitchensUnorderedAddressSetLib {
     
     function insert(Set storage self, address key) internal {
         require(!exists(self, key), "UnorderedAddressSet(101) - Address (key) already exists in the set.");
-        self.keyPointers[key] = self.keyList.push(key)-1;
+        self.keyList.push(key);
+        self.keyPointers[key] = self.keyList.length-1;
     }
     
     function remove(Set storage self, address key) internal {
@@ -23,7 +24,7 @@ library HitchensUnorderedAddressSetLib {
         self.keyPointers[keyToMove] = rowToReplace;
         self.keyList[rowToReplace] = keyToMove;
         delete self.keyPointers[key];
-        self.keyList.length--;
+        //self.keyList.length--;
     }
     
     function count(Set storage self) internal view returns(uint) {

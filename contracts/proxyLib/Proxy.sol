@@ -8,7 +8,7 @@ interface ProxyInterface {
     function registryAddress() external view returns(address);
     function componentUid() external view returns(bytes32);
     function userImplementation(address user) external view returns(address);
-    function () external payable;
+    fallback () external;
 }
 
 contract Proxy is ProxyInterface {
@@ -35,7 +35,7 @@ contract Proxy is ProxyInterface {
     /**
      * @return The address of authoratative implementation registry for this proxy. 
      */
-    function registryAddress() public view returns(address) {
+    function registryAddress() public override view returns(address) {
         address r;
         bytes32 registryAddressKey = REGISTRY_ADDRESS_KEY;
         //solium-disable-next-line security/no-inline-assembly
@@ -49,7 +49,7 @@ contract Proxy is ProxyInterface {
     /**
      * @return The componentUid for this proxy.
      */
-    function componentUid() public view returns(bytes32) {
+    function componentUid() public override view returns(bytes32) {
         RegistryInterface registry = RegistryInterface(registryAddress());
         return registry.componentUid();
     }
@@ -58,7 +58,7 @@ contract Proxy is ProxyInterface {
      * @return The user implementation preference. 
      * @dev If the user has no preference or the preference was recalled, returns the default implementation. 
      */
-    function userImplementation(address user) public view returns(address) {
+    function userImplementation(address user) public override view returns(address) {
         RegistryInterface registry = RegistryInterface(registryAddress());
         return registry.userImplementation(user);
     } 
@@ -66,12 +66,12 @@ contract Proxy is ProxyInterface {
     /**
      * @notice Delegates invokations to the user's preferred implementation. 
      */
-    function () external payable {
+    fallback () external override {
         address implementationAddress = userImplementation(msg.sender);
         //solium-disable-next-line security/no-inline-assembly
         assembly {
             let ptr := mload(0x40)
-            calldatacopy(ptr, 0, calldatasize)
+            calldatacopy(ptr, 0, calldatasize())
             let result := delegatecall(gas(), implementationAddress, ptr, calldatasize(), 0, 0)
             let size := returndatasize()
             returndatacopy(ptr, 0, size)

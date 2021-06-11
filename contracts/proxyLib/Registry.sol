@@ -47,7 +47,7 @@ contract Registry is RegistryInterface, Ownable {
     /**
      * @return bytes32 The componentUid this registry accepts.
      */
-    function componentUid() public view returns(bytes32) {
+    function componentUid() public override view returns(bytes32) {
         return COMPONENT_UID;
     }
     
@@ -55,7 +55,7 @@ contract Registry is RegistryInterface, Ownable {
      * @param implementationAddress Address of a compatible implementation contract. 
      * @notice The componentUid() function in the implementationAddress must return a matching componentUid. This helps prevent deployment errors. 
      */
-    function addImplementation(address implementationAddress) public onlyOwner {
+    function addImplementation(address implementationAddress) public override onlyOwner {
         UpgradableInterface u = UpgradableInterface(implementationAddress);
         require(u.componentUid() == COMPONENT_UID, "Implementation.componentUid doesn't match this registry's componentUid.");
         validImplementations.insert(implementationAddress);
@@ -66,7 +66,7 @@ contract Registry is RegistryInterface, Ownable {
      * @param implementationAddress The address of an implementation contract to recall. 
      * @notice onlyOwner. Cannot recall the default implementation. 
      */
-    function recallImplementation(address implementationAddress) public onlyOwner {
+    function recallImplementation(address implementationAddress) public override onlyOwner {
         require(implementationAddress != defaultImplementation, "Cannot recall default implementation.");
         validImplementations.remove(implementationAddress);
         emit LogRecalledImplementation(msg.sender, implementationAddress);
@@ -76,7 +76,7 @@ contract Registry is RegistryInterface, Ownable {
      * @param implementationAddress Set the default implementation. 
      * @notice onlyOwner. The default implementation address must be registered. 
      */
-    function setDefaultImplementation(address implementationAddress) public onlyOwner {
+    function setDefaultImplementation(address implementationAddress) public override onlyOwner {
         require(isImplementation(implementationAddress), "implementationAddress is not registered.");
         defaultImplementation = implementationAddress;
         emit LogNewDefaultImplementation(msg.sender, implementationAddress);
@@ -87,7 +87,7 @@ contract Registry is RegistryInterface, Ownable {
      * @notice Overrides the default implementation unless the user's preferred implementation was recalled. 
      * @notice Set to 0x0 to use the present and future default implementation set by the registry owner.
      */
-    function setMyImplementation(address implementationAddress) public {
+    function setMyImplementation(address implementationAddress) public override {
         if(implementationAddress != UNDEFINED) require(isImplementation(implementationAddress), "implementationAddress is not registered.");
         userImplementationChoices[msg.sender] = implementationAddress;
         emit LogUserImplementation(msg.sender, implementationAddress);
@@ -97,7 +97,7 @@ contract Registry is RegistryInterface, Ownable {
      * @param user The user to inspect.
      * @return address The user's preferred implementation address. Default if none or if the user's preferred implementation was recalled.
      */
-    function userImplementation(address user) public view returns(address) {
+    function userImplementation(address user) public override view returns(address) {
         address implementation = userImplementationChoices[user];
         if(!validImplementations.exists(implementation)) return defaultImplementation;
         return implementation;
@@ -106,7 +106,7 @@ contract Registry is RegistryInterface, Ownable {
     /**
      * @return address msg.sender's preferred implementation address.
      */
-    function myImplementation() public view returns(address) {
+    function myImplementation() public override view returns(address) {
         return userImplementation(msg.sender);
     }
     
@@ -114,14 +114,14 @@ contract Registry is RegistryInterface, Ownable {
      * @param implementationAddress The address to check. 
      * @return bool True if the implementation is a registered implementation.
      */
-    function isImplementation(address implementationAddress) public view returns(bool) {
+    function isImplementation(address implementationAddress) public override view returns(bool) {
         return validImplementations.exists(implementationAddress);
     }
     
     /**
      * @return uint The count of implementation contracts registered. 
      */
-    function implementationCount() public view returns(uint) {
+    function implementationCount() public override view returns(uint) {
         return validImplementations.count();
     }
     
@@ -129,7 +129,7 @@ contract Registry is RegistryInterface, Ownable {
      * @param index The row number to inspect. 
      * @return address The address of an implementtion address.
      */
-    function implementationAtIndex(uint index) public view returns(address) {
+    function implementationAtIndex(uint index) public override view returns(address) {
         return validImplementations.keyAtIndex(index);
     }
 }

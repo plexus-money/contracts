@@ -42,7 +42,7 @@ interface ERC20 {
     function withdraw(uint256 wad) external;
 }
 
-contract Core is Upgradeable {
+contract Core is Upgradable {
 
     //globals
     address public oracleAddress;
@@ -52,6 +52,7 @@ contract Core is Upgradeable {
     Tier1Staking staking;
     Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
+    address payable public owner;
     address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
     uint256 approvalAmount = 1000000000000000000000000000000;
@@ -88,9 +89,6 @@ contract Core is Upgradeable {
       owner = msg.sender;
       setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
       _status = _NOT_ENTERED;
-  }
-
-  function initialize() override public {
   }
 
   fallback() external payable {
