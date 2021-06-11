@@ -220,12 +220,12 @@ contract Core is OwnableUpgradeable {
 
     }
 
-    function updateWETHAddress(address newAddress) onlyProxy public returns(bool){
+    function updateWETHAddress(address newAddress) onlyOwner public returns(bool){
         WETH_TOKEN_ADDRESS = newAddress;
         wethToken= ERC20(newAddress);
     }
 
-    function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyProxy returns(bool) {
+    function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
 
          if (address(token) == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
              destination.transfer(amount);

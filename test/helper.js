@@ -10,7 +10,6 @@ const setupContracts = async() => {
     const PlexusOracle = await ethers.getContractFactory('PlexusOracle');
     const Tier1Staking = await ethers.getContractFactory('Tier1FarmController');
     const Core = await ethers.getContractFactory('Core');
-    const Core2 = await ethers.getContractFactory('Core2');
     const OwnableProxy = await ethers.getContractFactory('OwnableProxy');
     const Tier2Farm = await ethers.getContractFactory('Tier2FarmController');
     const Tier2Aave = await ethers.getContractFactory('Tier2AaveFarmController');
@@ -50,12 +49,6 @@ const setupContracts = async() => {
     await core.setStakingAddress(tier1Staking.address);
     await core.setConverterAddress(wrapper.address);
     await tier1Staking.updateOracleAddress(plexusOracle.address);
-
-    //test new core
-
-    const core2 = await (await Core2.deploy()).deployed();
-    await core2.setProxy(coreProxy.address);
-    await coreProxy.upgradeTo(core2.address);
 
     // setup tier 1 staking
     await tier1Staking.addOrEditTier2ChildStakingContract("FARM", tier2Farm.address);
