@@ -45,7 +45,7 @@ const setupContracts = async() => {
     await tokenRewards.updateStakingTokenAddress(plexusCoin.address);
    
     await plexusOracle.updateRewardAddress(tokenRewards.address);
-    await plexusOracle.updateCoreAddress(coreProxy.address);
+    await plexusOracle.updateCoreAddress(core.address);
     await plexusOracle.updateTier1Address(tier1Staking.address);
 
     await core.setOracleAddress(plexusOracle.address);
