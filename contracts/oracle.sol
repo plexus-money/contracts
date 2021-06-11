@@ -11,7 +11,7 @@ _____  _
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.8.0;
 pragma experimental ABIEncoderV2;
-
+import "./proxyLib/OwnableUpgradeable.sol";
 
 interface ERC20 {
     function balanceOf(address _owner) external view returns(uint balance);
@@ -102,11 +102,11 @@ library SafeMath {
 
 
 
-contract PlexusOracle{
+contract PlexusOracle is OwnableUpgradeable {
 
   using SafeMath for uint256;
 
-  address payable public owner;
+//  address payable public owner;
   address burnaddress  = address(0x0);
   mapping (string => address) farmDirectoryByName;
   mapping (address => mapping(address =>uint256)) farmManuallyEnteredAPYs;
@@ -127,13 +127,13 @@ contract PlexusOracle{
   mapping (string  => address) public platformDirectory;
 
 
-  modifier onlyOwner {
-         require(
-             msg.sender == owner,
-             "Only owner can call this function."
-         );
-         _;
- }
+//  modifier onlyOwner {
+//         require(
+//             msg.sender == owner,
+//             "Only owner can call this function."
+//         );
+//         _;
+// }
 
 
   constructor() public payable {

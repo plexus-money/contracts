@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 //Mainnet: 0x97b00db19bAe93389ba652845150CAdc597C6B2F
 pragma solidity >=0.4.22 <0.8.0;
+import "./proxyLib/OwnableUpgradeable.sol";
 
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
@@ -86,13 +87,13 @@ library SafeMath {
 
 }
 
-contract Tier1FarmController{
+contract Tier1FarmController is OwnableUpgradeable {
 
   using SafeMath
     for uint256;
 
 
-  address payable public owner;
+//  address payable public owner;
   address payable public admin;
   address ETH_TOKEN_ADDRESS  = address(0x0);
   mapping (string => address) public tier2StakingContracts;
@@ -103,13 +104,13 @@ contract Tier1FarmController{
   string public farmName = 'Tier1Aggregator';
   mapping (address => uint256) totalAmountStaked;
 
-  modifier onlyOwner {
-         require(
-             msg.sender == owner,
-             "Only owner can call this function."
-         );
-         _;
-  }
+//  modifier onlyOwner {
+//         require(
+//             msg.sender == owner,
+//             "Only owner can call this function."
+//         );
+//         _;
+//  }
 
  modifier onlyAdmin {
          require(

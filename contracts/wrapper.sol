@@ -64,7 +64,7 @@
 
 
 pragma solidity 0.7.4;
-
+import "./proxyLib/OwnableUpgradeable.sol";
 
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
@@ -168,12 +168,12 @@ library SafeMath {
 }
 
 
-contract WrapAndUnWrap{
+contract WrapAndUnWrap is OwnableUpgradeable {
 
   using SafeMath
     for uint256;
 
-  address payable public owner;
+//  address payable public owner;
   //placehodler token address for specifying eth tokens
   address public ETH_TOKEN_ADDRESS  = address(0x0);
   address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -192,13 +192,13 @@ contract WrapAndUnWrap{
   uint256 public maxfee = 0;
 
 
-  modifier onlyOwner {
-        require(
-            msg.sender == owner,
-            "Only owner can call this function."
-        );
-        _;
-}
+//  modifier onlyOwner {
+//        require(
+//            msg.sender == owner,
+//            "Only owner can call this function."
+//        );
+//        _;
+//  }
 
     fallback() external payable {
     }

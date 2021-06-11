@@ -1,5 +1,6 @@
 // Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
 pragma solidity >=0.4.22 <0.8.0;
+import "./proxyLib/OwnableUpgradeable.sol";
 //This contract will not support rebasing tokens
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
@@ -64,13 +65,13 @@ library SafeMath {
 
 
 
-contract Tier2AaveFarmController{
+contract Tier2AaveFarmController is OwnableUpgradeable {
 
   using SafeMath
     for uint256;
 
 
-  address payable public owner;
+//  address payable public owner;
   address payable public admin;
   //address public platformToken = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
   //address public tokenStakingContract = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -87,13 +88,13 @@ contract Tier2AaveFarmController{
   string public farmName = 'Aave';
   mapping (address => uint256) public totalAmountStaked;
 
-   modifier onlyOwner {
-         require(
-             msg.sender == owner,
-             "Only owner can call this function."
-         );
-         _;
- }
+//   modifier onlyOwner {
+//         require(
+//             msg.sender == owner,
+//             "Only owner can call this function."
+//         );
+//         _;
+//   }
 
   modifier onlyAdmin {
          require(

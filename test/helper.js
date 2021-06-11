@@ -23,22 +23,17 @@ const setupContracts = async() => {
     [owner, addr1, ...addrs] = await ethers.getSigners();
 
     // then deploy the contracts and wait for them to be mined
-    const wrapper = await (await Wrapper.deploy()).deployed();
-    const wrapperSushi = await (await WrapperSushi.deploy()).deployed();
-    let tokenRewards = await (await TokenRewards.deploy()).deployed();
-    const tokenRewardsProxy = await (await OwnableProxy.deploy(tokenRewards.address)).deployed();
-    await tokenRewards.setProxy(tokenRewardsProxy.address);
-    tokenRewards = await ethers.getContractAt('TokenRewards', tokenRewardsProxy.address);
+    const wrapper = await deployWithProxy(Wrapper, OwnableProxy);
+    const wrapperSushi = await deployWithProxy(WrapperSushi, OwnableProxy);
+    const tokenRewards = await deployWithProxy(TokenRewards, OwnableProxy);
+    const plexusOracle = await deployWithProxy(PlexusOracle, OwnableProxy);
+    const tier1Staking = await deployWithProxy(Tier1Staking, OwnableProxy);
+    const core = await deployWithProxy(Core, OwnableProxy);
+    const tier2Farm = await deployWithProxy(Tier2Farm, OwnableProxy);
+    const tier2Aave = await deployWithProxy(Tier2Aave, OwnableProxy);
+    const tier2Pickle = await deployWithProxy(Tier2Pickle, OwnableProxy);
 
-    const plexusOracle = await (await PlexusOracle.deploy()).deployed();
-    const tier1Staking = await (await  Tier1Staking.deploy()).deployed();
-    let core = await (await Core.deploy()).deployed();
-    const coreProxy = await (await OwnableProxy.deploy(core.address)).deployed();
-    await core.setProxy(coreProxy.address);
-    core = await ethers.getContractAt('Core', coreProxy.address);
-    const tier2Farm = await (await Tier2Farm.deploy()).deployed();
-    const tier2Aave = await (await Tier2Aave.deploy()).deployed();
-    const tier2Pickle = await (await Tier2Pickle.deploy()).deployed();
+    // plexus reward token
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();
 
     // then setup the contracts
@@ -71,6 +66,14 @@ const log = (message, params) =>{
     if(process.env.CONSOLE_LOG === 'true') {
        console.log(message, params);
     }
+}
+
+const deployWithProxy = async(contractFactory, proxyFactory) => {
+    let deployedContract = await (await contractFactory.deploy()).deployed();
+    const deployedProxy = await (await proxyFactory.deploy(deployedContract.address)).deployed();
+    await deployedContract.setProxy(deployedProxy.address);
+    deployedContract = await ethers.getContractAt('TokenRewards', deployedProxy.address);
+    return deployedContract
 }
 
 const mineBlocks = async (numOfBlocks) => {

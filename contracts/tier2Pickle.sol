@@ -4,6 +4,7 @@
 //This contract will not support rebasing tokens
 
 pragma solidity >=0.4.22 <0.8.0;
+import "./proxyLib/OwnableUpgradeable.sol";
 
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
@@ -67,13 +68,13 @@ library SafeMath {
 
 
 
-contract Tier2PickleFarmController{
+contract Tier2PickleFarmController is OwnableUpgradeable {
 
   using SafeMath
     for uint256;
 
 
-  address payable public owner;
+  //address payable public owner;
   address public platformToken = 0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5;
   address public tokenStakingContract = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;
   address ETH_TOKEN_ADDRESS  = address(0x0);
@@ -87,13 +88,13 @@ contract Tier2PickleFarmController{
   string public farmName = 'Pickle.Finance';
   mapping (address => uint256) public totalAmountStaked;
 
-  modifier onlyOwner {
-         require(
-             msg.sender == owner,
-             "Only owner can call this function."
-         );
-         _;
-  }
+//  modifier onlyOwner {
+//         require(
+//             msg.sender == owner,
+//             "Only owner can call this function."
+//         );
+//         _;
+//  }
 
 
 
