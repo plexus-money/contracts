@@ -95,22 +95,20 @@ contract Tier1FarmController is OwnableUpgradeable {
 
 //  address payable public owner;
   address payable public admin;
-  address ETH_TOKEN_ADDRESS  = address(0x0);
+  address ETH_TOKEN_ADDRESS;
   mapping (string => address) public tier2StakingContracts;
-  uint256 public commission  = 400; // Default is 4 percent
+  uint256 public commission; // Default is 4 percent
   Oracle oracle;
   address public oracleAddress;
 
-  string public farmName = 'Tier1Aggregator';
+  string public farmName;
   mapping (address => uint256) totalAmountStaked;
 
-//  modifier onlyOwner {
-//         require(
-//             msg.sender == owner,
-//             "Only owner can call this function."
-//         );
-//         _;
-//  }
+function initialize() initializeOnceOnly public {
+  ETH_TOKEN_ADDRESS  = address(0x0);
+  commission  = 400; // Default is 4 percent
+  farmName = 'Tier1Aggregator';
+}
 
  modifier onlyAdmin {
          require(

@@ -51,24 +51,22 @@ contract Core is OwnableUpgradeable {
     Oracle oracle;
     Tier1Staking staking;
     Converter converter;
-    address public ETH_TOKEN_PLACEHOLDER_ADDRESS  = address(0x0);
-    //address payable public owner;
-    address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    ERC20 wethToken = ERC20(WETH_TOKEN_ADDRESS);
-    uint256 approvalAmount = 1000000000000000000000000000000;
+    address public ETH_TOKEN_PLACEHOLDER_ADDRESS;
+    address public WETH_TOKEN_ADDRESS;
+    ERC20 wethToken;
+    uint256 approvalAmount;
 
     //Reeentrancy
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
 
-  //   modifier onlyOwner {
-  //          require(
-  //              msg.sender == owner,
-  //              "Only owner can call this function."
-  //          );
-  //          _;
-  //  }
+  function initialize() initializeOnceOnly public {
+    ETH_TOKEN_PLACEHOLDER_ADDRESS = address(0x0);
+    WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    wethToken = ERC20(WETH_TOKEN_ADDRESS);
+    approvalAmount = 1000000000000000000000000000000;
+  }
 
    modifier nonReentrant() {
         // On the first call to nonReentrant, _notEntered will be true
@@ -145,14 +143,11 @@ contract Core is OwnableUpgradeable {
   }
 
   function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
-
         if(sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS){
             ERC20 token = ERC20(sourceToken);
             require(token.transferFrom(msg.sender, address(this), amount), "You must approve this contract or have enough tokens to do this conversion");
         }
-
         ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount);
-
         ERC20 token = ERC20(destinationTokenAddress);
         token.transfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);

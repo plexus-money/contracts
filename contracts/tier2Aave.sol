@@ -75,26 +75,24 @@ contract Tier2AaveFarmController is OwnableUpgradeable {
   address payable public admin;
   //address public platformToken = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
   //address public tokenStakingContract = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
-  address ETH_TOKEN_ADDRESS  = address(0x0);
+  address ETH_TOKEN_ADDRESS;
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
   mapping (string => address) public stakingContractsStakingToken;
   mapping (address => mapping (address => uint256)) public depositBalances;
   mapping (address => address) public tokenToAToken;
     mapping (address => address) public aTokenToToken;
-  uint256 public commission  = 400; // Default is 4 percent
+  uint256 public commission; // Default is 4 percent
 
 
-  string public farmName = 'Aave';
+  string public farmName;
   mapping (address => uint256) public totalAmountStaked;
 
-//   modifier onlyOwner {
-//         require(
-//             msg.sender == owner,
-//             "Only owner can call this function."
-//         );
-//         _;
-//   }
+function initialize() initializeOnceOnly public {
+  ETH_TOKEN_ADDRESS  = address(0x0);
+  commission  = 400; // Default is 4 percent
+  farmName = 'Aave';
+}
 
   modifier onlyAdmin {
          require(

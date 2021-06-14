@@ -65,7 +65,6 @@
 
 pragma solidity 0.7.4;
 import "./proxyLib/OwnableUpgradeable.sol";
-
 interface ERC20 {
     function totalSupply() external view returns(uint supply);
 
@@ -175,33 +174,39 @@ contract WrapAndUnWrap is OwnableUpgradeable {
 
 //  address payable public owner;
   //placehodler token address for specifying eth tokens
-  address public ETH_TOKEN_ADDRESS  = address(0x0);
-  address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  WrappedETH wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
-  uint256 approvalAmount = 1000000000000000000000000000000;
-  uint256 longTimeFromNow = 1000000000000000000000000000;
-  address uniAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-  address uniFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-  UniswapV2 uniswapExchange = UniswapV2(uniAddress);
-  UniswapFactory factory = UniswapFactory(uniFactoryAddress);
+  address public ETH_TOKEN_ADDRESS;
+  address public WETH_TOKEN_ADDRESS;
+  WrappedETH wethToken;
+  uint256 approvalAmount;
+  uint256 longTimeFromNow;
+  address uniAddress;
+  address uniFactoryAddress;
+  UniswapV2 uniswapExchange;
+  UniswapFactory factory;
   mapping (address => address[]) public lpTokenAddressToPairs;
   mapping(string=>address) public stablecoins;
   mapping(address=>mapping(address=>address[])) public presetPaths;
   bool public changeRecpientIsOwner;
-  uint256 public fee = 0;
-  uint256 public maxfee = 0;
+  uint256 public fee;
+  uint256 public maxfee;
 
 
-//  modifier onlyOwner {
-//        require(
-//            msg.sender == owner,
-//            "Only owner can call this function."
-//        );
-//        _;
-//  }
+  function initialize() initializeOnceOnly public {
+    ETH_TOKEN_ADDRESS = address(0x0);
+    WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
+    approvalAmount = 1000000000000000000000000000000;
+    longTimeFromNow = 1000000000000000000000000000;
+    uniAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    uniFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    uniswapExchange = UniswapV2(uniAddress);
+    factory = UniswapFactory(uniFactoryAddress);
+    fee = 0;
+    maxfee = 0;
+  }
 
-    fallback() external payable {
-    }
+  fallback() external payable {
+  }
 
   constructor() public payable {
          stablecoins["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -213,7 +218,6 @@ contract WrapAndUnWrap is OwnableUpgradeable {
   }
 
   function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
-
 
     ERC20 sToken = ERC20(sourceToken);
     ERC20 dToken = ERC20(destinationTokens[0]);
@@ -471,7 +475,6 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 //addresses[0] = WETH_TOKEN_ADDRESS;
                 //addresses[1] = buyToken;
                 uniswapExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
-
             }
 
             else if(sellToken == WETH_TOKEN_ADDRESS){

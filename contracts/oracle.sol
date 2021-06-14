@@ -107,16 +107,16 @@ contract PlexusOracle is OwnableUpgradeable {
   using SafeMath for uint256;
 
 //  address payable public owner;
-  address burnaddress  = address(0x0);
+  address burnaddress;
   mapping (string => address) farmDirectoryByName;
   mapping (address => mapping(address =>uint256)) farmManuallyEnteredAPYs;
   mapping (address => mapping (address  => address )) farmOracleObtainedAPYs;
   string [] public farmTokenPlusFarmNames;
   address [] public farmAddresses;
   address [] public farmTokens;
-  address uniswapAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-  IUniswapV2RouterLite uniswap = IUniswapV2RouterLite(uniswapAddress);
-  address usdcCoinAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+  address uniswapAddress;
+  IUniswapV2RouterLite uniswap;
+  address usdcCoinAddress;
   address public rewardAddress;
   Reward reward;
   address tvlOracleAddress;
@@ -126,14 +126,12 @@ contract PlexusOracle is OwnableUpgradeable {
   address public tier1Address;
   mapping (string  => address) public platformDirectory;
 
-
-//  modifier onlyOwner {
-//         require(
-//             msg.sender == owner,
-//             "Only owner can call this function."
-//         );
-//         _;
-// }
+function initialize() initializeOnceOnly public {
+  burnaddress  = address(0x0);
+  uniswapAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+  uniswap = IUniswapV2RouterLite(uniswapAddress);
+  usdcCoinAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+}
 
 
   constructor() public payable {

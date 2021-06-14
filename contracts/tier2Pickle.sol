@@ -75,31 +75,25 @@ contract Tier2PickleFarmController is OwnableUpgradeable {
 
 
   //address payable public owner;
-  address public platformToken = 0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5;
-  address public tokenStakingContract = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;
-  address ETH_TOKEN_ADDRESS  = address(0x0);
+  address public platformToken;
+  address public tokenStakingContract;
+  address ETH_TOKEN_ADDRESS;
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
   mapping (string => address) public stakingContractsStakingToken;
   mapping (address => mapping (address => uint256)) public depositBalances;
-  uint256 public commission  = 400; // Default is 4 percent
+  uint256 public commission; // Default is 4 percent
 
 
   string public farmName = 'Pickle.Finance';
   mapping (address => uint256) public totalAmountStaked;
 
-//  modifier onlyOwner {
-//         require(
-//             msg.sender == owner,
-//             "Only owner can call this function."
-//         );
-//         _;
-//  }
-
-
-
-
-
+function initialize() initializeOnceOnly public {
+  platformToken = 0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5;
+  tokenStakingContract = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;
+  ETH_TOKEN_ADDRESS  = address(0x0);
+  commission  = 400; // Default is 4 percent
+}
 
   constructor() public payable {
         stakingContracts["PICKLE"] = 0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F;

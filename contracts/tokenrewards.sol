@@ -96,6 +96,12 @@ contract TokenRewards is OwnableUpgradeable {
   Oracle oracle;
   address public oracleAddress;
 
+function initialize() initializeOnceOnly public {
+  tokensInRewardsReserve = 0;
+  lpTokensInRewardsReserve  = 0;
+  ETH_TOKEN_ADDRESS  = address(0x0);
+}
+
  modifier onlyTier1 {
         require(
             msg.sender == oracle.getAddress("TIER1"),

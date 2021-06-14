@@ -41,7 +41,7 @@ contract OwnableProxy is OwnableProxied {
      * @dev Will use the delegatecall opcode to retain the current state of the Proxy contract and use the logic
      * from the target contract to process it.
      */
-    fallback () external {
+    fallback () external payable{
         bytes memory data = msg.data;
         address impl = target;
 

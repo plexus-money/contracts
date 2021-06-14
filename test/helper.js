@@ -73,6 +73,7 @@ const deployWithProxy = async(contractFactory, proxyFactory, factoryName) => {
     const deployedProxy = await (await proxyFactory.deploy(deployedContract.address)).deployed();
     await deployedContract.setProxy(deployedProxy.address);
     deployedContract = await ethers.getContractAt(factoryName, deployedProxy.address);
+    await deployedContract.initialize();
     return deployedContract
 }
 

@@ -72,28 +72,23 @@ contract Tier2FarmController is OwnableUpgradeable {
   using SafeMath
     for uint256;
 
-
-  //address payable public owner;
   //address public platformToken = 0xa0246c9032bC3A600820415aE600c6388619A14D;
   //address public tokenStakingContract = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
-  address ETH_TOKEN_ADDRESS  = address(0x0);
+  address ETH_TOKEN_ADDRESS;
   mapping (string => address) public stakingContracts;
   mapping (address => address) public tokenToFarmMapping;
   mapping (string => address) public stakingContractsStakingToken;
   mapping (address => mapping (address => uint256)) public depositBalances;
-  uint256 public commission  = 400; // Default is 4 percent
-
-
-  string public farmName = 'Harvest.Finance';
+  uint256 public commission; // Default is 4 percent
+  string public farmName;
   mapping (address => uint256) public totalAmountStaked;
 
-//  modifier onlyOwner {
-//         require(
-//             msg.sender == owner,
-//             "Only owner can call this function."
-//         );
-//         _;
-//  }
+function initialize() initializeOnceOnly public {
+  ETH_TOKEN_ADDRESS  = address(0x0);
+  commission  = 400; // Default is 4 percent
+  farmName = 'Harvest.Finance';
+}
+
 
   constructor() public payable {
         stakingContracts["FARM"] = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
