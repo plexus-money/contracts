@@ -2,7 +2,6 @@ pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 import './Ownable.sol';
-
 /*
  * @title Proxied v0.5
  * @author Jack Tanner
@@ -20,11 +19,11 @@ import './Ownable.sol';
  * function. Target Upgradeable contracts can only be intitialed once.
  */
 abstract contract OwnableProxied is Ownable {
-  address public target;
-  mapping (address => bool) public initialized;
+    address public target;
+    mapping (address => bool) public initialized;
 
-  event EventUpgrade(address indexed newTarget, address indexed oldTarget, address indexed admin);
-  event EventInitialized(address indexed target);
-
-  function upgradeTo(address _target) virtual public;
+    event EventUpgrade(address indexed newTarget, address indexed oldTarget, address indexed admin);
+    event EventInitialized(address indexed target);
+  
+    function upgradeTo(address _target) virtual public;
 }

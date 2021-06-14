@@ -5,17 +5,17 @@ describe('Deploying the plexus contracts', () => {
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
 
   before(async () => {
-    [ wrapper, 
-      wrapperSushi, 
-      tokenRewards, 
-      plexusOracle, 
-      tier1Staking, 
-      core, 
-      tier2Farm, 
-      tier2Aave, 
-      tier2Pickle, 
-      plexusCoin, 
-      owner, 
+    [ wrapper,
+      wrapperSushi,
+      tokenRewards,
+      plexusOracle,
+      tier1Staking,
+      core,
+      tier2Farm,
+      tier2Aave,
+      tier2Pickle,
+      plexusCoin,
+      owner,
       addr1] = await setupContracts();
   });
 

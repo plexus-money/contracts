@@ -2,7 +2,6 @@ require("dotenv").config();
 const hre = require("hardhat");
 
 const setupContracts = async() => {
-    
     // get the contract factories
     const Wrapper = await ethers.getContractFactory('WrapAndUnWrap');
     const WrapperSushi = await ethers.getContractFactory('WrapAndUnWrapSushi');
