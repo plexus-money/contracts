@@ -9,8 +9,19 @@ contract OwnableProxy is OwnableProxied {
      * @notice Constructor sets the target and emmits an event with the first target
      * @param _target - The target Upgradeable contracts address
      */
+    address public deployer;
     constructor(address _target) public {
+        deployer = msg.sender;
         upgradeTo(_target);
+    }
+
+    modifier onlyDeployer() {
+        require(msg.sender == deployer);
+    _;
+    }
+
+    function setDeployer (address _deployer) public onlyOwner {
+        deployer = _deployer;
     }
 
     /*
@@ -19,7 +30,7 @@ contract OwnableProxy is OwnableProxied {
      * contracts
      * @param _target - The target Upgradeable contracts address
      */
-    function upgradeTo(address _target) public override onlyOwner {
+    function upgradeTo(address _target) public override onlyDeployer {
         assert(target != _target);
 
         address oldTarget = target;

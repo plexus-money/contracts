@@ -5,41 +5,22 @@ describe('Deploying the plexus contracts', () => {
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
 
   before(async () => {
-    [ wrapper,
-      wrapperSushi,
-      tokenRewards,
-      plexusOracle,
-      tier1Staking,
-      core,
-      tier2Farm,
-      tier2Aave,
-      tier2Pickle,
-      plexusCoin,
-      owner,
-      addr1] = await setupContracts();
+    const { deployedContracts } = await setupContracts();
+    wrapper = deployedContracts.wrapper;
+    wrapperSushi = deployedContracts.wrapperSushi;
+    tokenRewards = deployedContracts.tokenRewards;
+    plexusOracle = deployedContracts.plexusOracle;
+    tier1Staking = deployedContracts.tier1Staking;
+    core = deployedContracts.core;
+    tier2Farm = deployedContracts.tier2Farm;
+    tier2Aave = deployedContracts.tier2Aave;
+    tier2Pickle = deployedContracts.tier2Pickle;
+    plexusCoin = deployedContracts.plexusCoin;
+    owner = deployedContracts.owner;
+    addr1 = deployedContracts.addr1;
   });
 
   describe('Test plexus contract deployment', () => {
-
-    log('wrapper1', wrapper)
-
-    // console.log('wrapperSushi1', wrapperSushi.address)
-    //
-    // console.log('tokenRewards1', tokenRewards.address)
-    //
-    // console.log('plexusOracle1', plexusOracle.address)
-    //
-    // console.log('tier1Staking1', tier1Staking.address)
-    //
-    // console.log('core1', core.address)
-    //
-    // console.log('tier2Farm1', tier2Farm.address)
-    //
-    // console.log('tier2Aave1', tier2Aave.address)
-    //
-    // console.log('tier2Pickle1', tier2Pickle.address)
-    //
-    // console.log('owner1', owner.address)
 
     it('Should set the deployed contracts to the correct owner', async function () {
       expect(await wrapper.owner()).to.equal(owner.address);

@@ -18,19 +18,20 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
+    const { deployedContracts } = await setupContracts();
+    wrapper = deployedContracts.wrapper;
+    wrapperSushi = deployedContracts.wrapperSushi;
+    tokenRewards = deployedContracts.tokenRewards;
+    plexusOracle = deployedContracts.plexusOracle;
+    tier1Staking = deployedContracts.tier1Staking;
+    core = deployedContracts.core;
+    tier2Farm = deployedContracts.tier2Farm;
+    tier2Aave = deployedContracts.tier2Aave;
+    tier2Pickle = deployedContracts.tier2Pickle;
+    plexusCoin = deployedContracts.plexusCoin;
+    owner = deployedContracts.owner;
+    addr1 = deployedContracts.addr1;
 
-    [ wrapper, 
-      wrapperSushi, 
-      tokenRewards, 
-      plexusOracle, 
-      tier1Staking, 
-      core, 
-      tier2Farm, 
-      tier2Aave, 
-      tier2Pickle, 
-      plexusCoin, 
-      owner, 
-      addr1] = await setupContracts();
     // Use contract as user/addr1
     coreAsSigner1 = core.connect(addr1);
   });

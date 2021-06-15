@@ -26,4 +26,5 @@ abstract contract OwnableProxied is Ownable {
     event EventInitialized(address indexed target);
 
     function upgradeTo(address _target) virtual public;
+
 }
