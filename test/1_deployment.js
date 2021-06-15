@@ -21,6 +21,26 @@ describe('Deploying the plexus contracts', () => {
 
   describe('Test plexus contract deployment', () => {
 
+    log('wrapper1', wrapper)
+
+    // console.log('wrapperSushi1', wrapperSushi.address)
+    //
+    // console.log('tokenRewards1', tokenRewards.address)
+    //
+    // console.log('plexusOracle1', plexusOracle.address)
+    //
+    // console.log('tier1Staking1', tier1Staking.address)
+    //
+    // console.log('core1', core.address)
+    //
+    // console.log('tier2Farm1', tier2Farm.address)
+    //
+    // console.log('tier2Aave1', tier2Aave.address)
+    //
+    // console.log('tier2Pickle1', tier2Pickle.address)
+    //
+    // console.log('owner1', owner.address)
+
     it('Should set the deployed contracts to the correct owner', async function () {
       expect(await wrapper.owner()).to.equal(owner.address);
       expect(await wrapperSushi.owner()).to.equal(owner.address);

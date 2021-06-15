@@ -44,7 +44,6 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
         expect(ethbalance).to.be.gt(3);
     });
 
-
     it('tier2Farm contract should have the correct Token and Token Staking Addresses', async () => {
 
         const { status } = await (await tier1Staking.addOrEditTier2ChildsChildStakingContract(tier2Farm.address, tier2ContractName, process.env.FARM_STAKING_MAINNET_ADDRESS, process.env.FARM_TOKEN_MAINNET_ADDRESS)).wait();
@@ -143,7 +142,6 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
           expect(currUserFarmTokenBalance).to.be.lt(initialUserFarmTokenBalance);
 
         }
-
     });
 
     it('User should be able to withdraw deposited Farm tokens via the Core Contract', async () => {
@@ -171,9 +169,6 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
         expect(currUserFarmTokenBalance).to.be.gte(initialUserFarmTokenBalance);
 
       }
-    
     });
-  
   });
-
 });
