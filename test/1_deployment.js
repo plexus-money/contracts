@@ -17,6 +17,8 @@ describe('Deploying the plexus contracts', () => {
       plexusCoin, 
       owner, 
       addr1] = await setupContracts();
+    
+    console.log(process.env.RPC_NODE_URL);
   });
 
   describe('Test plexus contract deployment', () => {
