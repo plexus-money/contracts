@@ -27,7 +27,12 @@ module.exports = {
         url: process.env.RPC_NODE_URL,
         blockNumber: 11997864,
       }
-    }
+    },
+    // local: {
+    //   url: process.env.REACT_APP_RPC_PROVIDER_LOCAL,
+    //   //chainId: parseInt(process.env.REACT_APP_NETWORK_ID_LOCAL),
+    //   accounts: [process.env.REACT_APP_PRIV_KEY_OWNER, process.env.REACT_APP_PRIV_KEY_ADDR1]
+    // },
   },
   mocha: {
     timeout: 2000000

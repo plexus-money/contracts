@@ -28,10 +28,10 @@ jobs:
     - run: yarn install 
     - run: yarn build
       env:
-        RPC_NODE_URL: ${{ secrets.ALCHEMY_API_URL }}
+        RPC_NODE_URL: https://eth-mainnet.alchemyapi.io/v2/STWBB1frs6EimLSFzCILfzIVGqHZfpnN
     - run: yarn test 
       env:
-        RPC_NODE_URL: ${{ secrets.ALCHEMY_API_URL }} 
+        RPC_NODE_URL: https://eth-mainnet.alchemyapi.io/v2/STWBB1frs6EimLSFzCILfzIVGqHZfpnN 
         CONSOLE_LOG: "true"
         ZERO_ADDRESS: "0x0000000000000000000000000000000000000000"
         FARM_TOKEN_MAINNET_ADDRESS: "0xa0246c9032bC3A600820415aE600c6388619A14D"
