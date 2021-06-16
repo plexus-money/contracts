@@ -81,57 +81,40 @@
  * the optional functions; to access them see {ERC20Detailed}.
  */
 
-
-
- interface WrappedETH {
+interface WrappedETH {
     function totalSupply() external view returns(uint supply);
-
     function balanceOf(address _owner) external view returns(uint balance);
-
     function transfer(address _to, uint _value) external returns(bool success);
-
     function transferFrom(address _from, address _to, uint _value) external returns(bool success);
-
     function approve(address _spender, uint _value) external returns(bool success);
-
     function allowance(address _owner, address _spender) external view returns(uint remaining);
-
     function decimals() external view returns(uint digits);
     event Approval(address indexed _owner, address indexed _spender, uint _value);
-
     function deposit() external payable;
-
     function withdraw(uint256 wad) external;
-
 }
 
-interface UniswapV2{
-
-
-   function addLiquidity ( address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline ) external returns ( uint256 amountA, uint256 amountB, uint256 liquidity );
-   function addLiquidityETH ( address token, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline ) external returns ( uint256 amountToken, uint256 amountETH, uint256 liquidity );
-   function removeLiquidityETH ( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline ) external returns ( uint256 amountToken, uint256 amountETH );
-   function removeLiquidity ( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline ) external returns ( uint256 amountA, uint256 amountB );
-
-   function swapExactTokensForTokens ( uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline ) external returns ( uint256[] memory amounts );
+interface UniswapV2 {
+    function addLiquidity ( address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline ) external returns ( uint256 amountA, uint256 amountB, uint256 liquidity );
+    function addLiquidityETH ( address token, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline ) external returns ( uint256 amountToken, uint256 amountETH, uint256 liquidity );
+    function removeLiquidityETH ( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline ) external returns ( uint256 amountToken, uint256 amountETH );
+    function removeLiquidity ( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline ) external returns ( uint256 amountA, uint256 amountB );
+    function swapExactTokensForTokens ( uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline ) external returns ( uint256[] memory amounts );
     function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
         external
         payable
         returns (uint[] memory amounts);
-   function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
-
-}
-interface UniswapFactory{
-  function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
+interface UniswapFactory {
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
+}
 
-interface BANGetter{
+interface BANGetter {
     function getConvertibleTokenAnchors(address tokenAddress) external view returns(address[] calldata banAddresses);
     function getConvertersByAnchors(address[] calldata) external view returns(address[] calldata);
 }
-
-
 
 interface IERC20 {
     /**
@@ -410,8 +393,6 @@ library Address {
         // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
         // for accounts without code, i.e. `keccak256('')`
         bytes32 codehash;
-
-
             bytes32 accountHash
          = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
@@ -787,26 +768,24 @@ interface IBancorContractRegistry {
 }
 
 contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
-
     address public ETH_TOKEN_ADDRESS  = address(0x0);
-  address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-  WrappedETH wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
-  uint256 approvalAmount = 1000000000000000000000000000000;
-  uint256 longTimeFromNow = 1000000000000000000000000000;
-  address uniAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-  address uniFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-  address bancorConverterRegistryAddress = 0xC0205e203F423Bcd8B2a4d6f8C8A154b0Aa60F19;
-  BANGetter bConv = BANGetter(bancorConverterRegistryAddress);
-  UniswapV2 uniswapExchange = UniswapV2(uniAddress);
-  UniswapFactory factory = UniswapFactory(uniFactoryAddress);
-  mapping (address => address[]) public lpTokenAddressToPairs;
-  mapping(string=>address) public stablecoins;
-  mapping(address=>mapping(address=>address[])) public presetPaths;
+    address public WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    WrappedETH wethToken = WrappedETH(WETH_TOKEN_ADDRESS);
+    uint256 approvalAmount = 1000000000000000000000000000000;
+    uint256 longTimeFromNow = 1000000000000000000000000000;
+    address uniAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address uniFactoryAddress = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address bancorConverterRegistryAddress = 0xC0205e203F423Bcd8B2a4d6f8C8A154b0Aa60F19;
+    BANGetter bConv = BANGetter(bancorConverterRegistryAddress);
+    UniswapV2 uniswapExchange = UniswapV2(uniAddress);
+    UniswapFactory factory = UniswapFactory(uniFactoryAddress);
+    mapping (address => address[]) public lpTokenAddressToPairs;
+    mapping(string=>address) public stablecoins;
+    mapping(address=>mapping(address=>address[])) public presetPaths;
 
-  bool public changeRecpientIsOwner;
-   uint256 public fee = 0;
-  uint256 public maxfee = 0;
-
+    bool public changeRecpientIsOwner;
+    uint256 public fee = 0;
+    uint256 public maxfee = 0;
 
     using SafeMath for uint256;
     using Address for address;
@@ -815,16 +794,12 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
     bool public stopped = false;
     uint16 public goodwill;
 
-    address
-        private constant ETHAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-    address
-        private constant wethTokenAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address payable
-        private constant zgoodwillAddress = 0x3CE37278de6388532C3949ce4e886F365B14fB56;
+    address private constant ETHAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address private constant wethTokenAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address payable private constant zgoodwillAddress = 0x3CE37278de6388532C3949ce4e886F365B14fB56;
 
     bytes32 private constant liquidityProtectionName = "LiquidityProtection";
-    bytes32
-        private constant liquidityProtectionStoreName = "LiquidityProtectionStore";
+    bytes32 private constant liquidityProtectionStoreName = "LiquidityProtectionStore";
 
     IBancorContractRegistry
         public constant bancorRegistry = IBancorContractRegistry(
@@ -839,7 +814,6 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
     );
 
     constructor() public {
-
         goodwill = 1;
         _owner = msg.sender;
     }
@@ -853,8 +827,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         }
     }
 
-    function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256){
-
+    function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256) {
         address[] memory banConvAddresses = bConv.getConvertibleTokenAnchors(destinationTokens[0]);
         address[] memory bancConAddrs = bConv.getConvertersByAnchors(banConvAddresses);
         address theBanConverterAddress = bancConAddrs[0];
@@ -862,32 +835,24 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         address theAllowanceTarget = address(0x0);
         address theSwapTarget = address(0x0);
         (uint256 lpsRec, uint256 idInfo) = ZapInSingleSided(sourceToken, theBanConverterAddress, destinationTokens[0], amount,theAllowanceTarget,theSwapTarget, swapData);
-        return(theBanConverterAddress, lpsRec);
 
+        return(theBanConverterAddress, lpsRec);
     }
 
-
-    function spaceAvailable(address tokenAddress) view public returns (address, uint256){
+    function spaceAvailable(address tokenAddress) view public returns (address, uint256) {
         address[] memory banConvAddresses = bConv.getConvertibleTokenAnchors(tokenAddress);
-
         address[] memory bancConAddrs = bConv.getConvertersByAnchors(banConvAddresses);
         address theBanConverterAddress = bancConAddrs[0];
        // return(theBanConverterAddress, 0);
-
-         address poolAnchor = IBancorV2Converter(theBanConverterAddress)
-            .anchor();
+        address poolAnchor = IBancorV2Converter(theBanConverterAddress).anchor();
         address bancorLiquidityProtectionAddress = bancorRegistry.addressOf(
             liquidityProtectionName
         );
-         IBancorLiquidityProtection bancorLiquidityProtection
-         = IBancorLiquidityProtection(bancorLiquidityProtectionAddress);
-
+        IBancorLiquidityProtection bancorLiquidityProtection = IBancorLiquidityProtection(bancorLiquidityProtectionAddress);
         uint256 spaceAvailable = bancorLiquidityProtection.baseTokenAvailableSpace(poolAnchor);
+
         return (poolAnchor, spaceAvailable);
-
-
     }
-
 
     function ZapInSingleSided(
         address _fromTokenAddress,
@@ -944,17 +909,14 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
             */
 
             uint256 reserveTokensBought= conductUniswap(tokenToSend, _toReserveTokenAddress, valueToSend);
-
-            if(fee>0 && _toReserveTokenAddress != address(0x0)  && _toReserveTokenAddress != ETHAddress){
-              IERC20 resToken =  IERC20(_toReserveTokenAddress);
-            uint256 totalFee = (reserveTokensBought.mul(fee)).div(10000);
-            if(totalFee >0){
-               resToken.transfer(_owner, totalFee);
+            if (fee>0 && _toReserveTokenAddress != address(0x0)  && _toReserveTokenAddress != ETHAddress) {
+                IERC20 resToken =  IERC20(_toReserveTokenAddress);
+                uint256 totalFee = (reserveTokensBought.mul(fee)).div(10000);
+                if (totalFee >0) {
+                    resToken.transfer(_owner, totalFee);
+                }
+                reserveTokensBought = resToken.balanceOf(address(this));
             }
-            reserveTokensBought = resToken.balanceOf(address(this));
-
-            }
-
 
             (lptReceived, id) = _enterBancor(
                 poolAnchor,
@@ -988,10 +950,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
             reserveToken = ETHAddress;
         }
 
-
-            IBancorLiquidityProtection bancorLiquidityProtection
-         = IBancorLiquidityProtection(bancorLiquidityProtectionAddress);
-
+        IBancorLiquidityProtection bancorLiquidityProtection = IBancorLiquidityProtection(bancorLiquidityProtectionAddress);
         id = bancorLiquidityProtection.addLiquidityFor{value:valueToSend}(
             tx.origin,
             _poolAnchor,
@@ -999,9 +958,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
             _amount
         );
 
-
-            IBancorLiquidityProtectionStore liquidityProtectionStore
-         = IBancorLiquidityProtectionStore(
+        IBancorLiquidityProtectionStore liquidityProtectionStore = IBancorLiquidityProtectionStore(
             bancorRegistry.addressOf(liquidityProtectionStoreName)
         );
 
@@ -1097,69 +1054,47 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         _to.transfer(contractBalance);
     }
 
-
-
-  function conductUniswap(address sellToken, address buyToken, uint amount) internal returns (uint256 amounts1){
-
-            if(sellToken ==ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS){
-                wethToken.deposit{value:msg.value}();
-
-            }
-            else if(sellToken == address(0x0) || sellToken == ETHAddress){
-
-               // address [] memory addresses = new address[](2);
-               address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
-                //addresses[0] = WETH_TOKEN_ADDRESS;
-                //addresses[1] = buyToken;
-                uniswapExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
-
-            }
-
-            else if(sellToken == WETH_TOKEN_ADDRESS){
-                wethToken.withdraw(amount);
-
-                //address [] memory addresses = new address[](2);
-                address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
-                //addresses[0] = WETH_TOKEN_ADDRESS;
-                //addresses[1] = buyToken;
-                uniswapExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
-
-            }
-
-
-
-            else{
-
-          address [] memory addresses = getBestPath(sellToken, buyToken, amount);
-           uint256 [] memory amounts = conductUniswapT4T(addresses, amount );
-           uint256 resultingTokens = amounts[amounts.length-1];
-           return resultingTokens;
-            }
+    function conductUniswap(address sellToken, address buyToken, uint amount) internal returns (uint256 amounts1) {
+        if (sellToken ==ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS) {
+            wethToken.deposit{value:msg.value}();
+        } else if (sellToken == address(0x0) || sellToken == ETHAddress) {
+            // address [] memory addresses = new address[](2);
+            address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
+            //addresses[0] = WETH_TOKEN_ADDRESS;
+            //addresses[1] = buyToken;
+            uniswapExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
+        } else if (sellToken == WETH_TOKEN_ADDRESS) {
+            wethToken.withdraw(amount);
+            //address [] memory addresses = new address[](2);
+            address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
+            //addresses[0] = WETH_TOKEN_ADDRESS;
+            //addresses[1] = buyToken;
+            uniswapExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
+        } else {
+            address [] memory addresses = getBestPath(sellToken, buyToken, amount);
+            uint256 [] memory amounts = conductUniswapT4T(addresses, amount );
+            uint256 resultingTokens = amounts[amounts.length-1];
+            return resultingTokens;
+        }
     }
 
-
     //gets the best path to route the transaction on Uniswap
-    function getBestPath(address sellToken, address buyToken, uint256 amount) public view returns (address[] memory){
-
+    function getBestPath(address sellToken, address buyToken, uint256 amount) public view returns (address[] memory) {
         address [] memory defaultPath =new address[](2);
         defaultPath[0]=sellToken;
         defaultPath[1] = buyToken;
 
-
-        if(presetPaths[sellToken][buyToken].length !=0){
+        if (presetPaths[sellToken][buyToken].length !=0) {
             return presetPaths[sellToken][buyToken];
         }
 
-
-        if(sellToken == stablecoins["DAI"] || sellToken == stablecoins["USDC"] || sellToken == stablecoins["USDT"]){
-            return defaultPath;
-        }
-        if(buyToken == stablecoins["DAI"] || buyToken == stablecoins["USDC"] || buyToken == stablecoins["USDT"]){
+        if (sellToken == stablecoins["DAI"] || sellToken == stablecoins["USDC"] || sellToken == stablecoins["USDT"]) {
             return defaultPath;
         }
 
-
-
+        if (buyToken == stablecoins["DAI"] || buyToken == stablecoins["USDC"] || buyToken == stablecoins["USDT"]) {
+            return defaultPath;
+        }
         address[] memory daiPath = new address[](3);
         address[] memory usdcPath =new address[](3);
         address[] memory usdtPath =new address[](3);
@@ -1167,28 +1102,20 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         daiPath[0] = sellToken;
         daiPath[1] = stablecoins["DAI"];
         daiPath[2] = buyToken;
-
         usdcPath[0] = sellToken;
         usdcPath[1] = stablecoins["USDC"];
         usdcPath[2] = buyToken;
-
         usdtPath[0] = sellToken;
         usdtPath[1] = stablecoins["USDT"];
         usdtPath[2] = buyToken;
-
-
         uint256 directPathOutput =  getPriceFromUniswap(defaultPath, amount)[1];
-
-
         uint256[] memory daiPathOutputRaw = getPriceFromUniswap(daiPath, amount);
         uint256[]  memory usdtPathOutputRaw = getPriceFromUniswap(usdtPath, amount);
         uint256[]  memory usdcPathOutputRaw = getPriceFromUniswap(usdcPath, amount);
-
         //uint256 directPathOutput = directPathOutputRaw[directPathOutputRaw.length-1];
         uint256 daiPathOutput = daiPathOutputRaw[daiPathOutputRaw.length-1];
         uint256 usdtPathOutput = usdtPathOutputRaw[usdtPathOutputRaw.length-1];
         uint256 usdcPathOutput = usdcPathOutputRaw[usdcPathOutputRaw.length-1];
-
         uint256 bestPathOutput = directPathOutput;
         address[] memory bestPath = new address[](2);
         address[] memory bestPath3 = new address[](3);
@@ -1197,137 +1124,107 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
 
         bool isTwoPath = true;
 
-        if(directPathOutput < daiPathOutput){
+        if (directPathOutput < daiPathOutput) {
             isTwoPath=false;
             bestPathOutput = daiPathOutput;
             bestPath3 = daiPath;
         }
-        if(bestPathOutput < usdcPathOutput){
+        if (bestPathOutput < usdcPathOutput) {
             isTwoPath=false;
             bestPathOutput = usdcPathOutput;
             bestPath3 = usdcPath;
         }
-         if(bestPathOutput < usdtPathOutput){
-             isTwoPath=false;
+        if (bestPathOutput < usdtPathOutput) {
+            isTwoPath=false;
             bestPathOutput = usdtPathOutput;
             bestPath3 = usdtPath;
         }
 
         require(bestPathOutput >0, "This trade will result in getting zero tokens back. Reverting");
 
-        if(isTwoPath==true){
-              return bestPath;
-        }
-        else{
+        if (isTwoPath==true) {
+            return bestPath;
+        } else {
             return bestPath3;
         }
-
-
-
     }
 
-    function getPriceFromUniswap(address  [] memory theAddresses, uint amount) public view returns (uint256[] memory amounts1){
-
-
-        try uniswapExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts){
+    function getPriceFromUniswap(address  [] memory theAddresses, uint amount) public view returns (uint256[] memory amounts1) {
+        try uniswapExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts) {
             return amounts;
-        }
-        catch  {
+        } catch {
             uint256 [] memory amounts2= new uint256[](2);
             amounts2[0]=0;
             amounts2[1]=0;
             return amounts2;
-
         }
-
-    }
-     function conductUniswapT4T(address  [] memory theAddresses, uint amount) internal returns (uint256[] memory amounts1){
-
-           uint256 deadline = 1000000000000000;
-           uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
-           return amounts;
-
     }
 
-     function updateOwnerAddress(address payable newOwner) onlyOwner public returns (bool){
-     _owner = newOwner;
-     return true;
-   }
+    function conductUniswapT4T(address  [] memory theAddresses, uint amount) internal returns (uint256[] memory amounts1) {
+        uint256 deadline = 1000000000000000;
+        uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
+        return amounts;
+    }
 
-   function updateUniswapExchange(address newAddress ) public onlyOwner returns (bool){
+    function updateOwnerAddress(address payable newOwner) onlyOwner public returns (bool) {
+        _owner = newOwner;
+        return true;
+    }
 
-    uniswapExchange = UniswapV2( newAddress);
-    uniAddress = newAddress;
-    return true;
+    function updateUniswapExchange(address newAddress ) public onlyOwner returns (bool) {
+        uniswapExchange = UniswapV2( newAddress);
+        uniAddress = newAddress;
+        return true;
+    }
 
-  }
+    function updateBancorConverter(address newAddress ) public onlyOwner returns (bool) {
+        bancorConverterRegistryAddress =newAddress;
+        bConv = BANGetter(newAddress);
 
+        return true;
+    }
 
-  function updateBancorConverter(address newAddress ) public onlyOwner returns (bool){
+    function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+        if (address(token) == ETH_TOKEN_ADDRESS) {
+            destination.transfer(amount);
+        } else {
+            IERC20 tokenToken = IERC20(token);
+            require(tokenToken.transfer(destination, amount));
+        }
+        return true;
+    }
 
-    bancorConverterRegistryAddress =newAddress;
-    bConv = BANGetter(newAddress);
+    function setFee(uint256 newFee) public onlyOwner returns (bool) {
+        require(newFee<=maxfee, "Admin cannot set the fee higher than the current maxfee");
+        fee = newFee;
+        return true;
+    }
 
-    return true;
+    function setMaxFee(uint256 newMax) public onlyOwner returns (bool) {
+        require(maxfee==0, "Admin can only set max fee once and it is perm");
+        maxfee = newMax;
+        return true;
+    }
 
-  }
+    function updateUniswapFactory(address newAddress ) public onlyOwner returns (bool) {
+        factory = UniswapFactory( newAddress);
+        uniFactoryAddress = newAddress;
+        return true;
+    }
 
-
-
- function adminEmergencyWithdrawTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
-
-      if (address(token) == ETH_TOKEN_ADDRESS) {
-          destination.transfer(amount);
-      }
-      else {
-          IERC20 tokenToken = IERC20(token);
-          require(tokenToken.transfer(destination, amount));
-      }
-      return true;
-  }
-
-
-  function setFee(uint256 newFee) public onlyOwner returns (bool){
-    require(newFee<=maxfee, "Admin cannot set the fee higher than the current maxfee");
-    fee = newFee;
-    return true;
-  }
-
-
-  function setMaxFee(uint256 newMax) public onlyOwner returns (bool){
-    require(maxfee==0, "Admin can only set max fee once and it is perm");
-    maxfee = newMax;
-    return true;
-  }
-
-  function updateUniswapFactory(address newAddress ) public onlyOwner returns (bool){
-
-   factory = UniswapFactory( newAddress);
-   uniFactoryAddress = newAddress;
-   return true;
-
- }
-
- function updateStableCoinAddress(string memory coinName, address newAddress) public onlyOwner returns(bool){
+    function updateStableCoinAddress(string memory coinName, address newAddress) public onlyOwner returns(bool) {
         stablecoins[coinName] = newAddress;
         return true;
-
     }
 
-    function updatePresetPaths(address sellToken, address buyToken, address[] memory newPath ) public onlyOwner returns(bool){
+    function updatePresetPaths(address sellToken, address buyToken, address[] memory newPath ) public onlyOwner returns(bool) {
         presetPaths[sellToken][buyToken] = newPath;
         return true;
     }
 
     //owner can turn on ability to collect a small fee from trade imbalances on LP conversions
-    function updateChangeRecipientBool(bool changeRecpientIsOwnerBool ) public onlyOwner returns(bool){
+    function updateChangeRecipientBool(bool changeRecpientIsOwnerBool ) public onlyOwner returns(bool) {
         changeRecpientIsOwner = changeRecpientIsOwnerBool;
         return true;
     }
-
-
-
-
-
-
 }
