@@ -1166,7 +1166,7 @@ contract BancorPlexusWrapper is ReentrancyGuard, Ownable {
         return amounts;
     }
 
-    function updateOwnerAddress(address payable newOwner) onlyOwner public returns (bool) {
+    function changeOwner(address payable newOwner) onlyOwner public returns (bool) {
         _owner = newOwner;
         return true;
     }

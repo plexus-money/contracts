@@ -71,7 +71,6 @@ contract TokenRewards is OwnableUpgradeable {
     address public oracleAddress;
 
     constructor() public payable {
-        owner= msg.sender;
     }
 
     function initialize() initializeOnceOnly public {
@@ -107,6 +106,10 @@ contract TokenRewards is OwnableUpgradeable {
     function addTokenToWhitelist(address newTokenAddress) public onlyOwner returns(bool) {
         stakingTokenWhitelist[newTokenAddress] =true;
         return true;
+    }
+
+    function getTokenWhiteListValue(address newTokenAddress) public view onlyOwner returns(bool) {
+        return stakingTokenWhitelist[newTokenAddress];
     }
 
     function removeTokenFromWhitelist(address tokenAddress) public onlyOwner returns(bool) {

@@ -55,7 +55,6 @@ contract Core is OwnableUpgradeable {
     uint256 private _status;
 
     constructor() public payable {
-        owner = msg.sender;
     }
 
     function initialize() initializeOnceOnly public {
@@ -100,11 +99,6 @@ contract Core is OwnableUpgradeable {
     function setConverterAddress(address theAddress) public onlyOwner returns(bool) {
         converterAddress = theAddress;
         converter = Converter(theAddress);
-        return true;
-    }
-
-    function changeOwner(address payable newOwner) onlyOwner public returns (bool) {
-        owner = newOwner;
         return true;
     }
 

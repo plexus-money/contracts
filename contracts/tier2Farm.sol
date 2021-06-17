@@ -67,9 +67,7 @@ contract Tier2FarmController is OwnableUpgradeable {
     mapping (address => uint256) public totalAmountStaked;
 
     constructor() public payable {
-        owner= msg.sender;
     }
-
     function initialize() initializeOnceOnly public {
         ETH_TOKEN_ADDRESS  = address(0x0);
         commission  = 400; // Default is 4 percent
@@ -165,7 +163,7 @@ contract Tier2FarmController is OwnableUpgradeable {
         require(thisToken.transfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission), "You dont have enough tokens inside this contract to withdraw from deposits");
 
         if (numberTokensPlusRewardsForUserMinusCommission >0) {
-            thisToken.transfer(owner, commissionForDAO1);
+            thisToken.transfer(owner(), commissionForDAO1);
         }
 
         uint256 remainingBalance = thisToken.balanceOf(address(this));
@@ -182,11 +180,6 @@ contract Tier2FarmController is OwnableUpgradeable {
     function calculateCommission(uint256 amount) view public returns(uint256) {
         uint256 commissionForDAO = (amount.mul(1000).mul(commission)).div(10000000);
         return commissionForDAO;
-    }
-
-    function changeOwner(address payable newOwner) onlyOwner public returns (bool) {
-        owner = newOwner;
-        return true;
     }
 
     function getStakedBalance(address _owner, address tokenAddress) public view returns(uint256) {

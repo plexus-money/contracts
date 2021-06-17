@@ -109,7 +109,6 @@ contract PlexusOracle is OwnableUpgradeable {
     mapping (string  => address) public platformDirectory;
 
     constructor() public payable {
-        owner= msg.sender;
     }
 
     function initialize() initializeOnceOnly public {

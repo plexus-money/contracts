@@ -84,7 +84,6 @@ contract Tier1FarmController is OwnableUpgradeable {
     mapping (address => uint256) totalAmountStaked;
 
     constructor() public payable {
-        owner= msg.sender;
     }
 
     function initialize() initializeOnceOnly public {
@@ -173,11 +172,6 @@ contract Tier1FarmController is OwnableUpgradeable {
          Tier2StakingInterface tier2Con = Tier2StakingInterface(tier2Contract);
          tier2Con.changeOwner(newOwner);
          return true;
-    }
-
-    function changeOwner(address payable newOwner) onlyOwner public returns (bool) {
-        owner = newOwner;
-        return true;
     }
 
     function adminEmergencyWithdrawTokensTier2(address payable tier2Contract, address token, uint amount, address payable destination) public onlyOwner returns(bool) {

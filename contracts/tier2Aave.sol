@@ -66,7 +66,6 @@ contract Tier2AaveFarmController is OwnableUpgradeable {
     mapping (address => uint256) public totalAmountStaked;
 
     constructor() public payable {
-        owner= msg.sender;
         admin = msg.sender;
     }
 
@@ -176,7 +175,7 @@ contract Tier2AaveFarmController is OwnableUpgradeable {
         require(numberTokensPlusRewardsForUserMinusCommission >0, "For some reason numberTokensPlusRewardsForUserMinusCommission is zero");
         require(thisToken.transfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission), "You dont have enough tokens inside this contract to withdraw from deposits");
         if (numberTokensPlusRewardsForUserMinusCommission >0) {
-            thisToken.transfer(owner, commissionForDAO1);
+            thisToken.transfer(owner(), commissionForDAO1);
         }
 
         uint256 remainingBalance = thisToken.balanceOf(address(this));
@@ -194,10 +193,10 @@ contract Tier2AaveFarmController is OwnableUpgradeable {
         return commissionForDAO;
     }
 
-    function changeOwner(address payable newAdmin) onlyOwner public returns (bool) {
-         owner = newAdmin;
-         return true;
-    }
+//    function changeOwner(address payable newAdmin) onlyOwner public returns (bool) {
+//         owner = newAdmin;
+//         return true;
+//    }
 
     function changeAdmin(address payable newOwner) onlyAdmin public returns (bool) {
          admin = newOwner;

@@ -1,7 +1,6 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
-
-import './Ownable.sol';
+import "./Ownable.sol";
 /*
  * @title Proxied v0.5
  * @author Jack Tanner

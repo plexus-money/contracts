@@ -158,7 +158,6 @@ contract WrapAndUnWrap is OwnableUpgradeable {
     uint256 public maxfee;
 
     constructor() public payable {
-        owner= msg.sender;
     }
 
     function initialize() initializeOnceOnly public {
@@ -256,7 +255,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             if (fee>0) {
                 uint256 totalFee = (thisBalance.mul(fee)).div(10000);
                 if (totalFee >0) {
-                    lpToken.transfer(owner, totalFee);
+                    lpToken.transfer(owner(), totalFee);
                 }
                 thisBalance =lpToken.balanceOf(address(this));
                 lpToken.transfer(msg.sender, thisBalance);
@@ -267,7 +266,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             //transfer any change to changeRecipient (from a pair imbalance. Should never be more than a few basis points)
             address changeRecipient = msg.sender;
             if (changeRecpientIsOwner == true) {
-                changeRecipient = owner;
+                changeRecipient = owner();
             }
             if (dToken.balanceOf(address(this)) >0) {
                 dToken.transfer(changeRecipient, dToken.balanceOf(address(this)));
@@ -344,7 +343,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 if (fee >0) {
                     uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
                     if (totalFee >0) {
-                        owner.transfer(totalFee);
+                        owner().transfer(totalFee);
                     }
                     msg.sender.transfer(address(this).balance);
                 } else {
@@ -354,7 +353,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 if (fee >0) {
                     uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                     if (totalFee >0) {
-                        dToken.transfer(owner, totalFee);
+                        dToken.transfer(owner(), totalFee);
                     }
                     destinationTokenBalance = dToken.balanceOf(address(this));
                     dToken.transfer(msg.sender, destinationTokenBalance);
@@ -377,13 +376,8 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         }
     }
 
-    function updateOwnerAddress(address payable newOwner) onlyOwner public returns (bool) {
-        owner = newOwner;
-        return true;
-    }
-
     function updateUniswapExchange(address newAddress ) public onlyOwner returns (bool) {
-        uniswapExchange = UniswapV2( newAddress);
+        uniswapExchange = UniswapV2(newAddress);
         uniAddress = newAddress;
         return true;
     }
