@@ -9,7 +9,6 @@ const { setupContracts, log } = require('./helper');
 describe('Re-deploying the plexus contracts for Wrapper test', () => {
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
 
-
   const farmTokenAddress = process.env.FARM_TOKEN_MAINNET_ADDRESS;
   const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
   const pickleTokenAddress = process.env.PICKLE_TOKEN_MAINNET_ADDRESS;
@@ -18,20 +17,19 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
-    
-    [ wrapper, 
-      wrapperSushi, 
-      tokenRewards, 
-      plexusOracle, 
-      tier1Staking, 
-      core, 
-      tier2Farm, 
-      tier2Aave, 
-      tier2Pickle, 
-      plexusCoin, 
-      owner, 
-      addr1] = await setupContracts();
-      
+    const { deployedContracts } = await setupContracts();
+    wrapper = deployedContracts.wrapper;
+    wrapperSushi = deployedContracts.wrapperSushi;
+    tokenRewards = deployedContracts.tokenRewards;
+    plexusOracle = deployedContracts.plexusOracle;
+    tier1Staking = deployedContracts.tier1Staking;
+    core = deployedContracts.core;
+    tier2Farm = deployedContracts.tier2Farm;
+    tier2Aave = deployedContracts.tier2Aave;
+    tier2Pickle = deployedContracts.tier2Pickle;
+    plexusCoin = deployedContracts.plexusCoin;
+    owner = deployedContracts.owner;
+    addr1 = deployedContracts.addr1;
   });
 
   describe('Test Plexus Uniswap wrapper', () => {
