@@ -9,7 +9,7 @@ require('solidity-coverage');
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
-    version: "0.7.4",
+    version: "0.8.0",
     settings: {
       optimizer: {
         enabled: true,
@@ -27,8 +27,33 @@ module.exports = {
         url: process.env.RPC_NODE_URL,
         blockNumber: 11997864,
       }
+    },
+
+    mainnet: {
+      gas: "auto",
+      gasPrice: "auto",
+      gasMultiplier: 20,
+      blockGasLimit: 90000000000000,
+      accounts: {
+        mnemonic: process.env.MNEMONIC
+      },
+      url: process.env.RPC_NODE_URL_MAINNET,
+      chainId: 1
+    },
+    
+    kovan: {
+      gas: "auto",
+      gasPrice: "auto",
+      gasMultiplier: 20,
+      blockGasLimit: 90000000000000,
+      accounts: {
+        mnemonic: process.env.MNEMONIC
+      },
+      url: process.env.RPC_NODE_URL_KOVAN,
+      chainId: 42
     }
   },
+
   mocha: {
     timeout: 2000000
   }
