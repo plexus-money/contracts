@@ -1,140 +1,160 @@
-// SPDX-License-Identifier: MIT
-
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IPlexusOracle.sol";
-import "./interfaces/staking/ITier1Staking.sol";
-import "./interfaces/IConverter.sol";
-import "./interfaces/token/IWETH.sol";
+//Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
-// Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
+interface Oracle {
+    function getTotalValueLockedInternalByToken(address tokenAddress, address tier2Address) external view returns (uint256);
+    function getTotalValueLockedAggregated(uint256 optionIndex) external view returns (uint256);
+    function getStakableTokens() view external  returns (address[] memory, string[] memory);
+    function getAPR ( address tier2Address, address tokenAddress ) external view returns ( uint256 );
+    function getAmountStakedByUser(address tokenAddress, address userAddress, address tier2Address) external view returns(uint256);
+    function getUserCurrentReward(address userAddress, address tokenAddress, address tier2FarmAddress) view external returns(uint256);
+    function getTokenPrice(address tokenAddress) view external returns(uint256);
+    function getUserWalletBalance(address userAddress, address tokenAddress) external view returns (uint256);
+}
 
-contract Core is OwnableUpgradeable, ReentrancyGuard {
-    // globals
+interface Tier1Staking {
+    function deposit ( string memory tier2ContractName, address tokenAddress, uint256 amount, address onBehalfOf ) external payable returns ( bool );
+    function withdraw ( string memory tier2ContractName, address tokenAddress, uint256 amount, address onBehalfOf ) external payable returns ( bool );
+}
+
+interface Converter {
+    function unwrap ( address sourceToken, address destinationToken, uint256 amount ) external payable returns ( uint256 );
+    function wrap ( address sourceToken, address[] memory destinationTokens, uint256 amount ) external payable returns ( address, uint256 );
+}
+
+interface ERC20 {
+    function totalSupply() external view returns(uint supply);
+    function balanceOf(address _owner) external view returns(uint balance);
+    function transfer(address _to, uint _value) external returns(bool success);
+    function transferFrom(address _from, address _to, uint _value) external returns(bool success);
+    function approve(address _spender, uint _value) external returns(bool success);
+    function allowance(address _owner, address _spender) external view returns(uint remaining);
+    function decimals() external view returns(uint digits);
+    event Approval(address indexed _owner, address indexed _spender, uint _value);
+    function deposit() external payable;
+    function withdraw(uint256 wad) external;
+}
+
+contract Core is OwnableUpgradeable {
+    //globals
     address public oracleAddress;
     address public converterAddress;
     address public stakingAddress;
-    IPlexusOracle private oracle;
-    ITier1Staking private staking;
-    IConverter private converter;
+    Oracle oracle;
+    Tier1Staking staking;
+    Converter converter;
     address public ETH_TOKEN_PLACEHOLDER_ADDRESS;
     address public WETH_TOKEN_ADDRESS;
-    IWETH private wethToken;
-    uint256 private approvalAmount;
+    ERC20 wethToken;
+    uint256 approvalAmount;
+    //Reeentrancy
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+    uint256 private _status;
 
-    constructor() payable {
+    constructor() public payable {
     }
 
-    function initialize(address _weth, address _converter) initializeOnceOnly public {
+    function initialize() initializeOnceOnly public {
         ETH_TOKEN_PLACEHOLDER_ADDRESS = address(0x0);
-        WETH_TOKEN_ADDRESS = _weth;
-        wethToken = IWETH(WETH_TOKEN_ADDRESS);
+        WETH_TOKEN_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        wethToken = ERC20(WETH_TOKEN_ADDRESS);
         approvalAmount = 1000000000000000000000000000000;
-        setConverterAddress(_converter);
+        setConverterAddress(0x1d17F9007282F9388bc9037688ADE4344b2cC49B);
+        _status = _NOT_ENTERED;
+    }
+
+   modifier nonReentrant() {
+        // On the first call to nonReentrant, _notEntered will be true
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _status = _ENTERED;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _status = _NOT_ENTERED;
     }
 
     fallback() external payable {
-        // For the converter to unwrap ETH when delegate calling.
-        // The contract has to be able to accept ETH for this reason.
-        // The emergency withdrawal call is to pick any change up for these conversions.
+        //for the converter to unwrap ETH when delegate calling. The contract has to be able to accept ETH for this reason. The emergency withdrawal call is to pick any change up for these conversions.
     }
 
-    receive() external payable {
-        // receive function
-    }
-
-    function setOracleAddress(address theAddress) public onlyOwner returns (bool) {
+    function setOracleAddress(address theAddress) public onlyOwner returns(bool) {
         oracleAddress = theAddress;
-        oracle = IPlexusOracle(theAddress);
+        oracle = Oracle(theAddress);
         return true;
     }
 
-    function setStakingAddress(address theAddress) public onlyOwner returns (bool) {
+    function setStakingAddress(address theAddress) public onlyOwner returns(bool) {
         stakingAddress = theAddress;
-        staking = ITier1Staking(theAddress);
+        staking = Tier1Staking(theAddress);
         return true;
     }
 
-    function setConverterAddress(address theAddress) public onlyOwner returns (bool) {
+    function setConverterAddress(address theAddress) public onlyOwner returns(bool) {
         converterAddress = theAddress;
-        converter = IConverter(theAddress);
+        converter = Converter(theAddress);
         return true;
     }
 
-    function deposit(
-        string memory tier2ContractName,
-        address tokenAddress,
-        uint256 amount
-    ) public payable nonReentrant returns (bool) {
-        IERC20 token;
-        if (tokenAddress == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
-            wethToken.deposit{value: msg.value}();
-            tokenAddress = WETH_TOKEN_ADDRESS;
-            token = IERC20(tokenAddress);
+    function deposit(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns(bool) {
+        ERC20 token;
+        if (tokenAddress==ETH_TOKEN_PLACEHOLDER_ADDRESS) {
+            wethToken.deposit{value:msg.value}();
+            tokenAddress=WETH_TOKEN_ADDRESS;
+            token = ERC20(tokenAddress);
         } else {
-            token = IERC20(tokenAddress);
+            token = ERC20(tokenAddress);
             token.transferFrom(msg.sender, address(this), amount);
         }
         token.approve(stakingAddress, 0);
         token.approve(stakingAddress, approvalAmount);
         bool result = staking.deposit(tier2ContractName, tokenAddress, amount, msg.sender);
-        require(result, "There was an issue in core with your deposit request.");
+        require(result, "There was an issue in core with your deposit request. Please see logs");
+
         return result;
     }
 
-    function withdraw(
-        string memory tier2ContractName,
-        address tokenAddress,
-        uint256 amount
-    ) public payable nonReentrant returns (bool) {
+    function withdraw(string memory tier2ContractName, address tokenAddress, uint256 amount) nonReentrant() payable public returns(bool) {
         bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
-        require(result, "There was an issue in core with your withdrawal request.");
+        require(result, "There was an issue in core with your withdrawal request. Please see logs");
+
         return result;
     }
 
-    function convert(
-        address sourceToken,
-        address[] memory destinationTokens,
-        uint256 amount
-    ) public payable returns (address, uint256) {
+    function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256) {
         if (sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS) {
-            IERC20 srcToken = IERC20(sourceToken);
-            require(
-                srcToken.transferFrom(msg.sender, address(this), amount),
-                "You must approve this contract or have enough tokens to do this conversion"
-            );
+            ERC20 token = ERC20(sourceToken);
+            require(token.transferFrom(msg.sender, address(this), amount), "You must approve this contract or have enough tokens to do this conversion");
         }
+        ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount);
+        ERC20 token = ERC20(destinationTokenAddress);
+        token.transfer(msg.sender, _amount);
 
-        (address destinationTokenAddress, uint256 _amount) =
-            converter.wrap{value: msg.value}(sourceToken, destinationTokens, amount);
-
-        IERC20 dstToken = IERC20(destinationTokenAddress);
-        dstToken.transfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
     }
 
-    // deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
-    function deconvert(
-        address sourceToken,
-        address destinationToken,
-        uint256 amount
-    ) public payable returns (uint256) {
-        uint256 _amount = converter.unwrap{value: msg.value}(sourceToken, destinationToken, amount);
-        IERC20 token = IERC20(destinationToken);
+    //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
+    function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256) {
+        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
+        ERC20 token = ERC20(destinationToken);
         token.transfer(msg.sender, _amount);
+
         return _amount;
     }
 
-    function getStakableTokens() public view returns (address[] memory, string[] memory) {
-        (address[] memory stakableAddresses, string[] memory stakableTokenNames) = oracle.getStakableTokens();
+    function getStakableTokens() view public  returns (address[] memory, string[] memory) {
+        (address [] memory stakableAddresses, string [] memory stakableTokenNames) = oracle.getStakableTokens();
         return (stakableAddresses, stakableTokenNames);
+
     }
 
-    function getAPR(address tier2Address, address tokenAddress) public view returns (uint256) {
+    function getAPR(address tier2Address, address tokenAddress) public view returns(uint256) {
         uint256 result = oracle.getAPR(tier2Address, tokenAddress);
         return result;
     }
@@ -144,63 +164,44 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         return result;
     }
 
-    function getTotalValueLockedInternalByToken(
-        address tokenAddress,
-        address tier2Address
-    ) public view returns (uint256) {
-        uint256 result = oracle.getTotalValueLockedInternalByToken(tokenAddress, tier2Address);
+    function getTotalValueLockedInternalByToken(address tokenAddress, address tier2Address) public view returns (uint256) {
+        uint256 result = oracle.getTotalValueLockedInternalByToken( tokenAddress, tier2Address);
         return result;
     }
 
-    function getAmountStakedByUser(
-        address tokenAddress,
-        address userAddress,
-        address tier2Address
-    ) public view returns (uint256) {
-        uint256 result = oracle.getAmountStakedByUser(tokenAddress, userAddress, tier2Address);
+    function getAmountStakedByUser(address tokenAddress, address userAddress, address tier2Address) public view returns(uint256) {
+        uint256 result = oracle.getAmountStakedByUser(tokenAddress, userAddress,  tier2Address);
         return result;
     }
 
-    function getUserCurrentReward(
-        address userAddress,
-        address tokenAddress,
-        address tier2FarmAddress
-    ) public view returns (uint256) {
-        return oracle.getUserCurrentReward( userAddress, tokenAddress, tier2FarmAddress);
-    }
+   function getUserCurrentReward(address userAddress, address tokenAddress, address tier2FarmAddress) view public returns(uint256) {
+        return oracle.getUserCurrentReward( userAddress,  tokenAddress, tier2FarmAddress);
+   }
 
-    function getTokenPrice(address tokenAddress) public view returns (uint256) {
+   function getTokenPrice(address tokenAddress) view public returns(uint256) {
         uint256 result = oracle.getTokenPrice(tokenAddress);
         return result;
-    }
+   }
 
     function getUserWalletBalance(address userAddress, address tokenAddress) public view returns (uint256) {
-        uint256 result = oracle.getUserWalletBalance(userAddress, tokenAddress);
+        uint256 result = oracle.getUserWalletBalance( userAddress, tokenAddress);
         return result;
+
     }
 
-    function updateWETHAddress(address newAddress) public onlyOwner returns (bool) {
+    function updateWETHAddress(address newAddress) onlyOwner public returns(bool) {
         WETH_TOKEN_ADDRESS = newAddress;
-        wethToken = IWETH(newAddress);
-        return true;
+        wethToken= ERC20(newAddress);
     }
 
-    function adminEmergencyWithdrawAccidentallyDepositedTokens(
-        address token,
-        uint256 amount,
-        address payable destination
-    ) public onlyOwner returns (bool) {
-        if (address(token) == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
-            destination.transfer(amount);
-        } else {
-            IERC20 token_ = IERC20(token);
-            require(
-                token_.transfer(destination, amount),
-                "Token Transfer Failed."
-            );
-        }
+    function adminEmergencyWithdrawAccidentallyDepositedTokens(address token, uint amount, address payable destination) public onlyOwner returns(bool) {
+         if (address(token) == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
+             destination.transfer(amount);
+         } else {
+             ERC20 tokenToken = ERC20(token);
+             require(tokenToken.transfer(destination, amount));
+         }
 
-        return true;
-    }
+         return true;
+     }
 }
-

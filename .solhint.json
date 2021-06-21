@@ -5,7 +5,7 @@
       "func-order": "off",
       "mark-callable-contracts": "off",
       "no-empty-blocks": "off",
-      "compiler-version": ["warn", "^0.8.0"],
+      "compiler-version": ["warn", "^0.7.0"],
       "private-vars-leading-underscore": "off",
       "code-complexity": "warn",
       "const-name-snakecase": "warn",

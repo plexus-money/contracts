@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.0;
+pragma solidity 0.7.4;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 
@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
  * the owner.
  */
 abstract contract Ownable is Context {
-    address private _owner;
+    address payable private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -25,7 +25,7 @@ abstract contract Ownable is Context {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     constructor() {
-        address msgSender = _msgSender();
+        address payable msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
     }
@@ -33,7 +33,7 @@ abstract contract Ownable is Context {
     /**
      * @dev Returns the address of the current owner.
      */
-    function owner() public view virtual returns (address) {
+    function owner() public view virtual returns (address payable) {
         return _owner;
     }
 
@@ -45,7 +45,7 @@ abstract contract Ownable is Context {
         _;
     }
 
-    function changeOwner(address newOwner) onlyOwner public returns (bool) {
+    function changeOwner(address payable newOwner) onlyOwner public returns (bool) {
         _owner = newOwner;
         return true;
     }
@@ -66,7 +66,7 @@ abstract contract Ownable is Context {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function transferOwnership(address payable newOwner) public virtual onlyOwner {
         require(newOwner != address(0), "Ownable: new owner is the zero address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;

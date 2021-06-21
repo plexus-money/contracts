@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 /*
 
                                        `.-:+osyhhhhhhyso+:-.`
@@ -65,78 +63,127 @@
 
 
 
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.7.4;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IWrapper.sol";
 
-contract LP2LP is OwnableUpgradeable {
-    using SafeMath for uint256;
+interface ERC20 {
+    function totalSupply() external view returns(uint supply);
 
-    // placehodler token address for specifying eth tokens
-    address public ETH_TOKEN_ADDRESS;
-    address private bancorLPTokenAddress;
-    mapping(uint256 => address) public platforms;
+    function balanceOf(address _owner) external view returns(uint balance);
 
-    constructor() {
-    }
+    function transfer(address _to, uint _value) external returns(bool success);
 
-    function initialize(address _bancorLPToken) initializeOnceOnly public {
-        ETH_TOKEN_ADDRESS = address(0x0);
-        bancorLPTokenAddress = _bancorLPToken;
-    }
+    function transferFrom(address _from, address _to, uint _value) external returns(bool success);
+
+    function approve(address _spender, uint _value) external returns(bool success);
+
+    function allowance(address _owner, address _spender) external view returns(uint remaining);
+
+    function decimals() external view returns(uint digits);
+    event Approval(address indexed _owner, address indexed _spender, uint _value);
+}
+
+
+
+interface wrapper{
+    function wrap(address sourceToken, address[] memory destinationTokens, uint256 amount) external payable returns(address, uint256);
+    function unwrap(address sourceToken, address destinationToken, uint256 amount) external payable returns( uint256);
+}
+
+
+
+
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal view returns (uint256) {
+    uint256 c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
+
+  function div(uint256 a, uint256 b) internal view returns (uint256) {
+    assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return c;
+  }
+
+
+
+  function sub(uint256 a, uint256 b) internal view returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function add(uint256 a, uint256 b) internal view returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+
+}
+
+
+
+
+contract LP2LP{
+
+  using SafeMath
+    for uint256;
+
+  address payable public owner;
+  //placehodler token address for specifying eth tokens
+  address public ETH_TOKEN_ADDRESS  = address(0x0);
+  mapping (uint256 => address) public platforms;
+  address bancorLPTokenAddress = 0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94;
+
+    modifier onlyOwner {
+        require(
+            msg.sender == owner,
+            "Only owner can call this function."
+        );
+        _;
+}
 
     fallback() external payable {
     }
 
-    receive() external payable {
-    }
 
-    function lpTolp(
-        uint256 platformFrom,
-        uint256 platformTo,
-        address fromLPByAddress,
-        address[] memory toLPTokensByTokens,
-        uint256 amountFrom
-    ) public returns (uint256) {
-        IERC20 tokenFrom = IERC20(fromLPByAddress);
-        
-        require(
-            tokenFrom.transferFrom(msg.sender, address(this), amountFrom),
-            "You need to approve this contract and have the appropriate balance to do this"
-        );
-        require(
-            platforms[platformFrom] != address(0x0),
-            "The platform does not exist. Was it created by admin with updatePlatforms?"
-        );
 
-        IWrapper fromWrapper = IWrapper(platforms[platformFrom]);
-        IWrapper toWrapper = IWrapper(platforms[platformTo]);
-        fromWrapper.unwrap(fromLPByAddress, ETH_TOKEN_ADDRESS, amountFrom);
-        uint256 thisETHBalance = address(this).balance;
-        (address lpRec, uint256 recAmount) = toWrapper.wrap{value: thisETHBalance}(ETH_TOKEN_ADDRESS, toLPTokensByTokens, thisETHBalance);
-        uint256 currentTokenBalance;
-        if (platformTo != 3) {
-            IERC20 tokensRecieved = IERC20(lpRec);
-            currentTokenBalance = tokensRecieved.balanceOf(address(this));
-            tokensRecieved.transfer(msg.sender, currentTokenBalance);
-        } else {
-            IERC20 tokensRecieved = IERC20(bancorLPTokenAddress);
-            currentTokenBalance = tokensRecieved.balanceOf(msg.sender);
-        }
+  function lpTolp(uint256 platformFrom, uint256 platformTo, address fromLPByAddress, address[] memory toLPTokensByTokens, uint256 amountFrom) public returns(uint256){
 
-        return currentTokenBalance;
-    }
+      ERC20 tokenFrom = ERC20(fromLPByAddress);
+      require(tokenFrom.transferFrom(msg.sender, address(this), amountFrom), "You need to approve this contract and have the appropriate balance to do this");
+      require(platforms[platformFrom] != address(0x0), "The platform does not exist. Was it created by admin with updatePlatforms?");
+      wrapper fromWrapper = wrapper(platforms[platformFrom]);
+      wrapper toWrapper = wrapper(platforms[platformTo]);
+      fromWrapper.unwrap(fromLPByAddress, ETH_TOKEN_ADDRESS, amountFrom);
+      uint256 thisETHBalance = address(this).balance;
+      (address lpRec,uint256 recAmount)= toWrapper.wrap{value:thisETHBalance}(ETH_TOKEN_ADDRESS, toLPTokensByTokens, thisETHBalance);
+      uint256 currentTokenBalance;
+      if(platformTo !=3){
+          ERC20 tokensRecieved = ERC20(lpRec);
+          currentTokenBalance = tokensRecieved.balanceOf(address(this));
+            tokensRecieved.transfer(msg.sender, currentTokenBalance );
+      }
 
-    function updateVBNTContract(address newAddress) public onlyOwner returns (bool) {
-        bancorLPTokenAddress = newAddress;
-        return true;
-    }
+      else{
+          ERC20 tokensRecieved = ERC20(bancorLPTokenAddress);
+          currentTokenBalance = tokensRecieved.balanceOf(msg.sender);
+      }
 
-    function updatePlatform(uint256 platformId, address wrapperAddress) public onlyOwner returns (bool) {
-        platforms[platformId] = wrapperAddress;
-        return true;
-    }
+      return currentTokenBalance;
+
+
+  }
+    function updateVBNTContract(address newAddress) public onlyOwner returns(bool){
+      bancorLPTokenAddress= newAddress;
+      return true;
+  }
+
+
+  function updatePlatform(uint256 platformId, address wrapperAddress) public onlyOwner returns(bool){
+      platforms[platformId] = wrapperAddress;
+      return true;
+  }
+
 }

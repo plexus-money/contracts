@@ -1,6 +1,4 @@
-// SPDX-License-Identifier: MIT
-
-pragma solidity 0.8.0;
+pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 import './OwnableProxied.sol';
@@ -12,7 +10,7 @@ contract OwnableProxy is OwnableProxied {
      * @param _target - The target Upgradeable contracts address
      */
     address public deployer;
-    constructor(address _target) {
+    constructor(address _target) public {
         deployer = msg.sender;
         upgradeTo(_target);
     }
@@ -69,8 +67,5 @@ contract OwnableProxy is OwnableProxied {
             case 0 { revert(ptr, size) }
             default { return(ptr, size) }
         }
-    }
-
-    receive() external payable {
     }
 }
