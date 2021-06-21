@@ -20,8 +20,8 @@ interface Tier1Staking {
 }
 
 interface Converter {
-    function unwrap ( address sourceToken, address destinationToken, uint256 amount ) external payable returns ( uint256 );
-    function wrap ( address sourceToken, address[] memory destinationTokens, uint256 amount ) external payable returns ( address, uint256 );
+    function unwrap ( address sourceToken, address destinationToken, uint256 amount, uint256 userSlippageTolerance) external payable returns ( uint256 );
+    function wrap ( address sourceToken, address[] memory destinationTokens, uint256 amount, uint256 userSlippageTolerance) external payable returns ( address, uint256 );
 }
 
 interface ERC20 {
@@ -127,12 +127,12 @@ contract Core is OwnableUpgradeable {
         return result;
     }
 
-    function convert(address sourceToken, address[] memory destinationTokens, uint256 amount) public payable returns(address, uint256) {
+    function convert(address sourceToken, address[] memory destinationTokens, uint256 amount, uint256 userSlippageTolerance) public payable returns(address, uint256) {
         if (sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS) {
             ERC20 token = ERC20(sourceToken);
             require(token.transferFrom(msg.sender, address(this), amount), "You must approve this contract or have enough tokens to do this conversion");
         }
-        ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount);
+        ( address destinationTokenAddress, uint256 _amount) = converter.wrap{value:msg.value}(sourceToken, destinationTokens, amount, userSlippageTolerance);
         ERC20 token = ERC20(destinationTokenAddress);
         token.transfer(msg.sender, _amount);
 
@@ -140,8 +140,8 @@ contract Core is OwnableUpgradeable {
     }
 
     //deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
-    function deconvert(address sourceToken, address destinationToken, uint256 amount) public payable returns(uint256) {
-        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount);
+    function deconvert(address sourceToken, address destinationToken, uint256 amount, uint256 userSlippageTolerance) public payable returns(uint256) {
+        uint256 _amount = converter.unwrap{value:msg.value}(sourceToken, destinationToken, amount, userSlippageTolerance);
         ERC20 token = ERC20(destinationToken);
         token.transfer(msg.sender, _amount);
 
