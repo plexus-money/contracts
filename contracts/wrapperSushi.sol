@@ -392,14 +392,16 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
             //addresses[0] = WETH_TOKEN_ADDRESS;
             //addresses[1] = buyToken;
-            sushiExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
+            uint amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            sushiExchange.swapExactETHForTokens{value:msg.value}(amountOutMin, addresses, address(this), 1000000000000000 );
         } else if (sellToken == WETH_TOKEN_ADDRESS) {
             wethToken.withdraw(amount);
             //address [] memory addresses = new address[](2);
             address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
             //addresses[0] = WETH_TOKEN_ADDRESS;
             //addresses[1] = buyToken;
-            sushiExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
+            uint amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            sushiExchange.swapExactETHForTokens{value:amount}(amountOutMin, addresses, address(this), 1000000000000000 );
         } else {
             address [] memory addresses = getBestPath(sellToken, buyToken, amount);
             uint256 [] memory amounts = conductUniswapT4T(addresses, amount, userSlippageTolerance);
@@ -491,11 +493,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
+    function getAmountOutMin(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) public view returns (uint256) {
+        uint256 [] memory assetAmounts = getPriceFromSushiswap(theAddresses, amount);
+        return assetAmounts[1] * (100 - userSlippageTolerance) / 100;
+    }
+
     function conductUniswapT4T(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) internal returns (uint256[] memory amounts1) {
         uint256 deadline = 1000000000000000;
-        uint256 [] memory assetAmounts = getPriceFromSushiswap(theAddresses, amount);
-        require(amount > assetAmounts[1] + userSlippageTolerance * assetAmounts[1] / 100, "Insufficient Asset in Uniswap!");
-        uint256 [] memory amounts =  sushiExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
+        uint256 amountOutMin = getAmountOutMin(theAddresses, amount, userSlippageTolerance);
+        uint256 [] memory amounts =  sushiExchange.swapExactTokensForTokens(amount, amountOutMin, theAddresses, address(this), deadline);
         return amounts;
     }
 

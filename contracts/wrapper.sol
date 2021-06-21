@@ -389,21 +389,23 @@ contract WrapAndUnWrap is OwnableUpgradeable {
     }
 
     function conductUniswap(address sellToken, address buyToken, uint amount, uint256 userSlippageTolerance) internal returns (uint256 amounts1) {
-        if (sellToken ==ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS) {
+        if (sellToken == ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS) {
             wethToken.deposit{value:msg.value}();
         } else if (sellToken == address(0x0)) {
             // address [] memory addresses = new address[](2);
             address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
             //addresses[0] = WETH_TOKEN_ADDRESS;
             //addresses[1] = buyToken;
-            uniswapExchange.swapExactETHForTokens{value:msg.value}(0, addresses, address(this), 1000000000000000 );
+            uint amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            uniswapExchange.swapExactETHForTokens{value:msg.value}(amountOutMin, addresses, address(this), 1000000000000000 );
         } else if (sellToken == WETH_TOKEN_ADDRESS) {
             wethToken.withdraw(amount);
             //address [] memory addresses = new address[](2);
             address [] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
             //addresses[0] = WETH_TOKEN_ADDRESS;
             //addresses[1] = buyToken;
-            uniswapExchange.swapExactETHForTokens{value:amount}(0, addresses, address(this), 1000000000000000 );
+            uint amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            uniswapExchange.swapExactETHForTokens{value:amount}(amountOutMin, addresses, address(this), 1000000000000000 );
         } else {
             address [] memory addresses = getBestPath(sellToken, buyToken, amount);
             uint256 [] memory amounts = conductUniswapT4T(addresses, amount, userSlippageTolerance);
@@ -487,7 +489,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
     }
 
     function getPriceFromUniswap(address  [] memory theAddresses, uint amount) public view returns (uint256[] memory amounts1) {
-        try uniswapExchange.getAmountsOut(amount,theAddresses ) returns (uint256[] memory amounts) {
+        try uniswapExchange.getAmountsOut(amount, theAddresses ) returns (uint256[] memory amounts) {
             return amounts;
         } catch {
             uint256 [] memory amounts2= new uint256[](2);
@@ -497,11 +499,15 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         }
     }
 
+    function getAmountOutMin(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) public view returns (uint256) {
+        uint256 [] memory assetAmounts = getPriceFromUniswap(theAddresses, amount);
+        return assetAmounts[1] * (100 - userSlippageTolerance) / 100;
+    }
+
     function conductUniswapT4T(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) internal returns (uint256[] memory amounts1) {
         uint256 deadline = 1000000000000000;
-        uint256 [] memory assetAmounts = getPriceFromUniswap(theAddresses, amount);
-        require(amount > assetAmounts[1] + userSlippageTolerance * assetAmounts[1] / 100, "Insufficient Asset in Uniswap!");
-        uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, 0, theAddresses, address(this),deadline );
+        uint256 amountOutMin = getAmountOutMin(theAddresses, amount, userSlippageTolerance);
+        uint256 [] memory amounts =  uniswapExchange.swapExactTokensForTokens(amount, amountOutMin, theAddresses, address(this), deadline);
         return amounts;
     }
 
