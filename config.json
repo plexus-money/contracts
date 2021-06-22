@@ -50,7 +50,7 @@
 
 		"swaps": {
 			"uniswap": {
-				"mainnet": "0x1d17F9007282F9388bc9037688ADE4344b2cC49B",
+				"mainnet": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
 				"kovan": ""
 			},
 			"uniswapFactory": {
