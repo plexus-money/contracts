@@ -1,5 +1,6 @@
 require("dotenv").config();
 const hre = require("hardhat");
+const config = require('../config.json');
 
 const setupContracts = async() => {
     
