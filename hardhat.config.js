@@ -37,7 +37,7 @@ module.exports = {
       accounts: {
         mnemonic: process.env.MNEMONIC
       },
-      url: process.env.RPC_NODE_URL_MAINNET,
+      url: process.env.RPC_NODE_URL,
       chainId: 1
     },
     
