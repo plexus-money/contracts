@@ -116,8 +116,7 @@ const setupContracts = async() => {
         LP2LP, 
         OwnableProxy, 
         'LP2LP',
-		addr.StakingRewards[network],
-		addr.tokens.PICKLE[network]
+		addr.tokens.vBNT[network]
     );
     
     const tier2Aggregator = await deployWithProxy(
