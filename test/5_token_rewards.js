@@ -15,7 +15,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
   const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
   const pickleTokenAddress = process.env.PICKLE_TOKEN_MAINNET_ADDRESS;
 
-  const unitAmount = "10";
+  const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {
