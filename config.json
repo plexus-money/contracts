@@ -1,0 +1,80 @@
+{
+	"addresses": {
+		"tokens": {
+			"USDT": {
+				"mainnet": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+				"kovan": ""
+			},
+			"DAI": {
+				"mainnet": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+				"kovan": ""
+			},
+			"USDC": {
+				"mainnet": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+				"kovan": ""
+			},
+			"WETH": {
+				"mainnet": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+				"kovan": ""
+			},
+			"aDAI": {
+				"mainnet": "0x028171bCA77440897B824Ca71D1c56caC55b68A3",
+				"kovan": ""
+			},
+			"FARM": {
+				"mainnet": "0xa0246c9032bC3A600820415aE600c6388619A14D",
+				"kovan": "",
+				"description": "Harvest.Finance: FARM Token"
+			},
+			"PICKLE": {
+				"mainnet": "0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5",
+				"kovan": "",
+				"description": "PICKLE.Finance: PICKLE Token"
+			},
+			"vBNT": {
+				"mainnet": "0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94",
+				"kovan": "",
+				"description": "Bancor: vBNT Token"
+			},
+			"pUNI_V2": {
+				"mainnet": "0x09FC573c502037B149ba87782ACC81cF093EC6ef",
+				"kovan": "",
+				"description": "PickleJar: Pickling Uniswap V2 (pUNI-V2) Token"
+			},
+			"UNI_V2": {
+				"mainnet": "0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852",
+				"kovan": "",
+				"description": "Uniswap V2: ETH/USDT LP (UNI-V2) Token"
+			}
+		},
+
+		"swaps": {
+			"uniswap": {
+				"mainnet": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+				"kovan": ""
+			},
+			"uniswapFactory": {
+				"mainnet": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+				"kovan": ""
+			},	
+			"sushiswap": {
+				"mainnet": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
+				"kovan": ""
+			}
+		},
+		
+		"AaveLendingPoolV2": {
+			"mainnet": "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+			"kovan": ""
+		},
+		"AutoStake": {
+			"mainnet": "0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50",
+			"kovan": ""
+		},
+		"StakingRewards": {
+			"mainnet": "0xa17a8883dA1aBd57c690DF9Ebf58fC194eDAb66F",
+			"kovan": ""
+		}
+	}
+
+}
