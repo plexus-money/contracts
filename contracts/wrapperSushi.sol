@@ -495,7 +495,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
 
     function getAmountOutMin(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) public view returns (uint256) {
         uint256 [] memory assetAmounts = getPriceFromSushiswap(theAddresses, amount);
-        return assetAmounts[1] * (100 - userSlippageTolerance) / 100;
+        require(userSlippageTolerance <= 100, 'userSlippageTolerance can not be larger than 100');
+        return SafeMath.div(SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)), 100);
     }
 
     function conductUniswapT4T(address  [] memory theAddresses, uint amount, uint256 userSlippageTolerance) internal returns (uint256[] memory amounts1) {
