@@ -99,7 +99,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function convert(
         address sourceToken,
         address[] memory destinationTokens,
-        uint256 amount
+        uint256 amount,
+        uint256 userSlippageTolerance
     ) public payable returns (address, uint256) {
         if (sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS) {
             IERC20 srcToken = IERC20(sourceToken);
@@ -108,9 +109,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
                 "You must approve this contract or have enough tokens to do this conversion"
             );
         }
-
         (address destinationTokenAddress, uint256 _amount) =
-            converter.wrap{value: msg.value}(sourceToken, destinationTokens, amount);
+            converter.wrap{value: msg.value}(sourceToken, destinationTokens, amount, userSlippageTolerance);
 
         IERC20 dstToken = IERC20(destinationTokenAddress);
         dstToken.transfer(msg.sender, _amount);
@@ -121,9 +121,10 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function deconvert(
         address sourceToken,
         address destinationToken,
-        uint256 amount
+        uint256 amount,
+        uint256 userSlippageTolerance
     ) public payable returns (uint256) {
-        uint256 _amount = converter.unwrap{value: msg.value}(sourceToken, destinationToken, amount);
+        uint256 _amount = converter.unwrap{value: msg.value}(sourceToken, destinationToken, amount, userSlippageTolerance);
         IERC20 token = IERC20(destinationToken);
         token.transfer(msg.sender, _amount);
         return _amount;

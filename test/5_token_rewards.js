@@ -15,7 +15,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
   const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
   const pickleTokenAddress = process.env.PICKLE_TOKEN_MAINNET_ADDRESS;
 
-  const unitAmount = "10";
+  const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {
@@ -61,6 +61,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to Farm token from harvest.finance', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
+      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
       const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
 
       // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -75,7 +76,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
       let coreAsSigner1 = core.connect(addr1);
 
       // Convert the 2 ETH to Farm Token(s)
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, overrides)).wait();
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
@@ -101,6 +102,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to DAI Token from MakerDao', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
+      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
       const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
 
       // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -115,7 +117,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
       let coreAsSigner1 = core.connect(addr1);
 
       // Convert the 2 ETH to Dai Token(s)
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, overrides)).wait();
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
@@ -141,6 +143,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to Pickle Token', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
+      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
       const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
 
       // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -155,7 +158,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
       let coreAsSigner1 = core.connect(addr1);
 
       // Convert the 2 ETH to Pickle Token(s)
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [pickleTokenAddress], amountPlaceholder, overrides)).wait();
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
