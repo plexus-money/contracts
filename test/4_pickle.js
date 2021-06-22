@@ -14,7 +14,7 @@ describe('Re-deploying the plexus ecosystem for Pickle test', () => {
   const tier2ContractName = "PICKLE";
   const pickleTokenAddress = process.env.PICKLE_TOKEN_MAINNET_ADDRESS;
   const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
-  const unitAmount = "120";
+  const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {

@@ -41,7 +41,6 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         expect(ethbalance).to.be.gt(3);
     });
 
-
      // Conversions From ETH
      it('Should convert 2 ETH to Farm token from harvest.finance via Uniswap', async () => {
 
@@ -80,7 +79,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         expect(ethbalance).to.be.lt(10000);
   
       });
-  
+
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
   
         const zeroAddress = process.env.ZERO_ADDRESS;

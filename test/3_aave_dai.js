@@ -14,7 +14,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
   const tier2ContractName = "DAI";
   const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
   const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
-  const unitAmount = "200";
+  const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {
