@@ -71,6 +71,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
     it('Should convert 2 ETH to Farm token from harvest.finance', async () => {
 
        const zeroAddress = process.env.ZERO_ADDRESS;
+       const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
 
        // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
@@ -84,7 +85,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
        let coreAsSigner1 = core.connect(addr1);
 
        // Convert the 2 ETH to Farm Token(s)
-       const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, overrides)).wait();
+       const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
 
        // Check if the txn is successful
        expect(status).to.equal(1);
