@@ -65,6 +65,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/token/IWETH.sol";
@@ -73,8 +74,9 @@ import "./interfaces/uniswap/IUniswapV2.sol";
 import "./interfaces/uniswap/IUniswapFactory.sol";
 
 contract WrapAndUnWrap is OwnableUpgradeable {
-    using SafeMath
-    for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
     //  address payable public owner;
     //placehodler token address for specifying eth tokens
     address public ETH_TOKEN_ADDRESS;
@@ -131,18 +133,16 @@ contract WrapAndUnWrap is OwnableUpgradeable {
 
         if (destinationTokens.length == 1) {
             if (sourceToken != ETH_TOKEN_ADDRESS) {
-                require(
-                    sToken.transferFrom(msg.sender, address(this), amount),
-                    "You have not approved this contract or do not have enough token for this transfer 1"
-                );
+                sToken.safeTransferFrom(msg.sender, address(this), amount);
+
                 if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
-                    sToken.approve(uniAddress, amount.mul(3));
+                    sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
                 }
             }
 
             conductUniswap(sourceToken, destinationTokens[0], amount, userSlippageTolerance);
             uint256 thisBalance = dToken.balanceOf(address(this));
-            dToken.transfer(msg.sender, thisBalance);
+            dToken.safeTransfer(msg.sender, thisBalance);
             return (destinationTokens[0], thisBalance);
         } else {
             bool updatedweth = false;
@@ -156,12 +156,10 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             }
 
             if (sourceToken != ETH_TOKEN_ADDRESS && updatedweth == false) {
-                require(
-                    sToken.transferFrom(msg.sender, address(this), amount),
-                    "You have not approved this contract or do not have enough token for this transfer  2"
-                );
+                sToken.safeTransferFrom(msg.sender, address(this), amount);
+
                 if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
-                    sToken.approve(uniAddress, amount.mul(3));
+                    sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
                 }
             }
 
@@ -193,11 +191,11 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
             if (dToken.allowance(address(this), uniAddress) < dTokenBalance.mul(2)) {
-                dToken.approve(uniAddress, dTokenBalance.mul(3));
+                dToken.safeIncreaseAllowance(uniAddress, dTokenBalance.mul(3));
             }
 
             if (dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)) {
-                dToken2.approve(uniAddress, dTokenBalance2.mul(3));
+                dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2.mul(3));
             }
 
             (, , uint256 liquidityCoins) =
@@ -222,12 +220,12 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             if (fee > 0) {
                 uint256 totalFee = (thisBalance.mul(fee)).div(10000);
                 if (totalFee > 0) {
-                    lpToken.transfer(owner(), totalFee);
+                    lpToken.safeTransfer(owner(), totalFee);
                 }
                 thisBalance = lpToken.balanceOf(address(this));
-                lpToken.transfer(msg.sender, thisBalance);
+                lpToken.safeTransfer(msg.sender, thisBalance);
             } else {
-                lpToken.transfer(msg.sender, thisBalance);
+                lpToken.safeTransfer(msg.sender, thisBalance);
             }
 
             // Transfer any change to changeRecipient (from a pair imbalance. Should never be more than a few basis points)
@@ -236,10 +234,10 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 changeRecipient = owner();
             }
             if (dToken.balanceOf(address(this)) > 0) {
-                dToken.transfer(changeRecipient, dToken.balanceOf(address(this)));
+                dToken.safeTransfer(changeRecipient, dToken.balanceOf(address(this)));
             }
             if (dToken2.balanceOf(address(this)) > 0) {
-                dToken2.transfer(changeRecipient, dToken2.balanceOf(address(this)));
+                dToken2.safeTransfer(changeRecipient, dToken2.balanceOf(address(this)));
             }
 
             return (thisPairAddress, thisBalance);
@@ -285,10 +283,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         IERC20 dToken = IERC20(destinationToken);
 
         if (sourceToken != ETH_TOKEN_ADDRESS) {
-            require(
-                sToken.transferFrom(msg.sender, address(this), amount),
-                "You have not approved this contract or do not have enough token for this transfer  3 unwrapping"
-            );
+            sToken.safeTransferFrom(msg.sender, address(this), amount);
         }
 
         ILPERC20 thisLpInfo = ILPERC20(sourceToken);
@@ -296,7 +291,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
 
         if (lpTokenAddressToPairs[sourceToken].length != 0) {
             if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
-                sToken.approve(uniAddress, amount.mul(3));
+                sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
 
             uniswapExchange.removeLiquidity(
@@ -316,11 +311,11 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
             if (pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)) {
-                pToken1.approve(uniAddress, pTokenBalance.mul(3));
+                pToken1.safeIncreaseAllowance(uniAddress, pTokenBalance.mul(3));
             }
 
             if (pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)) {
-                pToken2.approve(uniAddress, pTokenBalance2.mul(3));
+                pToken2.safeIncreaseAllowance(uniAddress, pTokenBalance2.mul(3));
             }
 
             if (lpTokenAddressToPairs[sourceToken][0] != destinationToken) {
@@ -358,25 +353,25 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 if (fee > 0) {
                     uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                     if (totalFee > 0) {
-                        dToken.transfer(owner(), totalFee);
+                        dToken.safeTransfer(owner(), totalFee);
                     }
                     destinationTokenBalance = dToken.balanceOf(address(this));
-                    dToken.transfer(msg.sender, destinationTokenBalance);
+                    dToken.safeTransfer(msg.sender, destinationTokenBalance);
                 } else {
-                    dToken.transfer(msg.sender, destinationTokenBalance);
+                    dToken.safeTransfer(msg.sender, destinationTokenBalance);
                 }
             }
 
             return destinationTokenBalance;
         } else {
             if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
-                sToken.approve(uniAddress, amount.mul(3));
+                sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
             if (sourceToken != destinationToken) {
                 conductUniswap(sourceToken, destinationToken, amount, userSlippageTolerance);
             }
             uint256 destinationTokenBalance = dToken.balanceOf(address(this));
-            dToken.transfer(msg.sender, destinationTokenBalance);
+            dToken.safeTransfer(msg.sender, destinationTokenBalance);
             return destinationTokenBalance;
         }
     }
@@ -562,10 +557,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
-            require(
-                token_.transfer(destination, amount),
-                "Token transfer failed"
-            );
+            token_.safeTransfer(destination, amount);
         }
         return true;
     }
