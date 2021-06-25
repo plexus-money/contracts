@@ -41,11 +41,11 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         expect(ethbalance).to.be.gt(3);
     });
 
-
      // Conversions From ETH
      it('Should convert 2 ETH to Farm token from harvest.finance via Uniswap', async () => {
 
         const zeroAddress = process.env.ZERO_ADDRESS;
+        const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
   
         // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -57,7 +57,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         };
   
         // Convert the 2 ETH to Farm Token(s)
-        const { status } = await (await wrapper.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, overrides)).wait();
+        const { status } = await (await wrapper.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -79,10 +79,11 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         expect(ethbalance).to.be.lt(10000);
   
       });
-  
+
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
   
         const zeroAddress = process.env.ZERO_ADDRESS;
+        const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
   
         // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -94,7 +95,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         };
   
         // Convert the 2 ETH to Dai Token(s)
-        const { status } = await (await wrapper.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, overrides)).wait();
+        const { status } = await (await wrapper.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -120,6 +121,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
       it('Should convert 2 ETH to Pickle Token(s) via Uniswap', async () => {
   
         const zeroAddress = process.env.ZERO_ADDRESS;
+        const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
   
         // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -131,7 +133,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
         };
   
         // Convert the 2 ETH to Pickle Token(s)
-        const { status } = await (await wrapper.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, overrides)).wait();
+        const { status } = await (await wrapper.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);

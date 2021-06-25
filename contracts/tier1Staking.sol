@@ -3,6 +3,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/IPlexusOracle.sol";
@@ -12,8 +13,9 @@ import "./interfaces/staking/ITier2Staking.sol";
 // Tier1FarmController contract on Mainnet: 0x97b00db19bAe93389ba652845150CAdc597C6B2F
 
 contract Tier1FarmController is OwnableUpgradeable {
-    using SafeMath
-    for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
     address payable public admin;
     address ETH_TOKEN_ADDRESS;
     mapping (string => address) public tier2StakingContracts;
@@ -32,6 +34,11 @@ contract Tier1FarmController is OwnableUpgradeable {
         farmName = 'Tier1Aggregator';
         tier2StakingContracts["FARM"] = _tier2StakingContracts_farm;
         updateOracleAddress(_oracleAddress);
+    }
+
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
+        _;
     }
 
     modifier onlyAdmin {
@@ -84,17 +91,14 @@ contract Tier1FarmController is OwnableUpgradeable {
         address tokenAddress,
         uint256 amount,
         address payable onBehalfOf
-    ) public payable onlyAdmin returns (bool) {
+    ) public payable onlyAdmin nonZeroAmount(amount) returns (bool) {
         address tier2Contract = tier2StakingContracts[tier2ContractName];
         IERC20 thisToken = IERC20(tokenAddress);
-        require(
-            thisToken.transferFrom(msg.sender, address(this), amount),
-            "Not enough tokens to transferFrom or no approval"
-        );
+        thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         // approve the tier2 contract to handle tokens from this account
-        thisToken.approve(tier2Contract, 0);
-        thisToken.approve(tier2Contract, amount.mul(100));
+        thisToken.safeIncreaseAllowance(tier2Contract, 0);
+        thisToken.safeIncreaseAllowance(tier2Contract, amount.mul(100));
 
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
 
@@ -116,7 +120,7 @@ contract Tier1FarmController is OwnableUpgradeable {
         address tokenAddress,
         uint256 amount,
         address payable onBehalfOf
-    ) public payable onlyAdmin returns (bool) {
+    ) public payable onlyAdmin nonZeroAmount(amount) returns (bool) {
         address tier2Contract = tier2StakingContracts[tier2ContractName];
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         tier2Con.withdraw(tokenAddress, amount, onBehalfOf);
@@ -148,7 +152,7 @@ contract Tier1FarmController is OwnableUpgradeable {
         address token,
         uint256 amount,
         address payable destination
-    ) public onlyOwner returns (bool) {
+    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         tier2Con.adminEmergencyWithdrawTokens(token, amount, destination);
         return true;
@@ -158,15 +162,12 @@ contract Tier1FarmController is OwnableUpgradeable {
         address token,
         uint256 amount,
         address payable destination
-    ) public onlyOwner returns (bool) {
+    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
         if (address(token) == ETH_TOKEN_ADDRESS) {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
-            require(
-                token_.transfer(destination, amount),
-                "Token transfer failed"
-            );
+            token_.safeTransfer(destination, amount);
         }
 
         return true;
@@ -189,6 +190,7 @@ contract Tier1FarmController is OwnableUpgradeable {
         address token
     ) external view returns (uint256) {
         address tier2Contract = tier2StakingContracts[tier2ContractName];
+        IERC20 thisToken = IERC20(token);
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         uint256 balance = tier2Con.depositBalances(_owner, token);
         return balance;

@@ -14,7 +14,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
   const tier2ContractName = "DAI";
   const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
   const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
-  const unitAmount = "200";
+  const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {
@@ -73,7 +73,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
     it('Should convert 2 ETH to DAI Token from MakerDao', async () => {
 
        const zeroAddress = process.env.ZERO_ADDRESS;
-
+       const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
        // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
     
@@ -86,7 +86,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
        let coreAsSigner1 = core.connect(addr1);
 
        // Convert the 2 ETH to Dai Token(s)
-       const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, overrides)).wait();
+       const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
 
        // Check if the txn is successful
        expect(status).to.equal(1);
