@@ -8,13 +8,15 @@ pragma solidity >=0.8.0 <0.9.0;
 // Tier2FarmController contract on Mainnet: 0x618fDCFF3Cca243c12E6b508D9d8a6fF9018325c
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/staking/IStaking3.sol";
 
 contract Tier2FarmController is OwnableUpgradeable {
-    using SafeMath
-    for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
     //address public platformToken = 0xa0246c9032bC3A600820415aE600c6388619A14D;
     //address public tokenStakingContract = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
     address ETH_TOKEN_ADDRESS;
@@ -66,18 +68,15 @@ contract Tier2FarmController is OwnableUpgradeable {
         address onBehalfOf
     ) public payable onlyOwner returns (bool) {
         IERC20 thisToken = IERC20(tokenAddress);
-        require(
-            thisToken.transferFrom(msg.sender, address(this), amount),
-            "Not enough tokens to transferFrom or no approval"
-        );
+        thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress] + amount;
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
 
         if (approvedAmount < amount) {
-            thisToken.approve(tokenToFarmMapping[tokenAddress], 0);
-            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(100));
+            thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
+            thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(100));
         }
         stake(amount, onBehalfOf, tokenAddress);
 
@@ -93,8 +92,8 @@ contract Tier2FarmController is OwnableUpgradeable {
         address tokenAddress
     ) internal returns (bool) {
         IERC20 tokenStaked = IERC20(tokenAddress);
-        tokenStaked.approve(tokenToFarmMapping[tokenAddress], 0);
-        tokenStaked.approve(tokenToFarmMapping[tokenAddress], amount.mul(2));
+        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
+        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
 
         IStaking3 staker = IStaking3(tokenToFarmMapping[tokenAddress]);
         staker.stake(amount);
@@ -174,12 +173,10 @@ contract Tier2FarmController is OwnableUpgradeable {
             "For some reason numberTokensPlusRewardsForUserMinusCommission is zero"
         );
 
-        require(
-            thisToken.transfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission),
-            "You dont have enough tokens inside this contract to withdraw from deposits"
-        );
+        thisToken.safeTransfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission);
+
         if (numberTokensPlusRewardsForUserMinusCommission > 0) {
-            thisToken.transfer(owner(), commissionForDAO1);
+            thisToken.safeTransfer(owner(), commissionForDAO1);
         }
 
         uint256 remainingBalance = thisToken.balanceOf(address(this));
@@ -211,10 +208,7 @@ contract Tier2FarmController is OwnableUpgradeable {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
-            require(
-				token_.transfer(destination, amount),
-				"Token transfer failed"
-			);
+			token_.safeTransfer(destination, amount);
         }
 
         return true;

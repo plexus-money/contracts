@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/IPlexusOracle.sol";
 import "./interfaces/staking/ITier1Staking.sol";
@@ -14,6 +15,8 @@ import "./interfaces/token/IWETH.sol";
 // Core contract on Mainnet: 0x7a72b2C51670a3D77d4205C2DB90F6ddb09E4303
 
 contract Core is OwnableUpgradeable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     // globals
     address public oracleAddress;
     address public converterAddress;
@@ -35,6 +38,11 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         wethToken = IWETH(WETH_TOKEN_ADDRESS);
         approvalAmount = 1000000000000000000000000000000;
         setConverterAddress(_converter);
+    }
+
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
+        _;
     }
 
     fallback() external payable {
@@ -69,7 +77,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) public payable nonReentrant returns (bool) {
+    ) public payable nonReentrant nonZeroAmount(amount) returns (bool) {
         IERC20 token;
         if (tokenAddress == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
             wethToken.deposit{value: msg.value}();
@@ -77,10 +85,10 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
             token = IERC20(tokenAddress);
         } else {
             token = IERC20(tokenAddress);
-            token.transferFrom(msg.sender, address(this), amount);
+            token.safeTransferFrom(msg.sender, address(this), amount);
         }
-        token.approve(stakingAddress, 0);
-        token.approve(stakingAddress, approvalAmount);
+        token.safeIncreaseAllowance(stakingAddress, 0);
+        token.safeIncreaseAllowance(stakingAddress, approvalAmount);
         bool result = staking.deposit(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your deposit request.");
         return result;
@@ -90,7 +98,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) public payable nonReentrant returns (bool) {
+    ) public payable nonReentrant nonZeroAmount(amount) returns (bool) {
         bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request.");
         return result;
@@ -101,19 +109,16 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address[] memory destinationTokens,
         uint256 amount,
         uint256 userSlippageTolerance
-    ) public payable returns (address, uint256) {
+    ) public payable nonZeroAmount(amount) returns (address, uint256) {
         if (sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS) {
             IERC20 srcToken = IERC20(sourceToken);
-            require(
-                srcToken.transferFrom(msg.sender, address(this), amount),
-                "You must approve this contract or have enough tokens to do this conversion"
-            );
+            srcToken.safeTransferFrom(msg.sender, address(this), amount);
         }
         (address destinationTokenAddress, uint256 _amount) =
             converter.wrap{value: msg.value}(sourceToken, destinationTokens, amount, userSlippageTolerance);
 
         IERC20 dstToken = IERC20(destinationTokenAddress);
-        dstToken.transfer(msg.sender, _amount);
+        dstToken.safeTransfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
     }
 
@@ -126,7 +131,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     ) public payable returns (uint256) {
         uint256 _amount = converter.unwrap{value: msg.value}(sourceToken, destinationToken, amount, userSlippageTolerance);
         IERC20 token = IERC20(destinationToken);
-        token.transfer(msg.sender, _amount);
+        token.safeTransfer(msg.sender, _amount);
         return _amount;
     }
 
@@ -195,10 +200,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
-            require(
-                token_.transfer(destination, amount),
-                "Token Transfer Failed."
-            );
+            token_.safeTransfer(destination, amount);
         }
 
         return true;

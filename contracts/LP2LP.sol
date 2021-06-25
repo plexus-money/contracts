@@ -68,12 +68,14 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/IWrapper.sol";
 
 contract LP2LP is OwnableUpgradeable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     // placehodler token address for specifying eth tokens
     address public ETH_TOKEN_ADDRESS;
@@ -88,6 +90,11 @@ contract LP2LP is OwnableUpgradeable {
         bancorLPTokenAddress = _bancorLPToken;
     }
 
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
+        _;
+    }
+
     fallback() external payable {
     }
 
@@ -100,13 +107,10 @@ contract LP2LP is OwnableUpgradeable {
         address fromLPByAddress,
         address[] memory toLPTokensByTokens,
         uint256 amountFrom
-    ) public returns (uint256) {
+    ) public nonZeroAmount(amountFrom) returns (uint256) {
         IERC20 tokenFrom = IERC20(fromLPByAddress);
-        
-        require(
-            tokenFrom.transferFrom(msg.sender, address(this), amountFrom),
-            "You need to approve this contract and have the appropriate balance to do this"
-        );
+        tokenFrom.safeTransferFrom(msg.sender, address(this), amountFrom);
+
         require(
             platforms[platformFrom] != address(0x0),
             "The platform does not exist. Was it created by admin with updatePlatforms?"
@@ -121,7 +125,7 @@ contract LP2LP is OwnableUpgradeable {
         if (platformTo != 3) {
             IERC20 tokensRecieved = IERC20(lpRec);
             currentTokenBalance = tokensRecieved.balanceOf(address(this));
-            tokensRecieved.transfer(msg.sender, currentTokenBalance);
+            tokensRecieved.safeTransfer(msg.sender, currentTokenBalance);
         } else {
             IERC20 tokensRecieved = IERC20(bancorLPTokenAddress);
             currentTokenBalance = tokensRecieved.balanceOf(msg.sender);

@@ -3,6 +3,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/IPlexusOracle.sol";
@@ -10,8 +11,9 @@ import "./interfaces/IPlexusOracle.sol";
 // TokenRewards contract on Mainnet: 0x2ae7b37ab144b5f8c803546b83e81ad297d8c2c4
 
 contract TokenRewards is OwnableUpgradeable {
-    using SafeMath
-    for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20Metadata;
+
     address public stakingTokensAddress;
     address public stakingLPTokensAddress;
     uint256 public tokensInRewardsReserve;
@@ -41,6 +43,11 @@ contract TokenRewards is OwnableUpgradeable {
             msg.sender == oracle.getAddress("TIER1"),
             "Only oracles TIER1 can call this function."
         );
+        _;
+    }
+
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
         _;
     }
 
@@ -88,18 +95,14 @@ contract TokenRewards is OwnableUpgradeable {
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) public returns (bool) {
+    ) public nonZeroAmount(amount) returns (bool) {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted to earn rewards"
         );
 
         IERC20Metadata token = IERC20Metadata(tokenAddress);
-
-        require(
-            token.transferFrom(msg.sender, address(this), amount),
-            "The msg.sender does not have enough tokens or has not approved token transfers from this address"
-        );
+        token.safeTransferFrom(msg.sender, address(this), amount);
 
         bool redepositing = false;
 
@@ -124,7 +127,7 @@ contract TokenRewards is OwnableUpgradeable {
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) public onlyTier1 returns (bool) {
+    ) public onlyTier1 nonZeroAmount(amount) returns (bool) {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted to earn rewards"
@@ -192,16 +195,10 @@ contract TokenRewards is OwnableUpgradeable {
             rewards = rewards.div(10**decimalDiff);
         }
 
-        require(
-            principalToken.transfer(
-                recipient,
-                tokenDeposits[onBehalfOf][tokenAddress]
-            ),
-            "There are not enough tokens in the pool to return principal. Contact the pool owner."
-        );
+        principalToken.safeTransfer(recipient, tokenDeposits[onBehalfOf][tokenAddress]);
 
         // not requiring this below, as we need to ensure at the very least the user gets their deposited tokens above back.
-        rewardToken.transfer(recipient, rewards);
+        rewardToken.safeTransfer(recipient, rewards);
 
         tokenDeposits[onBehalfOf][tokenAddress] = 0;
         depositBalances[onBehalfOf][tokenAddress] = [block.timestamp, 0];
@@ -251,7 +248,7 @@ contract TokenRewards is OwnableUpgradeable {
             rewards = rewards.div(10**decimalDiff);
         }
 
-        rewardToken.transfer(recipient, rewards);
+        rewardToken.safeTransfer(recipient, rewards);
 
         tokenDepositsDelegated[onBehalfOf][tokenAddress] = 0;
         depositBalancesDelegated[onBehalfOf][tokenAddress] = [block.timestamp, 0];
@@ -268,7 +265,7 @@ contract TokenRewards is OwnableUpgradeable {
             destination.transfer(amount);
         } else {
             IERC20Metadata token_ = IERC20Metadata(token);
-            require(token_.transfer(destination, amount));
+            token_.safeTransfer(destination, amount);
         }
 
         return true;

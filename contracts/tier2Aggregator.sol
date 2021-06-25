@@ -3,12 +3,14 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/staking/IStaking2.sol";
 
 contract Tier2AggregatorFarmController is OwnableUpgradeable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     address public platformToken;
     address public tokenStakingContract;
@@ -24,6 +26,7 @@ contract Tier2AggregatorFarmController is OwnableUpgradeable {
 
     constructor() payable {
     }
+
     function initialize(address _tokenStakingContract, address _platformToken) initializeOnceOnly public {
         ETH_TOKEN_ADDRESS  = address(0x0);
         commission  = 400; // Default is 4 percent
@@ -72,16 +75,13 @@ contract Tier2AggregatorFarmController is OwnableUpgradeable {
         }
 
         IERC20 thisToken = IERC20(tokenAddress);
-        require(
-            thisToken.transferFrom(msg.sender, address(this), amount),
-            "Not enough tokens to transferFrom or no approval"
-        );
+        thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress] + amount;
 
         uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
         if (approvedAmount < amount) {
-            thisToken.approve(tokenToFarmMapping[tokenAddress], amount.mul(10000000));
+            thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(10000000));
         }
         stake(amount, onBehalfOf, tokenAddress);
 
@@ -174,12 +174,10 @@ contract Tier2AggregatorFarmController is OwnableUpgradeable {
             "For some reason numberTokensPlusRewardsForUserMinusCommission is zero"
         );
 
-        require(
-            thisToken.transfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission),
-            "You dont have enough tokens inside this contract to withdraw from deposits"
-        );
+        thisToken.safeTransfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission);
+
         if (numberTokensPlusRewardsForUserMinusCommission > 0) {
-            thisToken.transfer(owner(), commissionForDAO1);
+            thisToken.safeTransfer(owner(), commissionForDAO1);
         }
 
         uint256 remainingBalance = thisToken.balanceOf(address(this));
@@ -210,10 +208,7 @@ contract Tier2AggregatorFarmController is OwnableUpgradeable {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
-            require(
-                token_.transfer(destination, amount), 
-                "Token transfer failed"
-                );
+            token_.safeTransfer(destination, amount);
         }
 
         return true;
