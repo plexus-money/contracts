@@ -45,6 +45,7 @@
                                                                                                         /$$  | $$
                                                                                                        |  $$$$$$/
                                                                                                        \______/
+
 */
 
 
@@ -61,8 +62,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -71,41 +70,58 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
 import "./interfaces/token/IWETH.sol";
 import "./interfaces/token/ILPERC20.sol";
-import "./interfaces/sushiswap/ISushiV2.sol";
+import "./interfaces/uniswap/IUniswapV2.sol";
 import "./interfaces/uniswap/IUniswapFactory.sol";
 
-contract WrapAndUnWrapSushi is OwnableUpgradeable {
+contract WrapAndUnWrap is OwnableUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    //  address payable public owner;
     //placehodler token address for specifying eth tokens
     address public ETH_TOKEN_ADDRESS;
     address public WETH_TOKEN_ADDRESS;
-    IWETH private wethToken;
+    bool public changeRecpientIsOwner;
+    address private uniAddress;
+    address private uniFactoryAddress;
     uint256 private approvalAmount;
     uint256 private longTimeFromNow;
-    address private sushiAddress;
-    address private uniFactoryAddress;
-    ISushiV2 private sushiExchange;
+    uint256 public fee;
+    uint256 public maxfee;
+    IWETH private wethToken;
+    IUniswapV2 private uniswapExchange;
     IUniswapFactory private factory;
     mapping (address => address[]) public lpTokenAddressToPairs;
     mapping(string=>address) public stablecoins;
     mapping(address=>mapping(address=>address[])) public presetPaths;
-    bool public changeRecpientIsOwner;
-    uint256 public fee;
-    uint256 public maxfee;
 
     constructor() payable {
     }
 
-    function initialize(address _weth, address _sushiAddress, address _uniFactoryAddress, address _dai, address _usdt, address _usdc) initializeOnceOnly public {
-        ETH_TOKEN_ADDRESS  = address(0x0);
+    fallback() external payable {
+    }
+
+    receive() external payable {
+    }
+
+    function initialize(
+        address _weth, 
+        address _uniAddress, 
+        address _uniFactoryAddress, 
+        address _dai, 
+        address _usdt, 
+        address _usdc
+    ) 
+        public 
+        initializeOnceOnly 
+    {
+        ETH_TOKEN_ADDRESS = address(0x0);
         WETH_TOKEN_ADDRESS = _weth;
         wethToken = IWETH(WETH_TOKEN_ADDRESS);
         approvalAmount = 1000000000000000000000000000000;
         longTimeFromNow = 1000000000000000000000000000;
-        sushiAddress = _sushiAddress;
-        sushiExchange = ISushiV2(sushiAddress);
+        uniAddress = _uniAddress;
+        uniswapExchange = IUniswapV2(uniAddress);
         uniFactoryAddress = _uniFactoryAddress;
         factory = IUniswapFactory(uniFactoryAddress);
         fee = 0;
@@ -116,15 +132,99 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         changeRecpientIsOwner = false;
     }
 
-    modifier nonZeroAmount(uint256 amount) {
-        require(amount > 0, "Amount specified is zero");
-        _;
+    function updateStableCoinAddress(
+        string memory coinName, 
+        address newAddress
+    ) 
+        external 
+        onlyOwner 
+        returns (bool)
+    {
+        stablecoins[coinName] = newAddress;
+        return true;
     }
 
-    fallback() external payable {
+    function updatePresetPaths(
+        address sellToken,
+        address buyToken,
+        address[] memory newPath
+    ) 
+        external 
+        onlyOwner 
+        returns (bool) 
+    {
+        presetPaths[sellToken][buyToken] = newPath;
+        return true;
     }
 
-    receive() external payable {
+    // Owner can turn on ability to collect a small fee from trade imbalances on LP conversions
+    function updateChangeRecipientBool(
+        bool changeRecpientIsOwnerBool
+    )
+        external
+        onlyOwner
+        returns (bool)
+    {
+        changeRecpientIsOwner = changeRecpientIsOwnerBool;
+        return true;
+    }
+
+    function updateUniswapExchange(address newAddress) external onlyOwner returns (bool) {
+        uniswapExchange = IUniswapV2(newAddress);
+        uniAddress = newAddress;
+        return true;
+    }
+
+    function updateUniswapFactory(address newAddress) external onlyOwner returns (bool) {
+        factory = IUniswapFactory(newAddress);
+        uniFactoryAddress = newAddress;
+        return true;
+    }
+
+    function adminEmergencyWithdrawTokens(
+        address token,
+        uint256 amount,
+        address payable destination
+    )
+        public 
+        onlyOwner 
+        returns (bool) 
+    {
+        if (address(token) == ETH_TOKEN_ADDRESS) {
+            destination.transfer(amount);
+        } else {
+            IERC20 token_ = IERC20(token);
+            token_.safeTransfer(destination, amount);
+        }
+        return true;
+    }
+
+    function setFee(uint256 newFee) public onlyOwner returns (bool) {
+        require(
+            newFee <= maxfee,
+            "Admin cannot set the fee higher than the current maxfee"
+        );
+        fee = newFee;
+        return true;
+    }
+
+    function setMaxFee(uint256 newMax) public onlyOwner returns (bool) {
+        require(maxfee == 0, "Admin can only set max fee once and it is perm");
+        maxfee = newMax;
+        return true;
+    }
+
+    function addLPPair(
+        address lpAddress,
+        address token1,
+        address token2
+    ) 
+        public 
+        onlyOwner 
+        returns (bool) 
+    {
+        lpTokenAddressToPairs[lpAddress] = [token1, token2];
+        return true;
     }
 
     function wrap(
@@ -132,16 +232,20 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address[] memory destinationTokens,
         uint256 amount,
         uint256 userSlippageTolerance
-    ) public payable returns (address, uint256) {
+    ) 
+        public 
+        payable 
+        returns (address, uint256) 
+    {
         IERC20 sToken = IERC20(sourceToken);
         IERC20 dToken = IERC20(destinationTokens[0]);
 
         if (destinationTokens.length == 1) {
             if (sourceToken != ETH_TOKEN_ADDRESS) {
-                    sToken.safeTransferFrom(msg.sender, address(this), amount);
+                sToken.safeTransferFrom(msg.sender, address(this), amount);
 
-                if (sToken.allowance(address(this), sushiAddress) < amount.mul(2)) {
-                    sToken.safeIncreaseAllowance(sushiAddress, amount.mul(3));
+                if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
+                    sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
                 }
             }
 
@@ -162,8 +266,9 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
 
             if (sourceToken != ETH_TOKEN_ADDRESS && updatedweth == false) {
                 sToken.safeTransferFrom(msg.sender, address(this), amount);
-                if (sToken.allowance(address(this), sushiAddress) < amount.mul(2)) {
-                    sToken.safeIncreaseAllowance(sushiAddress, amount.mul(3));
+
+                if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
+                    sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
                 }
             }
 
@@ -173,7 +278,6 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             if (destinationTokens[1] == ETH_TOKEN_ADDRESS) {
                 destinationTokens[1] = WETH_TOKEN_ADDRESS;
             }
-
             if (sourceToken != destinationTokens[0]) {
                 conductUniswap(
                     sourceToken,
@@ -182,7 +286,6 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     userSlippageTolerance
                 );
             }
-
             if (sourceToken != destinationTokens[1]) {
                 conductUniswap(
                     sourceToken,
@@ -196,16 +299,16 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             uint256 dTokenBalance = dToken.balanceOf(address(this));
             uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-            if (dToken.allowance(address(this), sushiAddress) < dTokenBalance.mul(2)) {
-                dToken.safeIncreaseAllowance(sushiAddress, dTokenBalance.mul(3));
+            if (dToken.allowance(address(this), uniAddress) < dTokenBalance.mul(2)) {
+                dToken.safeIncreaseAllowance(uniAddress, dTokenBalance.mul(3));
             }
 
-            if (dToken2.allowance(address(this), sushiAddress) < dTokenBalance2.mul(2)) {
-                dToken2.safeIncreaseAllowance(sushiAddress, dTokenBalance2.mul(3));
+            if (dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)) {
+                dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2.mul(3));
             }
 
             (, , uint256 liquidityCoins) =
-                sushiExchange.addLiquidity(
+                uniswapExchange.addLiquidity(
                     destinationTokens[0],
                     destinationTokens[1],
                     dTokenBalance,
@@ -216,9 +319,11 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     longTimeFromNow
                 );
 
-            address thisPairAddress = factory.getPair(destinationTokens[0], destinationTokens[1]);
+            address thisPairAddress =
+                factory.getPair(destinationTokens[0], destinationTokens[1]);
             IERC20 lpToken = IERC20(thisPairAddress);
             lpTokenAddressToPairs[thisPairAddress] = [destinationTokens[0], destinationTokens[1]];
+
             uint256 thisBalance = lpToken.balanceOf(address(this));
 
             if (fee > 0) {
@@ -232,7 +337,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 lpToken.safeTransfer(msg.sender, thisBalance);
             }
 
-            // Transfer any change to changeRecipient (from a pair imbalance. Should never be more than a few basis points)
+            // Transfer any change to changeRecipient 
+            // (from a pair imbalance. Should never be more than a few basis points)
             address changeRecipient = msg.sender;
             if (changeRecpientIsOwner == true) {
                 changeRecipient = owner();
@@ -248,33 +354,16 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
-    function updateStableCoinAddress(string memory coinName, address newAddress) public onlyOwner returns (bool) {
-        stablecoins[coinName] = newAddress;
-        return true;
-    }
-
-    function updatePresetPaths(
-        address sellToken,
-        address buyToken,
-        address[] memory newPath
-    ) public onlyOwner returns (bool) {
-        presetPaths[sellToken][buyToken] = newPath;
-        return true;
-    }
-
-    // Owner can turn on ability to collect a small fee from trade imbalances on LP conversions
-    function updateChangeRecipientBool(bool changeRecpientIsOwnerBool) public onlyOwner returns (bool)
-    {
-        changeRecpientIsOwner = changeRecpientIsOwnerBool;
-        return true;
-    }
-
     function unwrap(
         address sourceToken,
         address destinationToken,
         uint256 amount,
         uint256 userSlippageTolerance
-    ) public payable returns (uint256) {
+    ) 
+        public 
+        payable 
+        returns (uint256) 
+    {
         address originalDestinationToken = destinationToken;
         IERC20 sToken = IERC20(sourceToken);
         if (destinationToken == ETH_TOKEN_ADDRESS) {
@@ -290,11 +379,11 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         lpTokenAddressToPairs[sourceToken] = [thisLpInfo.token0(), thisLpInfo.token1()];
 
         if (lpTokenAddressToPairs[sourceToken].length != 0) {
-            if (sToken.allowance(address(this), sushiAddress) < amount.mul(2)) {
-                sToken.safeIncreaseAllowance(sushiAddress, amount.mul(3));
+            if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
+                sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
 
-            sushiExchange.removeLiquidity(
+            uniswapExchange.removeLiquidity(
                 lpTokenAddressToPairs[sourceToken][0],
                 lpTokenAddressToPairs[sourceToken][1],
                 amount,
@@ -310,12 +399,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             uint256 pTokenBalance = pToken1.balanceOf(address(this));
             uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
 
-            if (pToken1.allowance(address(this), sushiAddress) < pTokenBalance.mul(2)) {
-                pToken1.safeIncreaseAllowance(sushiAddress, pTokenBalance.mul(3));
+            if (pToken1.allowance(address(this), uniAddress) < pTokenBalance.mul(2)) {
+                pToken1.safeIncreaseAllowance(uniAddress, pTokenBalance.mul(3));
             }
 
-            if (pToken2.allowance(address(this), sushiAddress) < pTokenBalance2.mul(2)) {
-                pToken2.safeIncreaseAllowance(sushiAddress, pTokenBalance2.mul(3));
+            if (pToken2.allowance(address(this), uniAddress) < pTokenBalance2.mul(2)) {
+                pToken2.safeIncreaseAllowance(uniAddress, pTokenBalance2.mul(3));
             }
 
             if (lpTokenAddressToPairs[sourceToken][0] != destinationToken) {
@@ -326,6 +415,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     userSlippageTolerance
                 );
             }
+
             if (lpTokenAddressToPairs[sourceToken][1] != destinationToken) {
                 conductUniswap(
                     lpTokenAddressToPairs[sourceToken][1],
@@ -340,8 +430,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             if (originalDestinationToken == ETH_TOKEN_ADDRESS) {
                 wethToken.withdraw(destinationTokenBalance);
                 if (fee > 0) {
-                    uint256 totalFee =
-                        (address(this).balance.mul(fee)).div(10000);
+                    uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
                     if (totalFee > 0) {
                         payable(owner()).transfer(totalFee);
                     }
@@ -351,8 +440,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 }
             } else {
                 if (fee > 0) {
-                    uint256 totalFee =
-                        (destinationTokenBalance.mul(fee)).div(10000);
+                    uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                     if (totalFee > 0) {
                         dToken.safeTransfer(owner(), totalFee);
                     }
@@ -365,8 +453,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
 
             return destinationTokenBalance;
         } else {
-            if (sToken.allowance(address(this), sushiAddress) < amount.mul(2)) {
-                sToken.safeIncreaseAllowance(sushiAddress, amount.mul(3));
+            if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
+                sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
             if (sourceToken != destinationToken) {
                 conductUniswap(sourceToken, destinationToken, amount, userSlippageTolerance);
@@ -377,58 +465,59 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
-    function updateSushiExchange(address newAddress) public onlyOwner returns (bool) {
-        sushiExchange = ISushiV2(newAddress);
-        sushiAddress = newAddress;
-        return true;
-    }
-
-    function updateUniswapFactory(address newAddress) public onlyOwner returns (bool) {
-        factory = IUniswapFactory(newAddress);
-        uniFactoryAddress = newAddress;
-        return true;
-    }
-
-    function conductUniswap(
-        address sellToken,
-        address buyToken,
-        uint256 amount,
-        uint256 userSlippageTolerance
-    ) internal returns (uint256 amounts1) {
-        if (sellToken == ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS) {
-            wethToken.deposit{value: msg.value}();
-        } else if (sellToken == address(0x0)) {
-            // address [] memory addresses = new address[](2);
-            address[] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
-            // addresses[0] = WETH_TOKEN_ADDRESS;
-            // addresses[1] = buyToken;
-            uint256 amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
-            sushiExchange.swapExactETHForTokens{value: msg.value}(
-                amountOutMin,
-                addresses,
-                address(this),
-                1000000000000000
-            );
-        } else if (sellToken == WETH_TOKEN_ADDRESS) {
-            wethToken.withdraw(amount);
-
-            // address [] memory addresses = new address[](2);
-            address[] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
-            // addresses[0] = WETH_TOKEN_ADDRESS;
-            // addresses[1] = buyToken;
-            uint256 amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
-            sushiExchange.swapExactETHForTokens{value: amount}(
-                amountOutMin,
-                addresses,
-                address(this),
-                1000000000000000
-            );
-        } else {
-            address[] memory addresses = getBestPath(sellToken, buyToken, amount);
-            uint256[] memory amounts = conductUniswapT4T(addresses, amount, userSlippageTolerance);
-            uint256 resultingTokens = amounts[amounts.length - 1];
-            return resultingTokens;
+    function getPriceFromUniswap(address[] memory theAddresses, uint256 amount)
+        public
+        view
+        returns (uint256[] memory amounts1) {
+        try uniswapExchange.getAmountsOut(
+            amount, 
+            theAddresses
+        ) returns (uint256[] memory amounts) {
+            return amounts;
+        } catch {
+            uint256[] memory amounts2 = new uint256[](2);
+            amounts2[0] = 0;
+            amounts2[1] = 0;
+            return amounts2;
         }
+    }
+
+    function getLPTokenByPair(
+        address token1, 
+        address token2
+    )
+        public 
+        view
+        returns (address lpAddr) 
+    {
+        address thisPairAddress = factory.getPair(token1, token2);
+        return thisPairAddress;
+    }
+
+    function getUserTokenBalance(
+        address userAddress, 
+        address tokenAddress
+    ) 
+        public 
+        view 
+        returns (uint256) 
+    {
+        IERC20 token = IERC20(tokenAddress);
+        return token.balanceOf(userAddress);
+    }
+
+    function getAmountOutMin(
+        address[] memory theAddresses, 
+        uint256 amount, 
+        uint256 userSlippageTolerance
+    ) 
+        public 
+        view 
+        returns (uint256) 
+    {
+        uint256[] memory assetAmounts = getPriceFromUniswap(theAddresses, amount);
+        require(userSlippageTolerance <= 100, "userSlippageTolerance can not be larger than 100");
+        return SafeMath.div(SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)), 100);
     }
 
     // Gets the best path to route the transaction on Uniswap
@@ -436,7 +525,11 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address sellToken,
         address buyToken,
         uint256 amount
-    ) public view returns (address[] memory) {
+    ) 
+        public 
+        view 
+        returns (address[] memory) 
+    {
         address[] memory defaultPath = new address[](2);
         defaultPath[0] = sellToken;
         defaultPath[1] = buyToken;
@@ -445,10 +538,18 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             return presetPaths[sellToken][buyToken];
         }
 
-        if (sellToken == stablecoins["DAI"] || sellToken == stablecoins["USDC"] || sellToken == stablecoins["USDT"]) {
+        if (
+            sellToken == stablecoins["DAI"] ||
+            sellToken == stablecoins["USDC"] ||
+            sellToken == stablecoins["USDT"]
+        ) {
             return defaultPath;
         }
-        if (buyToken == stablecoins["DAI"] || buyToken == stablecoins["USDC"] || buyToken == stablecoins["USDT"]) {
+        if (
+            buyToken == stablecoins["DAI"] ||
+            buyToken == stablecoins["USDC"] ||
+            buyToken == stablecoins["USDT"]
+        ) {
             return defaultPath;
         }
 
@@ -468,11 +569,11 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         usdtPath[1] = stablecoins["USDT"];
         usdtPath[2] = buyToken;
 
-        uint256 directPathOutput = getPriceFromSushiswap(defaultPath, amount)[1];
+        uint256 directPathOutput = getPriceFromUniswap(defaultPath, amount)[1];
 
-        uint256[] memory daiPathOutputRaw = getPriceFromSushiswap(daiPath, amount);
-        uint256[] memory usdtPathOutputRaw = getPriceFromSushiswap(usdtPath, amount);
-        uint256[] memory usdcPathOutputRaw = getPriceFromSushiswap(usdcPath, amount);
+        uint256[] memory daiPathOutputRaw = getPriceFromUniswap(daiPath, amount);
+        uint256[] memory usdtPathOutputRaw = getPriceFromUniswap(usdtPath, amount);
+        uint256[] memory usdcPathOutputRaw = getPriceFromUniswap(usdcPath, amount);
 
         // uint256 directPathOutput = directPathOutputRaw[directPathOutputRaw.length-1];
         uint256 daiPathOutput = daiPathOutputRaw[daiPathOutputRaw.length - 1];
@@ -515,84 +616,73 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
-    function getPriceFromSushiswap(address[] memory theAddresses, uint256 amount) public view returns (uint256[] memory amounts1) {
-        try sushiExchange.getAmountsOut(amount, theAddresses) returns (
-            uint256[] memory amounts
-        ) {
-            return amounts;
-        } catch {
-            uint256[] memory amounts2 = new uint256[](2);
-            amounts2[0] = 0;
-            amounts2[1] = 0;
-            return amounts2;
+    function conductUniswap(
+        address sellToken,
+        address buyToken,
+        uint256 amount,
+        uint256 userSlippageTolerance
+    ) 
+        internal 
+        returns (uint256 amounts1) 
+    {
+        if (sellToken == ETH_TOKEN_ADDRESS && buyToken == WETH_TOKEN_ADDRESS) {
+            wethToken.deposit{value: msg.value}();
+        } else if (sellToken == address(0x0)) {
+            // address[] memory addresses = new address[](2);
+            address[] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
+            // addresses[0] = WETH_TOKEN_ADDRESS;
+            // addresses[1] = buyToken;
+            uint256 amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            uniswapExchange.swapExactETHForTokens{value: msg.value}(
+                amountOutMin,
+                addresses,
+                address(this),
+                1000000000000000
+            );
+        } else if (sellToken == WETH_TOKEN_ADDRESS) {
+            wethToken.withdraw(amount);
+            // address[] memory addresses = new address[](2);
+            address[] memory addresses = getBestPath(WETH_TOKEN_ADDRESS, buyToken, amount);
+            // addresses[0] = WETH_TOKEN_ADDRESS;
+            // addresses[1] = buyToken;
+            uint256 amountOutMin = getAmountOutMin(addresses, amount, userSlippageTolerance);
+            uniswapExchange.swapExactETHForTokens{value: amount}(
+                amountOutMin,
+                addresses,
+                address(this),
+                1000000000000000
+            );
+        } else {
+            address[] memory addresses = getBestPath(sellToken, buyToken, amount);
+            uint256[] memory amounts = conductUniswapT4T(
+                addresses, 
+                amount, 
+                userSlippageTolerance
+            );
+            uint256 resultingTokens = amounts[amounts.length - 1];
+            return resultingTokens;
         }
     }
 
-    function getAmountOutMin(address  [] memory theAddresses, uint256 amount, uint256 userSlippageTolerance) public view returns (uint256) {
-        uint256 [] memory assetAmounts = getPriceFromSushiswap(theAddresses, amount);
-        require(userSlippageTolerance <= 100, 'userSlippageTolerance can not be larger than 100');
-        return SafeMath.div(SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)), 100);
-    }
-
-    function conductUniswapT4T(address[] memory theAddresses, uint256 amount, uint256 userSlippageTolerance) internal returns (uint256[] memory amounts1) {
+    function conductUniswapT4T(
+        address[] memory theAddresses, 
+        uint256 amount, 
+        uint256 userSlippageTolerance
+    ) 
+        internal 
+        returns (uint256[] memory amounts_) 
+    {
         uint256 deadline = 1000000000000000;
         uint256 amountOutMin = getAmountOutMin(theAddresses, amount, userSlippageTolerance);
         uint256[] memory amounts =
-            sushiExchange.swapExactTokensForTokens(
+            uniswapExchange.swapExactTokensForTokens(
                 amount,
                 amountOutMin,
                 theAddresses,
                 address(this),
                 deadline
             );
+
         return amounts;
-    }
-
-    function adminEmergencyWithdrawTokens(
-        address token,
-        uint256 amount,
-        address payable destination
-    ) public onlyOwner returns (bool) {
-        if (address(token) == ETH_TOKEN_ADDRESS) {
-            destination.transfer(amount);
-        } else {
-            IERC20 token_ = IERC20(token);
-			token_.safeTransfer(destination, amount);
-        }
-        return true;
-    }
-
-    function setFee(uint256 newFee) public onlyOwner returns (bool) {
-        require(
-            newFee <= maxfee,
-            "Admin cannot set the fee higher than the current maxfee"
-        );
-        fee = newFee;
-        return true;
-    }
-
-    function setMaxFee(uint256 newMax) public onlyOwner returns (bool) {
-        require(maxfee == 0, "Admin can only set max fee once and it is perm");
-        maxfee = newMax;
-        return true;
-    }
-
-    function addLPPair(
-        address lpAddress,
-        address token1,
-        address token2
-    ) public onlyOwner returns (bool) {
-        lpTokenAddressToPairs[lpAddress] = [token1, token2];
-        return true;
-    }
-
-    function getLPTokenByPair(address token1, address token2) public view returns (address lpAddr) {
-        address thisPairAddress = factory.getPair(token1, token2);
-        return thisPairAddress;
-    }
-
-    function getUserTokenBalance(address userAddress, address tokenAddress) public view returns (uint256) {
-        IERC20 token = IERC20(tokenAddress);
-        return token.balanceOf(userAddress);
     }
 }

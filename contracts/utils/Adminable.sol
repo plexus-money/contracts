@@ -31,13 +31,6 @@ abstract contract Adminable is Context {
     }
 
     /**
-     * @dev Returns the address of the current admin.
-     */
-    function admin() public view virtual returns (address) {
-        return _admin;
-    }
-
-    /**
      * @dev Throws if called by any account other than the admin.
      */
     modifier onlyAdmin() {
@@ -65,5 +58,12 @@ abstract contract Adminable is Context {
         require(newAdmin != address(0), "Adminable: new admin is the zero address");
         emit AdminTransferred(_admin, newAdmin);
         _admin = newAdmin;
+    }
+
+    /**
+     * @dev Returns the address of the current admin.
+     */
+    function admin() public view virtual returns (address) {
+        return _admin;
     }
 }

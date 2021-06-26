@@ -4,21 +4,36 @@ pragma solidity >=0.8.0 <0.9.0;
 
 interface ITier2Staking {
     // Staked balance info
-    function depositBalances(address _owner, address token) external view returns (uint256 balance);
+    function depositBalances(address _owner, address token)
+        external
+        view
+        returns (uint256 balance);
+        
+    function getStakedBalances(address _owner, address token)
+        external
+        view
+        returns (uint256 balance);
 
-    function getStakedBalances(address _owner, address token) external view returns (uint256 balance);
-
-    function getStakedPoolBalanceByUser(address _owner, address tokenAddress) external view returns (uint256);
+    function getStakedPoolBalanceByUser(address _owner, address tokenAddress)
+        external
+        view
+        returns (uint256 balance);
 
     // Basic info
-    function tokenToFarmMapping(address tokenAddress) external view returns (address stakingContractAddress);
-
-    function stakingContracts(string calldata platformName) external view returns (address stakingAddress);
-
-    function stakingContractsStakingToken(string calldata platformName) external view returns (address tokenAddress);
+    function tokenToFarmMapping(address tokenAddress)
+        external
+        view
+        returns (address stakingContractAddress);
+    function stakingContracts(string calldata platformName)
+        external
+        view
+        returns (address stakingAddress);
+    function stakingContractsStakingToken(string calldata platformName)
+        external
+        view
+        returns (address tokenAddress);
 
     function platformToken() external view returns (address tokenAddress);
-
     function owner() external view returns (address ownerAddress);
 
     // Actions
@@ -41,7 +56,6 @@ interface ITier2Staking {
     ) external returns (bool);
 
     function updateCommission(uint256 amount) external returns (bool);
-
     function changeOwner(address payable newOwner) external returns (bool);
 
     function adminEmergencyWithdrawTokens(

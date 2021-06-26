@@ -7,11 +7,17 @@ interface IWrapper {
         address sourceToken,
         address[] memory destinationTokens,
         uint256 amount
-    ) external payable returns (address, uint256);
+    ) 
+        external 
+        payable 
+        returns (address, uint256);
 
     function unwrap(
         address sourceToken,
         address destinationToken,
         uint256 amount
-    ) external payable returns (uint256);
+    ) 
+        external 
+        payable 
+        returns (uint256);
 }
