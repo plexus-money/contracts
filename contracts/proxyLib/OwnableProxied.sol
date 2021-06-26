@@ -23,11 +23,14 @@ import "./Ownable.sol";
  */
 abstract contract OwnableProxied is Ownable {
     address public target;
-    mapping (address => bool) public initialized;
+    mapping(address => bool) public initialized;
 
-    event EventUpgrade(address indexed newTarget, address indexed oldTarget, address indexed admin);
+    event EventUpgrade(
+        address indexed newTarget,
+        address indexed oldTarget,
+        address indexed admin
+    );
     event EventInitialized(address indexed target);
 
-    function upgradeTo(address _target) virtual public;
-
+    function upgradeTo(address _target) public virtual;
 }

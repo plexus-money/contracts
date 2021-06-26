@@ -64,7 +64,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -85,9 +84,10 @@ contract LP2LP is OwnableUpgradeable {
     constructor() {
     }
 
-    function initialize(address _bancorLPToken) initializeOnceOnly public {
-        ETH_TOKEN_ADDRESS = address(0x0);
-        bancorLPTokenAddress = _bancorLPToken;
+    fallback() external payable {
+    }
+
+    receive() external payable {
     }
 
     modifier nonZeroAmount(uint256 amount) {
@@ -95,10 +95,9 @@ contract LP2LP is OwnableUpgradeable {
         _;
     }
 
-    fallback() external payable {
-    }
-
-    receive() external payable {
+    function initialize(address _bancorLPToken) external initializeOnceOnly {
+        ETH_TOKEN_ADDRESS = address(0x0);
+        bancorLPTokenAddress = _bancorLPToken;
     }
 
     function lpTolp(
@@ -107,20 +106,19 @@ contract LP2LP is OwnableUpgradeable {
         address fromLPByAddress,
         address[] memory toLPTokensByTokens,
         uint256 amountFrom
-    ) public nonZeroAmount(amountFrom) returns (uint256) {
+    ) external nonZeroAmount(amountFrom) returns (uint256) {
         IERC20 tokenFrom = IERC20(fromLPByAddress);
         tokenFrom.safeTransferFrom(msg.sender, address(this), amountFrom);
 
-        require(
-            platforms[platformFrom] != address(0x0),
-            "The platform does not exist. Was it created by admin with updatePlatforms?"
-        );
+        require(platforms[platformFrom] != address(0x0), "The platform does not exist.");
 
         IWrapper fromWrapper = IWrapper(platforms[platformFrom]);
         IWrapper toWrapper = IWrapper(platforms[platformTo]);
         fromWrapper.unwrap(fromLPByAddress, ETH_TOKEN_ADDRESS, amountFrom);
         uint256 thisETHBalance = address(this).balance;
-        (address lpRec, uint256 recAmount) = toWrapper.wrap{value: thisETHBalance}(ETH_TOKEN_ADDRESS, toLPTokensByTokens, thisETHBalance);
+        (address lpRec, uint256 recAmount) = toWrapper.wrap{
+            value: thisETHBalance
+        }(ETH_TOKEN_ADDRESS, toLPTokensByTokens, thisETHBalance);
         uint256 currentTokenBalance;
         if (platformTo != 3) {
             IERC20 tokensRecieved = IERC20(lpRec);
@@ -134,12 +132,19 @@ contract LP2LP is OwnableUpgradeable {
         return currentTokenBalance;
     }
 
-    function updateVBNTContract(address newAddress) public onlyOwner returns (bool) {
+    function updateVBNTContract(address newAddress) external onlyOwner returns (bool) {
         bancorLPTokenAddress = newAddress;
         return true;
     }
 
-    function updatePlatform(uint256 platformId, address wrapperAddress) public onlyOwner returns (bool) {
+    function updatePlatform(
+        uint256 platformId, 
+        address wrapperAddress
+    ) 
+        external 
+        onlyOwner 
+        returns (bool) 
+    {
         platforms[platformId] = wrapperAddress;
         return true;
     }

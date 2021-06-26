@@ -16,24 +16,32 @@ contract Tier1FarmController is OwnableUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address payable public admin;
-    address ETH_TOKEN_ADDRESS;
-    mapping (string => address) public tier2StakingContracts;
-    uint256 public commission; // Default is 4 percent
-    IPlexusOracle private oracle;
+    address private ETH_TOKEN_ADDRESS;
     address public oracleAddress;
+    uint256 public commission; // Default is 4 percent
     string public farmName;
+    mapping (string => address) public tier2StakingContracts;
     mapping(address => uint256) private totalAmountStaked;
+    IPlexusOracle private oracle;
 
     constructor() payable {
     }
 
-    function initialize(address _tier2StakingContracts_farm, address _oracleAddress) initializeOnceOnly public {
+    function initialize(
+        address tier2StakingContracts_farm_, 
+        address oracleAddress_
+    ) public initializeOnceOnly {
         ETH_TOKEN_ADDRESS  = address(0x0);
         commission  = 400; // Default is 4 percent
-        farmName = 'Tier1Aggregator';
-        tier2StakingContracts["FARM"] = _tier2StakingContracts_farm;
-        updateOracleAddress(_oracleAddress);
+        farmName = "Tier1Aggregator";
+        tier2StakingContracts["FARM"] = tier2StakingContracts_farm_;
+        updateOracleAddress(oracleAddress_);
+    }
+
+    fallback() external payable {
+    }
+
+    receive() external payable {
     }
 
     modifier nonZeroAmount(uint256 amount) {
@@ -49,22 +57,10 @@ contract Tier1FarmController is OwnableUpgradeable {
         _;
     }
 
-    fallback() external payable {
-    }
-
-    receive() external payable {
-    }
-
-    function updateOracleAddress(address newOracleAddress) public onlyOwner returns (bool) {
-        oracleAddress = newOracleAddress;
-        oracle = IPlexusOracle(newOracleAddress);
-        return true;
-    }
-
     function addOrEditTier2ChildStakingContract(
         string memory name,
         address stakingAddress
-    ) public onlyOwner returns (bool) {
+    ) external onlyOwner returns (bool) {
         tier2StakingContracts[name] = stakingAddress;
         return true;
     }
@@ -74,15 +70,74 @@ contract Tier1FarmController is OwnableUpgradeable {
         string memory name,
         address stakingAddress,
         address stakingToken
-    ) public onlyOwner returns (bool) {
+    ) external onlyOwner returns (bool) {
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         tier2Con.addOrEditStakingContract(name, stakingAddress, stakingToken);
         return true;
     }
 
-    function updateCommissionTier2(address tier2Contract, uint256 amount) public onlyOwner returns (bool) {
+    function updateCommissionTier2(
+        address tier2Contract, 
+        uint256 amount
+    ) 
+        external 
+        onlyOwner 
+        returns (bool) 
+    {
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         tier2Con.updateCommission(amount);
+        return true;
+    }
+
+    function changeTier2Owner(
+        address payable tier2Contract,
+        address payable newOwner
+    ) external onlyOwner returns (bool) {
+        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
+        tier2Con.changeOwner(newOwner);
+        return true;
+    }
+
+    function adminEmergencyWithdrawTokensTier2(
+        address payable tier2Contract,
+        address token,
+        uint256 amount,
+        address payable destination
+    ) external onlyOwner nonZeroAmount(amount) returns (bool) {
+        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
+        tier2Con.adminEmergencyWithdrawTokens(token, amount, destination);
+        return true;
+    }
+
+    function getDepositBalanceByUser(
+        string calldata tier2ContractName,
+        address _owner,
+        address token
+    ) external view returns (uint256) {
+        address tier2Contract = tier2StakingContracts[tier2ContractName];
+        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
+        uint256 balance = tier2Con.depositBalances(_owner, token);
+        return balance;
+    }
+
+    function updateOracleAddress(address newOracleAddress) public onlyOwner returns (bool) {
+        oracleAddress = newOracleAddress;
+        oracle = IPlexusOracle(newOracleAddress);
+        return true;
+    }
+
+    function adminEmergencyWithdrawTokens(
+        address token,
+        uint256 amount,
+        address payable destination
+    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
+        if (address(token) == ETH_TOKEN_ADDRESS) {
+            destination.transfer(amount);
+        } else {
+            IERC20 token_ = IERC20(token);
+            token_.safeTransfer(destination, amount);
+        }
+
         return true;
     }
 
@@ -138,41 +193,6 @@ contract Tier1FarmController is OwnableUpgradeable {
         return true;
     }
 
-    function changeTier2Owner(
-        address payable tier2Contract,
-        address payable newOwner
-    ) public onlyOwner returns (bool) {
-        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
-        tier2Con.changeOwner(newOwner);
-        return true;
-    }
-
-    function adminEmergencyWithdrawTokensTier2(
-        address payable tier2Contract,
-        address token,
-        uint256 amount,
-        address payable destination
-    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
-        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
-        tier2Con.adminEmergencyWithdrawTokens(token, amount, destination);
-        return true;
-    }
-
-    function adminEmergencyWithdrawTokens(
-        address token,
-        uint256 amount,
-        address payable destination
-    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
-        if (address(token) == ETH_TOKEN_ADDRESS) {
-            destination.transfer(amount);
-        } else {
-            IERC20 token_ = IERC20(token);
-            token_.safeTransfer(destination, amount);
-        }
-
-        return true;
-    }
-
     function getStakedPoolBalanceByUser(
         string memory tier2ContractName,
         address _owner,
@@ -181,18 +201,6 @@ contract Tier1FarmController is OwnableUpgradeable {
         address tier2Contract = tier2StakingContracts[tier2ContractName];
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         uint256 balance = tier2Con.getStakedPoolBalanceByUser(_owner, tokenAddress);
-        return balance;
-    }
-
-    function getDepositBalanceByUser(
-        string calldata tier2ContractName,
-        address _owner,
-        address token
-    ) external view returns (uint256) {
-        address tier2Contract = tier2StakingContracts[tier2ContractName];
-        IERC20 thisToken = IERC20(token);
-        ITier2Staking tier2Con = ITier2Staking(tier2Contract);
-        uint256 balance = tier2Con.depositBalances(_owner, token);
         return balance;
     }
 }

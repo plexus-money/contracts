@@ -107,9 +107,9 @@ contract Oracle{
   mapping (string => address) farmDirectoryByName;
   mapping (address => mapping(address =>uint256)) farmManuallyEnteredAPYs;
   mapping (address => mapping (address  => address )) farmOracleObtainedAPYs;
-  string [] public farmTokenPlusFarmNames;
-  address [] public farmAddresses;
-  address [] public farmTokens;
+  string[] public farmTokenPlusFarmNames;
+  address[] public farmAddresses;
+  address[] public farmTokens;
   address uniswapAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
   IUniswapV2RouterLite uniswap = IUniswapV2RouterLite(uniswapAddress);
   address usdcCoinAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -186,10 +186,10 @@ contract Oracle{
     }
 
     function getTokenPrice(address tokenAddress, uint256 amount) view external returns(uint256){
-      address [] memory addresses = new address[](2);
+      address[] memory addresses = new address[](2);
       addresses[0] = tokenAddress;
       addresses[1] = usdcCoinAddress;
-      uint256 [] memory amounts = getUniswapPrice(addresses, amount );
+      uint256[] memory amounts = getUniswapPrice(addresses, amount );
       uint256 resultingTokens = amounts[1];
       return resultingTokens;
     }
