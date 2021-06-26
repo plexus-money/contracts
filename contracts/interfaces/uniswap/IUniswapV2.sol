@@ -56,7 +56,7 @@ interface IUniswapV2 {
         address to,
         uint256 deadline
     ) external payable returns (uint256[] memory amounts);
-
+    
     function getAmountsOut(
         uint256 amountIn, 
         address[] calldata path
