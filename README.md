@@ -1,5 +1,7 @@
 ## Plexus Smart Contracts
 
+[![Node.js CI](https://github.com/plexus-money/contracts/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/plexus-money/contracts/actions/workflows/node.js.yml)
+
 ### Yield Farming Aggregator and Plexus Rewards Ecosystem
 
 ## Overview
