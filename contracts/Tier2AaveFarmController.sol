@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-// Aave AToken Deposit (Converts from regular token to aToken, stores in this contract, and withdraws based on percentage of pool)
+// Aave AToken Deposit 
+// Converts from regular token to aToken, stores in this contract, 
+// and withdraws based on percentage of pool
 
 pragma solidity >=0.8.0 <0.9.0;
 
@@ -22,34 +24,20 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
     //address public platformToken = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
     //address public tokenStakingContract = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
     address private ETH_TOKEN_ADDRESS;
+    uint256 public commission; // Default is 4 percent
+    string public farmName;
     mapping (string => address) public stakingContracts;
     mapping (address => address) public tokenToFarmMapping;
     mapping (string => address) public stakingContractsStakingToken;
     mapping (address => mapping (address => uint256)) public depositBalances;
     mapping (address => address) public tokenToAToken;
     mapping (address => address) public aTokenToToken;
-    uint256 public commission; // Default is 4 percent
-    string public farmName;
     mapping (address => uint256) public totalAmountStaked;
 
+    event Deposit(address indexed user, uint256 amount, address token);
+    event Withdrawal(address indexed user, uint256 amount, address token);
+
     constructor() payable {
-    }
-
-    function initialize(address _tokenStakingContract, address _daiToken, address _aToken) initializeOnceOnly public {
-        ETH_TOKEN_ADDRESS  = address(0x0);
-        commission  = 400; // Default is 4 percent
-        farmName = 'Aave';
-        stakingContracts["DAI"] =_tokenStakingContract ;
-        stakingContracts["ALL"] =_tokenStakingContract ;
-        stakingContractsStakingToken["DAI"] = _daiToken;
-        tokenToAToken[_daiToken] = _aToken;
-        aTokenToToken[_aToken] = _daiToken;
-        tokenToFarmMapping[stakingContractsStakingToken["DAI"]] = stakingContracts["DAI"];
-    }
-
-    modifier nonZeroAmount(uint256 amount) {
-        require(amount > 0, "Amount specified is zero");
-        _;
     }
 
     fallback() external payable {
@@ -58,7 +46,38 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
     receive() external payable {
     }
 
-    function updateATokens(address tokenAddress, address aTokenAddress) public onlyAdmin returns (bool) {
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
+        _;
+    }
+
+    function initialize(
+        address tokenStakingContract, 
+        address daiToken, 
+        address aDaiToken
+    ) 
+        external 
+        initializeOnceOnly
+    {
+        ETH_TOKEN_ADDRESS  = address(0x0);
+        commission  = 400; // Default is 4 percent
+        farmName = "Aave";
+        stakingContracts["DAI"] = tokenStakingContract ;
+        stakingContracts["ALL"] = tokenStakingContract ;
+        stakingContractsStakingToken["DAI"] = daiToken;
+        tokenToAToken[daiToken] = aDaiToken;
+        aTokenToToken[aDaiToken] = daiToken;
+        tokenToFarmMapping[stakingContractsStakingToken["DAI"]] = stakingContracts["DAI"];
+    }
+
+    function updateATokens(
+        address tokenAddress, 
+        address aTokenAddress
+    ) 
+        external 
+        onlyAdmin 
+        returns (bool) 
+    {
         tokenToAToken[tokenAddress] = aTokenAddress;
         aTokenToToken[aTokenAddress] = tokenAddress;
         return true;
@@ -82,17 +101,51 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return true;
     }
 
+    function changeAdmin(address payable newAdmin) public onlyAdmin returns (bool) {
+        transferAdmin(newAdmin);
+        return true;
+    }
+
+    function adminEmergencyWithdrawTokens(
+        address token,
+        uint256 amount,
+        address payable destination
+    ) 
+        public 
+        onlyOwner 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
+        if (address(token) == ETH_TOKEN_ADDRESS) {
+            destination.transfer(amount);
+        } else {
+            IERC20 token_ = IERC20(token);
+            token_.safeTransfer(destination, amount);
+        }
+
+        return true;
+    }
+
     function deposit(
         address tokenAddress,
         uint256 amount,
         address onBehalfOf
-    ) public payable onlyOwner returns (bool) {
+    ) 
+        public 
+        payable 
+        onlyOwner 
+        returns (bool) 
+    {
         IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        depositBalances[onBehalfOf][tokenAddress] = depositBalances[onBehalfOf][tokenAddress].add(amount);
+        depositBalances[onBehalfOf][tokenAddress] =
+            depositBalances[onBehalfOf][tokenAddress].add(amount);
 
-        uint256 approvedAmount = thisToken.allowance(address(this), tokenToFarmMapping[tokenAddress]);
+        uint256 approvedAmount = thisToken.allowance(
+            address(this), 
+            tokenToFarmMapping[tokenAddress]
+        );
         if (approvedAmount < amount) {
             thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
             thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(100));
@@ -105,66 +158,31 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return true;
     }
 
-    function stake(
-        uint256 amount,
-        address onBehalfOf,
-        address tokenAddress
-    ) internal nonZeroAmount(amount) returns (bool) {
-        IERC20 tokenStaked = IERC20(tokenAddress);
-        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
-        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
-        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
-        staker.deposit(tokenAddress, amount, address(this), 0);
-        return true;
-    }
-
-    function unstake(
-        uint256 amount,
-        address onBehalfOf,
-        address tokenAddress
-    ) internal nonZeroAmount(amount) returns (bool) {
-        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
-        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
-        staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
-        return true;
-    }
-
-    function getStakedPoolBalanceByUser(address _owner, address tokenAddress) public view returns (uint256) {
-        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
-        uint256 numberTokens = aToken.balanceOf(address(this));
-
-        uint256 usersBalancePercentage =
-            (depositBalances[_owner][tokenAddress].mul(1000000)).div(
-                totalAmountStaked[tokenAddress]
-            );
-        uint256 numberTokensPlusRewardsForUser =
-            (numberTokens.mul(1000).mul(usersBalancePercentage)).div(
-                1000000000
-            );
-
-        return numberTokensPlusRewardsForUser;
-    }
-
     function withdraw(
         address tokenAddress,
         uint256 amount,
         address payable onBehalfOf
-    ) public payable onlyOwner nonZeroAmount(amount) returns (bool) {
+    ) 
+        public 
+        payable 
+        onlyOwner 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
         IERC20 thisToken = IERC20(tokenAddress);
-        // uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
 
         require(
             depositBalances[onBehalfOf][tokenAddress] > 0,
             "You dont have any tokens deposited"
         );
 
-        // uint256 numberTokensPostWithdrawal = thisToken.balanceOf(address(this));
-
-        // uint256 usersBalancePercentage = depositBalances[onBehalfOf][tokenAddress].div(totalAmountStaked[tokenAddress]);
-
-        uint256 numberTokensPlusRewardsForUser1 = getStakedPoolBalanceByUser(onBehalfOf, tokenAddress);
+        uint256 numberTokensPlusRewardsForUser1 = getStakedPoolBalanceByUser(
+            onBehalfOf, 
+            tokenAddress
+        );
         uint256 commissionForDAO1 = calculateCommission(numberTokensPlusRewardsForUser1);
-        uint256 numberTokensPlusRewardsForUserMinusCommission = numberTokensPlusRewardsForUser1 - commissionForDAO1;
+        uint256 numberTokensPlusRewardsForUserMinusCommission = 
+            numberTokensPlusRewardsForUser1 - commissionForDAO1;
 
         unstake(amount, onBehalfOf, tokenAddress);
 
@@ -176,15 +194,13 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         depositBalances[onBehalfOf][tokenAddress] = 0;
         require(
             numberTokensPlusRewardsForUserMinusCommission > 0,
-            "For some reason numberTokensPlusRewardsForUserMinusCommission is zero"
+            "numberTokensPlusRewardsForUserMinusCommission is zero"
         );
 
         thisToken.safeTransfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission);
-
         if (numberTokensPlusRewardsForUserMinusCommission > 0) {
             thisToken.safeTransfer(owner(), commissionForDAO1);
         }
-
         uint256 remainingBalance = thisToken.balanceOf(address(this));
         if (remainingBalance > 0) {
             stake(remainingBalance, address(this), tokenAddress);
@@ -200,9 +216,27 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return commissionForDAO;
     }
 
-    function changeAdmin(address payable newAdmin) public onlyAdmin returns (bool) {
-        transferAdmin(newAdmin);
-        return true;
+    function getStakedPoolBalanceByUser(
+        address _owner, 
+        address tokenAddress
+    ) 
+        public 
+        view 
+        returns (uint256) 
+    {
+        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
+        uint256 numberTokens = aToken.balanceOf(address(this));
+
+        uint256 usersBalancePercentage =
+            (depositBalances[_owner][tokenAddress].mul(1000000)).div(
+                totalAmountStaked[tokenAddress]
+            );
+        uint256 numberTokensPlusRewardsForUser =
+            (numberTokens.mul(1000).mul(usersBalancePercentage)).div(
+                1000000000
+            );
+
+        return numberTokensPlusRewardsForUser;
     }
 
     function getStakedBalance(address _owner, address tokenAddress) public view returns (uint256) {
@@ -210,21 +244,35 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return staker.balanceOf(_owner);
     }
 
-    function adminEmergencyWithdrawTokens(
-        address token,
+    function stake(
         uint256 amount,
-        address payable destination
-    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
-        if (address(token) == ETH_TOKEN_ADDRESS) {
-            destination.transfer(amount);
-        } else {
-            IERC20 token_ = IERC20(token);
-            token_.safeTransfer(destination, amount);
-        }
-
+        address onBehalfOf,
+        address tokenAddress
+    )
+        internal 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
+        IERC20 tokenStaked = IERC20(tokenAddress);
+        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
+        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
+        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
+        staker.deposit(tokenAddress, amount, address(this), 0);
         return true;
     }
 
-    event Deposit(address indexed user, uint256 amount, address token);
-    event Withdrawal(address indexed user, uint256 amount, address token);
+    function unstake(
+        uint256 amount,
+        address onBehalfOf,
+        address tokenAddress
+    ) 
+        internal 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
+        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
+        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
+        staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
+        return true;
+    }
 }
