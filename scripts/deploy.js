@@ -1,10 +1,13 @@
 const config = require('../config.json');
+const fs = require('fs');
+let root = {}
+let network = 'mainnet'
 
 async function main() {
 	const addr = config.addresses;
 
 	const netinfo = await ethers.provider.getNetwork();
-	var network = netinfo.name;
+	network = netinfo.name;
 	if (network === "unknown")
 		network = "mainnet";
 
@@ -32,7 +35,7 @@ async function main() {
 
 	// plexus reward token
 	const PlexusCoin = await ethers.getContractFactory('PlexusTestCoin');
-	
+
 	// get the signers
 	let owner, addr1;
 	[owner, addr1, ...addrs] = await ethers.getSigners();
@@ -44,8 +47,8 @@ async function main() {
 
 	// then deploy the contracts and wait for them to be mined
 	const wrapper = await deployWithProxy(
-        Wrapper, 
-        OwnableProxy, 
+        Wrapper,
+        OwnableProxy,
         'WrapAndUnWrap',
 		addr.tokens.WETH[network],
 		addr.swaps.uniswap[network],
@@ -57,8 +60,8 @@ async function main() {
 	console.log("Wrapper is deployed at: ", wrapper.address);
 
 	const wrapperSushi = await deployWithProxy(
-        WrapperSushi, 
-        OwnableProxy, 
+        WrapperSushi,
+        OwnableProxy,
         'WrapAndUnWrapSushi',
 		addr.tokens.WETH[network],
 		addr.swaps.sushiswap[network],
@@ -77,8 +80,8 @@ async function main() {
 	console.log("TokenRewards is deployed at: ", tokenRewards.address);
 
 	const plexusOracle = await deployWithProxy(
-        PlexusOracle, 
-        OwnableProxy, 
+        PlexusOracle,
+        OwnableProxy,
         'PlexusOracle',
 		addr.swaps.uniswap[network],
 		addr.tokens.USDC[network]
@@ -86,8 +89,8 @@ async function main() {
 	console.log("PlexusOracle is deployed at: ", plexusOracle.address);
 
 	const tier2Farm = await deployWithProxy(
-        Tier2Farm, 
-        OwnableProxy, 
+        Tier2Farm,
+        OwnableProxy,
         'Tier2FarmController',
 		addr.AutoStake[network],
 		addr.tokens.FARM[network]
@@ -95,8 +98,8 @@ async function main() {
 	console.log("Tier2Farm is deployed at: ", tier2Farm.address);
 
 	const tier1Staking = await deployWithProxy(
-        Tier1Staking, 
-        OwnableProxy, 
+        Tier1Staking,
+        OwnableProxy,
         'Tier1FarmController',
 		tier2Farm.address,
 		plexusOracle.address
@@ -104,8 +107,8 @@ async function main() {
 	console.log("Tier1Staking is deployed at: ", tier1Staking.address);
 
 	const core = await deployWithProxy(
-        Core, 
-        OwnableProxy, 
+        Core,
+        OwnableProxy,
         'Core',
 		addr.tokens.WETH[network],
 		wrapper.address
@@ -113,8 +116,8 @@ async function main() {
 	console.log("Core is deployed at: ", core.address);
 
 	const tier2Aave = await deployWithProxy(
-        Tier2Aave, 
-        OwnableProxy, 
+        Tier2Aave,
+        OwnableProxy,
         'Tier2AaveFarmController',
 		addr.AaveLendingPoolV2[network],
 		addr.tokens.DAI[network],
@@ -123,8 +126,8 @@ async function main() {
 	console.log("Tier2Aave is deployed at: ", tier2Aave.address);
 
 	const tier2Pickle = await deployWithProxy(
-        Tier2Pickle, 
-        OwnableProxy, 
+        Tier2Pickle,
+        OwnableProxy,
         'Tier2PickleFarmController',
 		addr.StakingRewards[network],
 		addr.tokens.PICKLE[network]
@@ -132,16 +135,16 @@ async function main() {
 	console.log("Tier2Pickle is deployed at: ", tier2Pickle.address);
 
 	const lp2lp = await deployWithProxy(
-        LP2LP, 
-        OwnableProxy, 
+        LP2LP,
+        OwnableProxy,
         'LP2LP',
 		addr.tokens.vBNT[network]
     );
 	console.log("LP2LP is deployed at: ", lp2lp.address);
 
 	const tier2Aggregator = await deployWithProxy(
-        Tier2Aggregator, 
-        OwnableProxy, 
+        Tier2Aggregator,
+        OwnableProxy,
         'Tier2AggregatorFarmController',
 		addr.tokens.pUNI_V2[network],
 		addr.tokens.UNI_V2[network]
@@ -156,7 +159,7 @@ async function main() {
 	console.log("Setting up contracts... ");
 	await tokenRewards.updateOracleAddress(plexusOracle.address);
 	await tokenRewards.updateStakingTokenAddress(plexusCoin.address);
- 
+
 	await plexusOracle.updateRewardAddress(tokenRewards.address);
 	await plexusOracle.updateCoreAddress(core.address);
 	await plexusOracle.updateTier1Address(tier1Staking.address);
@@ -181,6 +184,11 @@ async function main() {
 	await tier2Aave.changeOwner(tier1Staking.address);
 	await tier2Pickle.changeOwner(tier1Staking.address);
 
+	console.log("Write addresses")
+	const json = JSON.stringify(root);
+
+	fs.writeFileSync('addresses.json', json);
+
 	console.log("");
 	console.log("Successfully Deployed!");
 	console.log("============================================================");
@@ -188,13 +196,24 @@ async function main() {
 
 const deployWithProxy = async(contractFactory, proxyFactory, factoryName, ...params) => {
 	let deployedContract = await (await contractFactory.deploy()).deployed();
+	await writeAddress(factoryName, deployedContract.address, [])
 	const deployedProxy = await (await proxyFactory.deploy(deployedContract.address)).deployed();
 	await deployedContract.setProxy(deployedProxy.address);
     deployedContract = await ethers.getContractAt(factoryName, deployedProxy.address);
     await deployedContract.initialize(...params);
+    await writeAddress(factoryName + 'Proxy', deployedProxy.address, [])
+
     return deployedContract;
 }
-  
+
+const writeAddress = async (factoryName, address, args) => {
+	root[factoryName] = {}
+	root[factoryName][network] = {
+		address,
+		args
+	}
+}
+
 main()
 	.then(() => process.exit(0))
 	.catch(error => {

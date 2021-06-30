@@ -5,6 +5,7 @@ require("dotenv").config();
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
+require("@nomiclabs/hardhat-etherscan");
 
 module.exports = {
   defaultNetwork: "hardhat",
@@ -40,7 +41,7 @@ module.exports = {
       url: process.env.RPC_NODE_URL,
       chainId: 1
     },
-    
+
     kovan: {
       gas: "auto",
       gasPrice: "auto",
@@ -51,7 +52,13 @@ module.exports = {
       },
       url: process.env.RPC_NODE_URL_KOVAN,
       chainId: 42
-    }
+    },
+  },
+
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_API_KEY
   },
 
   mocha: {
