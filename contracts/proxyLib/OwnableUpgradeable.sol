@@ -27,7 +27,7 @@ contract OwnableUpgradeable is OwnableProxied {
      * @notice Will always fail if called. This is used as a placeholder for the contract ABI.
      * @dev This is code is never executed by the Proxy using delegate call
      */
-    function upgradeTo(address) override public {
+    function upgradeTo(address) public pure override {
         assert(false);
     }
 
@@ -41,7 +41,7 @@ contract OwnableUpgradeable is OwnableProxied {
      * from being initialized more than once.
      * If a contract is upgraded twice, pay special attention that the state variables are not initialized again
      */
-    /*function initialize() initializeOnceOnly public {
+    /*function initialize() public initializeOnceOnly {
         // initialize contract state variables here
     }*/
 

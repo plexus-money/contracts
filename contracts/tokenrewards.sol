@@ -16,6 +16,8 @@ contract TokenRewards is OwnableUpgradeable {
 
     address public stakingTokensAddress;
     address public stakingLPTokensAddress;
+    address ETH_TOKEN_ADDRESS;
+    address public oracleAddress;
     uint256 public tokensInRewardsReserve;
     uint256 public lpTokensInRewardsReserve;
     //(100% APR = 100000), .01% APR = 10)
@@ -25,17 +27,9 @@ contract TokenRewards is OwnableUpgradeable {
     mapping (address => mapping(address => uint256)) public tokenDeposits;
     mapping (address => mapping(address => uint256[])) public depositBalancesDelegated;
     mapping (address => mapping(address => uint256)) public tokenDepositsDelegated;
-    address ETH_TOKEN_ADDRESS;
     IPlexusOracle private oracle;
-    address public oracleAddress;
 
     constructor() payable {
-    }
-
-    function initialize() initializeOnceOnly public {
-        tokensInRewardsReserve = 0;
-        lpTokensInRewardsReserve  = 0;
-        ETH_TOKEN_ADDRESS  = address(0x0);
     }
 
     modifier onlyTier1 {
@@ -51,51 +45,82 @@ contract TokenRewards is OwnableUpgradeable {
         _;
     }
 
-    function updateOracleAddress(address newOracleAddress) public onlyOwner returns (bool) {
+    function initialize() external initializeOnceOnly {
+        tokensInRewardsReserve = 0;
+        lpTokensInRewardsReserve  = 0;
+        ETH_TOKEN_ADDRESS  = address(0x0);
+    }
+
+    function updateOracleAddress(address newOracleAddress) external onlyOwner returns (bool) {
         oracleAddress = newOracleAddress;
         oracle = IPlexusOracle(newOracleAddress);
         return true;
     }
 
-    function updateStakingTokenAddress(address newAddress) public onlyOwner returns (bool) {
+    function updateStakingTokenAddress(address newAddress) external onlyOwner returns (bool) {
         stakingTokensAddress = newAddress;
         return true;
     }
 
-    function updateLPStakingTokenAddress(address newAddress) public onlyOwner returns (bool) {
+    function updateLPStakingTokenAddress(address newAddress) external onlyOwner returns (bool) {
         stakingLPTokensAddress = newAddress;
         return true;
     }
 
-    function addTokenToWhitelist(address newTokenAddress) public onlyOwner returns (bool) {
+    function addTokenToWhitelist(address newTokenAddress) external onlyOwner returns (bool) {
         stakingTokenWhitelist[newTokenAddress] = true;
         return true;
     }
 
-    function getTokenWhiteListValue(address newTokenAddress) public view onlyOwner returns(bool) {
-        return stakingTokenWhitelist[newTokenAddress];
-    }
-
-    function removeTokenFromWhitelist(address tokenAddress) public onlyOwner returns (bool) {
+    function removeTokenFromWhitelist(address tokenAddress) external onlyOwner returns (bool) {
         stakingTokenWhitelist[tokenAddress] = false;
         return true;
     }
 
-    function checkIfTokenIsWhitelistedForStaking(address tokenAddress) external view returns (bool) {
-        return stakingTokenWhitelist[tokenAddress];
-    }
-
-    // APR should have be in this format (uint representing decimals): (100% APR = 100000), .01% APR = 10)
-    function updateAPR(uint256 newAPR, address stakedToken) public onlyOwner returns (bool) {
+    // APR should have be in this format (uint representing decimals): 
+    // (100% APR = 100000), .01% APR = 10)
+    function updateAPR(
+        uint256 newAPR, 
+        address stakedToken
+    ) 
+        external 
+        onlyOwner 
+        returns (bool) 
+    {
         tokenAPRs[stakedToken] = newAPR;
         return true;
+    }
+
+    function getTokenWhiteListValue(
+        address newTokenAddress
+    ) 
+        external 
+        view 
+        onlyOwner 
+        returns(bool) 
+    {
+        return stakingTokenWhitelist[newTokenAddress];
+    }
+
+    function checkIfTokenIsWhitelistedForStaking(
+        address tokenAddress
+    )
+        external
+        view 
+        returns (bool) 
+    {
+        return stakingTokenWhitelist[tokenAddress];
     }
 
     function stake(
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) public nonZeroAmount(amount) returns (bool) {
+    ) 
+        public 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted to earn rewards"
@@ -113,8 +138,10 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         if (redepositing == true) {
-            depositBalances[onBehalfOf][tokenAddress] = [block.timestamp, (tokenDeposits[onBehalfOf][tokenAddress].add(amount))];
-            tokenDeposits[onBehalfOf][tokenAddress] = tokenDeposits[onBehalfOf][tokenAddress].add(amount);
+            depositBalances[onBehalfOf][tokenAddress] = 
+                [block.timestamp, (tokenDeposits[onBehalfOf][tokenAddress].add(amount))];
+            tokenDeposits[onBehalfOf][tokenAddress] = 
+                tokenDeposits[onBehalfOf][tokenAddress].add(amount);
         } else {
             depositBalances[onBehalfOf][tokenAddress] = [block.timestamp, amount];
             tokenDeposits[onBehalfOf][tokenAddress] = amount;
@@ -127,7 +154,12 @@ contract TokenRewards is OwnableUpgradeable {
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) public onlyTier1 nonZeroAmount(amount) returns (bool) {
+    ) 
+        public 
+        onlyTier1 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted to earn rewards"
@@ -142,8 +174,10 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         if (redepositing == true) {
-            depositBalancesDelegated[onBehalfOf][tokenAddress] = [block.timestamp, (tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount))];
-            tokenDepositsDelegated[onBehalfOf][tokenAddress] = tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount);
+            depositBalancesDelegated[onBehalfOf][tokenAddress] = 
+                [block.timestamp, (tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount))];
+            tokenDepositsDelegated[onBehalfOf][tokenAddress] = 
+                tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount);
         } else {
             depositBalancesDelegated[onBehalfOf][tokenAddress] = [block.timestamp, amount];
             tokenDepositsDelegated[onBehalfOf][tokenAddress] = amount;
@@ -152,12 +186,16 @@ contract TokenRewards is OwnableUpgradeable {
         return true;
     }
 
-    // when standalone, this is called. It's brother (delegated version that does not deal with transfers is called in other instances)
+    // when standalone, this is called. It's brother 
+    // (delegated version that does not deal with transfers is called in other instances)
     function unstakeAndClaim(
         address onBehalfOf,
         address tokenAddress,
         address recipient
-    ) public returns (uint256) {
+    ) 
+        public 
+        returns (uint256) 
+    {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted"
@@ -197,7 +235,8 @@ contract TokenRewards is OwnableUpgradeable {
 
         principalToken.safeTransfer(recipient, tokenDeposits[onBehalfOf][tokenAddress]);
 
-        // not requiring this below, as we need to ensure at the very least the user gets their deposited tokens above back.
+        // not requiring this below, as we need to ensure at the very least
+        // the user gets their deposited tokens above back.
         rewardToken.safeTransfer(recipient, rewards);
 
         tokenDeposits[onBehalfOf][tokenAddress] = 0;
@@ -211,7 +250,11 @@ contract TokenRewards is OwnableUpgradeable {
         address onBehalfOf,
         address tokenAddress,
         address recipient
-    ) public onlyTier1 returns (uint256) {
+    ) 
+        public 
+        onlyTier1 
+        returns (uint256) 
+    {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
             "The token you are staking is not whitelisted"
@@ -229,7 +272,8 @@ contract TokenRewards is OwnableUpgradeable {
                 tokenDepositsDelegated[onBehalfOf][tokenAddress],
                 tokenAPRs[tokenAddress]
             );
-        uint256 principalPlusRewards = tokenDepositsDelegated[onBehalfOf][tokenAddress].add(rewards);
+        // uint256 principalPlusRewards = 
+        //     tokenDepositsDelegated[onBehalfOf][tokenAddress].add(rewards);
 
         IERC20Metadata principalToken = IERC20Metadata(tokenAddress);
         IERC20Metadata rewardToken = IERC20Metadata(stakingTokensAddress);
@@ -260,7 +304,11 @@ contract TokenRewards is OwnableUpgradeable {
         address token,
         uint256 amount,
         address payable destination
-    ) public onlyOwner returns (bool) {
+    ) 
+        public 
+        onlyOwner 
+        returns (bool) 
+    {
         if (address(token) == ETH_TOKEN_ADDRESS) {
             destination.transfer(amount);
         } else {
@@ -284,8 +332,15 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         apr = apr.mul(10000000);
-        // 365.25 days, accounting for leap years. We should just have 1/4 days at the end of each year and cause more mass confusion than daylight savings. "Please set your clocks back 6 hours on Jan 1st, Thank you""
-        // Imagine new years. You get to do it twice after 6hours. Or would it be recursive and end up in an infinite loop. Is that the secret to freezing time and staying young? Maybe because it's 2020.
+        
+        // 365.25 days, accounting for leap years. We should just have 1/4 days
+        // at the end of each year and cause more mass confusion than daylight savings. 
+        // "Please set your clocks back 6 hours on Jan 1st, Thank you""
+        // Imagine new years. 
+        // You get to do it twice after 6hours. 
+        // Or would it be recursive and end up in an infinite loop. 
+        // Is that the secret to freezing time and staying young?
+        // Maybe because it's 2020.
         uint256 secondsInAvgYear = 31557600;
 
         uint256 rewardsPerSecond = (principalAmount.mul(apr)).div(secondsInAvgYear);

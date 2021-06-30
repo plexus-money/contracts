@@ -21,28 +21,15 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     address public oracleAddress;
     address public converterAddress;
     address public stakingAddress;
+    address public ETH_TOKEN_ADDRESS;
+    address public WETH_TOKEN_ADDRESS;
+    uint256 private approvalAmount;
     IPlexusOracle private oracle;
     ITier1Staking private staking;
     IConverter private converter;
-    address public ETH_TOKEN_PLACEHOLDER_ADDRESS;
-    address public WETH_TOKEN_ADDRESS;
     IWETH private wethToken;
-    uint256 private approvalAmount;
 
     constructor() payable {
-    }
-
-    function initialize(address _weth, address _converter) initializeOnceOnly public {
-        ETH_TOKEN_PLACEHOLDER_ADDRESS = address(0x0);
-        WETH_TOKEN_ADDRESS = _weth;
-        wethToken = IWETH(WETH_TOKEN_ADDRESS);
-        approvalAmount = 1000000000000000000000000000000;
-        setConverterAddress(_converter);
-    }
-
-    modifier nonZeroAmount(uint256 amount) {
-        require(amount > 0, "Amount specified is zero");
-        _;
     }
 
     fallback() external payable {
@@ -55,21 +42,28 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         // receive function
     }
 
-    function setOracleAddress(address theAddress) public onlyOwner returns (bool) {
+    modifier nonZeroAmount(uint256 amount) {
+        require(amount > 0, "Amount specified is zero");
+        _;
+    }
+
+    function initialize(address _weth, address _converter) external initializeOnceOnly {
+        ETH_TOKEN_ADDRESS = address(0x0);
+        WETH_TOKEN_ADDRESS = _weth;
+        wethToken = IWETH(WETH_TOKEN_ADDRESS);
+        approvalAmount = 1000000000000000000000000000000;
+        setConverterAddress(_converter);
+    }
+
+    function setOracleAddress(address theAddress) external onlyOwner returns (bool) {
         oracleAddress = theAddress;
         oracle = IPlexusOracle(theAddress);
         return true;
     }
 
-    function setStakingAddress(address theAddress) public onlyOwner returns (bool) {
+    function setStakingAddress(address theAddress) external onlyOwner returns (bool) {
         stakingAddress = theAddress;
         staking = ITier1Staking(theAddress);
-        return true;
-    }
-
-    function setConverterAddress(address theAddress) public onlyOwner returns (bool) {
-        converterAddress = theAddress;
-        converter = IConverter(theAddress);
         return true;
     }
 
@@ -77,9 +71,15 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) public payable nonReentrant nonZeroAmount(amount) returns (bool) {
+    ) 
+        external 
+        payable 
+        nonReentrant 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
         IERC20 token;
-        if (tokenAddress == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
+        if (tokenAddress == ETH_TOKEN_ADDRESS) {
             wethToken.deposit{value: msg.value}();
             tokenAddress = WETH_TOKEN_ADDRESS;
             token = IERC20(tokenAddress);
@@ -98,7 +98,13 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) public payable nonReentrant nonZeroAmount(amount) returns (bool) {
+    ) 
+        external 
+        payable 
+        nonReentrant 
+        nonZeroAmount(amount) 
+        returns (bool) 
+    {
         bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request.");
         return result;
@@ -109,43 +115,66 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address[] memory destinationTokens,
         uint256 amount,
         uint256 userSlippageTolerance
-    ) public payable nonZeroAmount(amount) returns (address, uint256) {
-        if (sourceToken != ETH_TOKEN_PLACEHOLDER_ADDRESS) {
+    ) 
+        external 
+        payable 
+        nonZeroAmount(amount) 
+        returns (address, uint256) 
+    {
+        if (sourceToken != ETH_TOKEN_ADDRESS) {
             IERC20 srcToken = IERC20(sourceToken);
             srcToken.safeTransferFrom(msg.sender, address(this), amount);
         }
-        (address destinationTokenAddress, uint256 _amount) =
-            converter.wrap{value: msg.value}(sourceToken, destinationTokens, amount, userSlippageTolerance);
+        (
+            address destinationTokenAddress, 
+            uint256 _amount
+        ) = converter.wrap{
+                value: msg.value
+            }(sourceToken, destinationTokens, amount, userSlippageTolerance);
 
         IERC20 dstToken = IERC20(destinationTokenAddress);
         dstToken.safeTransfer(msg.sender, _amount);
         return (destinationTokenAddress, _amount);
     }
 
-    // deconverting is mostly for LP tokens back to another token, as these cant be simply swapped on uniswap
+    // deconverting is mostly for LP tokens back to another token, 
+    // as these cant be simply swapped on uniswap
     function deconvert(
         address sourceToken,
         address destinationToken,
         uint256 amount,
         uint256 userSlippageTolerance
-    ) public payable returns (uint256) {
-        uint256 _amount = converter.unwrap{value: msg.value}(sourceToken, destinationToken, amount, userSlippageTolerance);
+    ) 
+        external 
+        payable 
+        returns (uint256) 
+    {
+        uint256 _amount = 
+            converter.unwrap{value: msg.value}(
+                sourceToken, 
+                destinationToken, 
+                amount, 
+                userSlippageTolerance
+            );
         IERC20 token = IERC20(destinationToken);
         token.safeTransfer(msg.sender, _amount);
         return _amount;
     }
 
-    function getStakableTokens() public view returns (address[] memory, string[] memory) {
-        (address[] memory stakableAddresses, string[] memory stakableTokenNames) = oracle.getStakableTokens();
+    function getStakableTokens() external view returns (address[] memory, string[] memory) {
+        (
+            address[] memory stakableAddresses, 
+            string[] memory stakableTokenNames
+        ) = oracle.getStakableTokens();
         return (stakableAddresses, stakableTokenNames);
     }
 
-    function getAPR(address tier2Address, address tokenAddress) public view returns (uint256) {
+    function getAPR(address tier2Address, address tokenAddress) external view returns (uint256) {
         uint256 result = oracle.getAPR(tier2Address, tokenAddress);
         return result;
     }
 
-    function getTotalValueLockedAggregated(uint256 optionIndex) public view returns (uint256) {
+    function getTotalValueLockedAggregated(uint256 optionIndex) external view returns (uint256) {
         uint256 result = oracle.getTotalValueLockedAggregated(optionIndex);
         return result;
     }
@@ -153,7 +182,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function getTotalValueLockedInternalByToken(
         address tokenAddress,
         address tier2Address
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         uint256 result = oracle.getTotalValueLockedInternalByToken(tokenAddress, tier2Address);
         return result;
     }
@@ -162,7 +191,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address tokenAddress,
         address userAddress,
         address tier2Address
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         uint256 result = oracle.getAmountStakedByUser(tokenAddress, userAddress, tier2Address);
         return result;
     }
@@ -171,21 +200,28 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address userAddress,
         address tokenAddress,
         address tier2FarmAddress
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         return oracle.getUserCurrentReward( userAddress, tokenAddress, tier2FarmAddress);
     }
 
-    function getTokenPrice(address tokenAddress) public view returns (uint256) {
+    function getTokenPrice(address tokenAddress) external view returns (uint256) {
         uint256 result = oracle.getTokenPrice(tokenAddress);
         return result;
     }
 
-    function getUserWalletBalance(address userAddress, address tokenAddress) public view returns (uint256) {
+    function getUserWalletBalance(
+        address userAddress, 
+        address tokenAddress
+    ) 
+        external 
+        view 
+        returns (uint256) 
+    {
         uint256 result = oracle.getUserWalletBalance(userAddress, tokenAddress);
         return result;
     }
 
-    function updateWETHAddress(address newAddress) public onlyOwner returns (bool) {
+    function updateWETHAddress(address newAddress) external onlyOwner returns (bool) {
         WETH_TOKEN_ADDRESS = newAddress;
         wethToken = IWETH(newAddress);
         return true;
@@ -196,13 +232,19 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         uint256 amount,
         address payable destination
     ) public onlyOwner returns (bool) {
-        if (address(token) == ETH_TOKEN_PLACEHOLDER_ADDRESS) {
+        if (address(token) == ETH_TOKEN_ADDRESS) {
             destination.transfer(amount);
         } else {
             IERC20 token_ = IERC20(token);
             token_.safeTransfer(destination, amount);
         }
 
+        return true;
+    }
+
+    function setConverterAddress(address theAddress) public onlyOwner returns (bool) {
+        converterAddress = theAddress;
+        converter = IConverter(theAddress);
         return true;
     }
 }
