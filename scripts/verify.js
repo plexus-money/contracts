@@ -1,10 +1,9 @@
-const config = require('../config.json');
 const addresses = require('../addresses.json');
 const hre = require("hardhat");
 
 async function main() {
 	const netinfo = await ethers.provider.getNetwork();
-	var network = netinfo.name;
+	let network = netinfo.name;
 	if (network === "unknown")
 		network = "mainnet";
 
@@ -74,6 +73,6 @@ function verifyContract(contractInfo, network) {
 main()
 	.then(() => process.exit(0))
 	.catch(error => {
-			console.error(error);
-			process.exit(1);
+		console.error(error);
+		process.exit(1);
 	});
