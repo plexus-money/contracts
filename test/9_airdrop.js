@@ -114,8 +114,7 @@ describe('Re-deploying the plexus contracts for Airdrop test', () => {
       // Try to claim again and check if it is reverted
       await expect(airdrop.connect(addrs[0]).claimAirdropWithOption2()).to.be.revertedWith("You need to wait more time.");
 
-      // Wait until 60 blocks are mined
-      // await delay(interval * 60);
+      // Wait until 50 blocks are mined
       for (let i = 0; i < 50; i ++) {
         await ethers.provider.send("evm_mine");
       }
@@ -134,7 +133,6 @@ describe('Re-deploying the plexus contracts for Airdrop test', () => {
       expect(amount1).to.equal(1200);
 
       // Wait until 250 blocks are mined
-      // await delay(interval * 250);
       for (let i = 0; i < 250; i ++) {
         await ethers.provider.send("evm_mine");
       }
