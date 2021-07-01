@@ -24,6 +24,7 @@ const setupContracts = async() => {
     const Tier2Pickle = await ethers.getContractFactory('Tier2PickleFarmController');
     const LP2LP = await ethers.getContractFactory('LP2LP');
 	const Tier2Aggregator = await ethers.getContractFactory('Tier2AggregatorFarmController');
+    const Airdrop = await ethers.getContractFactory('Airdrop');
 
     // plexus reward token
     const PlexusCoin = await ethers.getContractFactory('PlexusTestCoin');
@@ -130,6 +131,18 @@ const setupContracts = async() => {
     // plexus reward token
     const plexusCoin = await (await PlexusCoin.deploy()).deployed();
 
+    // airdrop
+    const airdrop = await deployWithProxy(
+        Airdrop, 
+        OwnableProxy, 
+        'Airdrop',
+		plexusCoin.address,
+		[addr1.address, addrs[0].address]
+    );
+
+    const amount = ethers.utils.parseEther("100000");
+    plexusCoin.transfer(airdrop.address, amount);
+
     // then setup the contracts
     await tokenRewards.updateOracleAddress(plexusOracle.address);
     await tokenRewards.updateStakingTokenAddress(plexusCoin.address);
@@ -165,8 +178,10 @@ const setupContracts = async() => {
         lp2lp,
         tier2Aggregator,
         plexusCoin,
+        airdrop,
         owner,
-        addr1 } };
+        addr1,
+        addrs } };
 };
 
 const log = (message, params) =>{

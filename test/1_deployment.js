@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { setupContracts, log } = require('./helper');
 
 describe('Deploying the plexus contracts', () => {
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, airdrop, owner, addr1;
 
   before(async () => {
     const { deployedContracts } = await setupContracts();
@@ -16,6 +16,7 @@ describe('Deploying the plexus contracts', () => {
     tier2Aave = deployedContracts.tier2Aave;
     tier2Pickle = deployedContracts.tier2Pickle;
     plexusCoin = deployedContracts.plexusCoin;
+    airdrop = deployedContracts.airdrop;
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
   });
@@ -30,6 +31,7 @@ describe('Deploying the plexus contracts', () => {
       expect(await tier1Staking.owner()).to.equal(owner.address);
       expect(await core.owner()).to.equal(owner.address);
       expect(await plexusCoin.owner()).to.equal(owner.address);
+      expect(await airdrop.owner()).to.equal(owner.address);
     });
 
     it('Should set the tier1Staking contract as the owner of the deployed tier2 contracts', async function () {
