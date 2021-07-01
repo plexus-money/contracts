@@ -6,13 +6,9 @@ const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
 describe('Re-deploying the plexus contracts for Airdrop test', () => {
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, airdrop, owner, addr1, addrs;
   let erc20;
-
-  const interval = process.env.BLOCK_MINING_INTERVAL;
 
   // Deploy and setup the contracts
   before(async () => {
