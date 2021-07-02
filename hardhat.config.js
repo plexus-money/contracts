@@ -5,6 +5,7 @@ require("dotenv").config();
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
+require("@nomiclabs/hardhat-etherscan");
 
 module.exports = {
   defaultNetwork: "hardhat",
@@ -29,18 +30,18 @@ module.exports = {
       }
     },
 
-    mainnet: {
-      gas: "auto",
-      gasPrice: "auto",
-      gasMultiplier: 20,
-      blockGasLimit: 90000000000000,
-      accounts: {
-        mnemonic: process.env.MNEMONIC
-      },
-      url: process.env.RPC_NODE_URL,
-      chainId: 1
-    },
-    
+    // mainnet: {
+    //   gas: "auto",
+    //   gasPrice: "auto",
+    //   gasMultiplier: 20,
+    //   blockGasLimit: 90000000000000,
+    //   accounts: {
+    //     mnemonic: process.env.MNEMONIC
+    //   },
+    //   url: process.env.RPC_NODE_URL,
+    //   chainId: 1
+    // },
+
     kovan: {
       gas: "auto",
       gasPrice: "auto",
@@ -51,7 +52,25 @@ module.exports = {
       },
       url: process.env.RPC_NODE_URL_KOVAN,
       chainId: 42
+    },
+
+    matic: {
+      url: "https://rpc-mainnet.maticvigil.com",
+      mnemonic: process.env.MNEMONIC
+    },
+
+    mainnet: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gasPrice: 20000000000,
+      mnemonic: process.env.MNEMONIC
     }
+  },
+
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_API_KEY
   },
 
   mocha: {
