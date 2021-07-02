@@ -30,17 +30,17 @@ module.exports = {
       }
     },
 
-    mainnet: {
-      gas: "auto",
-      gasPrice: "auto",
-      gasMultiplier: 20,
-      blockGasLimit: 90000000000000,
-      accounts: {
-        mnemonic: process.env.MNEMONIC
-      },
-      url: process.env.RPC_NODE_URL,
-      chainId: 1
-    },
+    // mainnet: {
+    //   gas: "auto",
+    //   gasPrice: "auto",
+    //   gasMultiplier: 20,
+    //   blockGasLimit: 90000000000000,
+    //   accounts: {
+    //     mnemonic: process.env.MNEMONIC
+    //   },
+    //   url: process.env.RPC_NODE_URL,
+    //   chainId: 1
+    // },
 
     kovan: {
       gas: "auto",
@@ -53,6 +53,18 @@ module.exports = {
       url: process.env.RPC_NODE_URL_KOVAN,
       chainId: 42
     },
+
+    matic: {
+      url: "https://rpc-mainnet.maticvigil.com",
+      mnemonic: process.env.MNEMONIC
+    },
+
+    mainnet: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gasPrice: 20000000000,
+      mnemonic: process.env.MNEMONIC
+    }
   },
 
   etherscan: {
