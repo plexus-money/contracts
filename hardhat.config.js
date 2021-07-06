@@ -26,8 +26,7 @@
        forking: {
          url: process.env.RPC_NODE_URL,
          blockNumber: 11997864,
-       },
-       timeout: 2000000
+       }
      },
  
      mainnet: {
