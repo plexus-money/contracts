@@ -6,12 +6,13 @@
   "scripts": {
     "test": "npx hardhat test",
     "build": "hardhat compile",
+    "clean": "npx hardhat clean",
     "console": "hardhat console",
-    "verify": "yarn hint && yarn test",
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
     "format": "yarn prettier --write contracts/*.sol && yarn prettier --write test/*.js",
     "hint": "solhint \"contracts/**/*.sol\"",
-    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\""
+    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
+    "deploy": "npx hardhat run scripts/deploy.js"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-etherscan": "^2.1.3",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "chai": "^4.3.3",
