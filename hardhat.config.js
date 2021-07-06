@@ -5,6 +5,7 @@ require("dotenv").config();
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-solhint');
 require('solidity-coverage');
+require("@nomiclabs/hardhat-etherscan");
 
 module.exports = {
   defaultNetwork: "hardhat",
@@ -40,7 +41,7 @@ module.exports = {
       url: process.env.RPC_NODE_URL,
       chainId: 1
     },
-    
+
     kovan: {
       gas: "auto",
       gasPrice: "auto",
@@ -51,6 +52,18 @@ module.exports = {
       },
       url: process.env.RPC_NODE_URL_KOVAN,
       chainId: 42
+    },
+
+    polygon: {
+      url: "https://rpc-mainnet.maticvigil.com",
+      mnemonic: process.env.MNEMONIC
+    },
+
+    binance: {
+      url: "https://bsc-dataseed.binance.org/",
+      chainId: 56,
+      gasPrice: 20000000000,
+      mnemonic: process.env.MNEMONIC
     }
   },
 
