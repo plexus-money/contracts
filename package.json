@@ -11,7 +11,8 @@
     "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
     "format": "yarn prettier --write contracts/*.sol && yarn prettier --write test/*.js",
     "hint": "solhint \"contracts/**/*.sol\"",
-    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\""
+    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
+    "upgrade-checks": "npx hardhat run scripts/upgradeChecks.js"
   },
   "repository": {
     "type": "git",
