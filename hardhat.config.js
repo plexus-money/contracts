@@ -5,7 +5,8 @@
  require('@nomiclabs/hardhat-waffle');
  require('@nomiclabs/hardhat-solhint');
  require('solidity-coverage');
- 
+ require("@nomiclabs/hardhat-etherscan");
+
  module.exports = {
    defaultNetwork: "hardhat",
    solidity: {
@@ -28,7 +29,7 @@
          blockNumber: 11997864,
        }
      },
- 
+
      mainnet: {
        accounts: {
          mnemonic: process.env.MNEMONIC
@@ -37,7 +38,7 @@
        chainId: 1,
        timeout: 2000000
      },
-     
+
      kovan: {
        accounts: {
          mnemonic: process.env.MNEMONIC
@@ -46,7 +47,7 @@
        chainId: 42,
        timeout: 2000000
      },
-     
+
      binance: {
        accounts: {
          mnemonic: process.env.MNEMONIC
@@ -55,7 +56,7 @@
        chainId: 56,
        timeout: 20000000
      },
-     
+
      matic: {
        accounts: {
          mnemonic: process.env.MNEMONIC
@@ -64,11 +65,13 @@
        chainId: 137,
        timeout: 20000000
      },
- 
    },
- 
+
+   etherscan: {
+     apiKey: process.env.ETHERSCAN_API_KEY
+   },
+
    mocha: {
      timeout: 2000000
    }
  };
- 
