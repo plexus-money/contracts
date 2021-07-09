@@ -121,3 +121,6 @@ dist
 artifacts/
 cache/
 coverage.json
+
+# solidity-docgen documentation output
+docs/

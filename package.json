@@ -12,7 +12,8 @@
     "hint": "solhint \"contracts/**/*.sol\"",
     "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
     "upgrade-checks": "npx hardhat run scripts/upgradeChecks.js",
-    "verify": "npx hardhat run scripts/verify.js"
+    "verify": "npx hardhat run scripts/verify.js",
+    "generate-docs": "node node_modules/solidity-docgen/dist/cli.js --solc-module=solc"
   },
   "repository": {
     "type": "git",
@@ -43,6 +44,8 @@
     "human-standard-token-abi": "^2.0.0",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
-    "solidity-coverage": "^0.7.16"
+    "solc": "^0.8.6",
+    "solidity-coverage": "^0.7.16",
+    "solidity-docgen": "^0.5.13"
   }
 }
