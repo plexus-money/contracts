@@ -16,15 +16,15 @@ contract PlexusTestCoin is ERC20 {
         assembly {
             chainId := chainid()
         }
-        
+
         // mint 100,000 Plexus Coins meant as reward tokens
-         _mint(msg.sender, 1000000000000000000000000);
+        _mint(msg.sender, 1000000000000000000000000);
         owner= msg.sender;
 
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes("PlexusTestCoin")),
+                keccak256(bytes("Plexus")),
                 keccak256(bytes("1")),
                 chainId,
                 address(this)
