@@ -7,13 +7,15 @@ interface IConverter {
         address sourceToken,
         address[] memory destinationTokens,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) external payable returns (address, uint256);
     
     function unwrap(
         address sourceToken,
         address destinationToken,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) external payable returns (uint256);
 }

@@ -257,7 +257,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address sourceToken,
         address[] memory destinationTokens,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         public 
         payable 
@@ -282,7 +283,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 sourceToken,
                 destinationTokens[0],
                 amount,
-                userSlippageTolerance
+                userSlippageTolerance,
+                deadline
             );
             uint256 thisBalance = dToken.balanceOf(address(this));
             dToken.safeTransfer(msg.sender, thisBalance);
@@ -320,7 +322,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     sourceToken,
                     destinationTokens[0],
                     amount.div(2),
-                    userSlippageTolerance
+                    userSlippageTolerance,
+                    deadline
                 );
             }
 
@@ -329,7 +332,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     sourceToken,
                     destinationTokens[1],
                     amount.div(2),
-                    userSlippageTolerance
+                    userSlippageTolerance,
+                    deadline
                 );
             }
 
@@ -357,7 +361,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 );
             }
 
-            (, , uint256 liquidityCoins) = sushiExchange.addLiquidity(
+            sushiExchange.addLiquidity(
                 destinationTokens[0],
                 destinationTokens[1],
                 dTokenBalance,
@@ -417,7 +421,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address sourceToken,
         address destinationToken,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         public 
         payable 
@@ -455,27 +460,22 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 longTimeFromNow
             );
 
-            IERC20 pToken1 = IERC20(lpTokenAddressToPairs[sourceToken][0]);
-            IERC20 pToken2 = IERC20(lpTokenAddressToPairs[sourceToken][1]);
+            IERC20 pToken;
+            pToken = IERC20(lpTokenAddressToPairs[sourceToken][0]);
+            uint256 pTokenBalance = pToken.balanceOf(address(this));
 
-            uint256 pTokenBalance = pToken1.balanceOf(address(this));
-            uint256 pTokenBalance2 = pToken2.balanceOf(address(this));
-
-            if (
-                pToken1.allowance(address(this), sushiAddress) <
-                pTokenBalance.mul(2)
-            ) {
-                pToken1.safeIncreaseAllowance(
+            if (pToken.allowance(address(this), sushiAddress) < pTokenBalance.mul(2)) {
+                pToken.safeIncreaseAllowance(
                     sushiAddress,
                     pTokenBalance.mul(3)
                 );
             }
 
-            if (
-                pToken2.allowance(address(this), sushiAddress) <
-                pTokenBalance2.mul(2)
-            ) {
-                pToken2.safeIncreaseAllowance(
+            pToken = IERC20(lpTokenAddressToPairs[sourceToken][1]);
+            uint256 pTokenBalance2 = pToken.balanceOf(address(this));
+
+            if (pToken.allowance(address(this), sushiAddress) < pTokenBalance2.mul(2)) {
+                pToken.safeIncreaseAllowance(
                     sushiAddress,
                     pTokenBalance2.mul(3)
                 );
@@ -486,7 +486,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     lpTokenAddressToPairs[sourceToken][0],
                     destinationToken,
                     pTokenBalance,
-                    userSlippageTolerance
+                    userSlippageTolerance,
+                    deadline
                 );
             }
             if (lpTokenAddressToPairs[sourceToken][1] != destinationToken) {
@@ -494,7 +495,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     lpTokenAddressToPairs[sourceToken][1],
                     destinationToken,
                     pTokenBalance2,
-                    userSlippageTolerance
+                    userSlippageTolerance,
+                    deadline
                 );
             }
 
@@ -538,7 +540,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                     sourceToken,
                     destinationToken,
                     amount,
-                    userSlippageTolerance
+                    userSlippageTolerance,
+                    deadline
                 );
             }
             uint256 destinationTokenBalance = dToken.balanceOf(address(this));
@@ -706,7 +709,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address sellToken,
         address buyToken,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         internal 
         returns (uint256 amounts1) 
@@ -731,7 +735,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 amountOutMin,
                 addresses,
                 address(this),
-                1000000000000000
+                deadline
             );
         } else if (sellToken == WETH_TOKEN_ADDRESS) {
             wethToken.withdraw(amount);
@@ -753,7 +757,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 amountOutMin,
                 addresses,
                 address(this),
-                1000000000000000
+                deadline
             );
         } else {
             address[] memory addresses = getBestPath(
