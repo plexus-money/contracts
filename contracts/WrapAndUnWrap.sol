@@ -110,7 +110,8 @@ contract WrapAndUnWrap is OwnableUpgradeable {
      * @param sellToken Contract address for the token swap's sell token
      * @param buyToken Contract address for the token swap's buy token 
      * @param newPath Array representing the updated path between the two 
-     * tokens*/
+     * tokens
+     */
     function updatePresetPaths(
         address sellToken,
         address buyToken,
