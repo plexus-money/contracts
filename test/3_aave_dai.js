@@ -86,7 +86,8 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
        let coreAsSigner1 = core.connect(addr1);
 
        // Convert the 2 ETH to Dai Token(s)
-       const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
+      const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+       const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
        // Check if the txn is successful
        expect(status).to.equal(1);

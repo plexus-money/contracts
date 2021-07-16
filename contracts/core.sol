@@ -160,7 +160,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address sourceToken,
         address[] memory destinationTokens,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         external 
         payable 
@@ -176,7 +177,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
             uint256 _amount
         ) = converter.wrap{
                 value: msg.value
-            }(sourceToken, destinationTokens, amount, userSlippageTolerance);
+            }(sourceToken, destinationTokens, amount, userSlippageTolerance, deadline);
 
         IERC20 dstToken = IERC20(destinationTokenAddress);
         dstToken.safeTransfer(msg.sender, _amount);
@@ -197,7 +198,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address sourceToken,
         address destinationToken,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         external 
         payable 
@@ -208,7 +210,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
                 sourceToken, 
                 destinationToken, 
                 amount, 
-                userSlippageTolerance
+                userSlippageTolerance,
+                deadline
             );
         IERC20 token = IERC20(destinationToken);
         token.safeTransfer(msg.sender, _amount);
