@@ -59,7 +59,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
         };
   
         // Convert the 2 ETH to Farm Token(s)
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
+        const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -97,7 +98,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
         };
   
         // Convert the 2 ETH to Dai Token(s)
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
+        const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -135,7 +137,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
         };
   
         // Convert the 2 ETH to Pickle Token(s)
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, overrides)).wait();
+        const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -157,6 +160,24 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
         expect(ethbalance).to.be.lt(10000);
   
     });
+  
+    it('Should revert via Sushiswap after the deadline has passed', async () => {
+
+      const zeroAddress = process.env.ZERO_ADDRESS;
+      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+
+      // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
+      const amountPlaceholder = ethers.utils.parseEther(unitAmount)
+   
+      // We send 2 ETH to the wrapper for conversion
+      let overrides = {
+           value: ethers.utils.parseEther("2")
+      };
+
+      // Check if the txn reverts after it has passed
+      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, 10, overrides)).to.be.revertedWith("revert UniswapV2Router: EXPIRED");
+        
+  });
 
   });
 
