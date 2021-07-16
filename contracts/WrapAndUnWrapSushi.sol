@@ -768,7 +768,8 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             uint256[] memory amounts = conductUniswapT4T(
                 addresses,
                 amount,
-                userSlippageTolerance
+                userSlippageTolerance,
+                deadline
             );
             uint256 resultingTokens = amounts[amounts.length - 1];
             return resultingTokens;
@@ -778,12 +779,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
     function conductUniswapT4T(
         address[] memory theAddresses,
         uint256 amount,
-        uint256 userSlippageTolerance
+        uint256 userSlippageTolerance,
+        uint256 deadline
     ) 
         internal
         returns (uint256[] memory amounts1)
     {
-        uint256 deadline = 1000000000000000;
         uint256 amountOutMin = getAmountOutMin(
             theAddresses,
             amount,
