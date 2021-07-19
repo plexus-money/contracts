@@ -863,7 +863,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
      * token
      * @param amount Amount of input tokens to be swapped
      * @param userSlippageTolerance Maximum permissible slippage tolerance
-     * @return amounts_ The input token amount and all subsequent output token 
+     * @return amounts_ The input token amount and all subsequent output token
      * amounts
      */
     function conductUniswapT4T(
@@ -873,7 +873,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         uint256 deadline
     ) 
         internal
-        returns (uint256[] memory amounts1)
+        returns (uint256[] memory amounts_)
     {
         uint256 amountOutMin = getAmountOutMin(
             theAddresses,
