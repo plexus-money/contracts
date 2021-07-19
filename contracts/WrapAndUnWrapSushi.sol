@@ -1,65 +1,4 @@
 // SPDX-License-Identifier: MIT
-
-/*
-                                       `.-:+osyhhhhhhyso+:-.`
-                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
-                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.
-                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`
-                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.
-                         `omNNNNNNdo-`                        `-odNNNNNNmo`
-                        :dNNNNNNh/`                              `/hNNNNNNd:
-                      `oNNNNNNh:                     /-/.           :hNNNNNNo`
-                     `yNNNNNm+`                      mNNm-           `+mNNNNNy`
-                    `hNNNNNd-                        hNNNm.            -dNNNNNh`
-                    yNNNNNd.                         .ymNNh             .dNNNNNy
-                   /NNNNNm.                            -mNNys+.          .mNNNNN/
-                  `mNNNNN:                           `:hNNNNNNNs`         :NNNNNm`
-                  /NNNNNh                          `+dNNNNNNNNNNd.         hNNNNN/
-                  yNNNNN/               .:+syyhhhhhmNNNNNNNNNNNNNm`        /NNNNNy
-                  dNNNNN.            `+dNNNNNNNNNNNNNNNNNNNNNNNmd+         .NNNNNd
-                  mNNNNN`           -dNNNNNNNNNNNNNNNNNNNNNNm-             `NNNNNm
-                  dNNNNN.          -NNNNNNNNNNNNNNNNNNNNNNNN+              .NNNNNd
-                  yNNNNN/          dNNNNNNNNNNNNNNNNNNNNNNNN:              /NNNNNy
-                  /NNNNNh         .NNNNNNNNNNNNNNNNNNNNNNNNd`              hNNNNN/
-                  `mNNNNN:        -NNNNNNNNNNNNNNNNNNNNNNNh.              :NNNNNm`
-                   /NNNNNm.       `NNNNNNNNNNNNNNNNNNNNNh:               .mNNNNN/
-                    yNNNNNd.      .yNNNNNNNNNNNNNNNdmNNN/               .dNNNNNy
-                    `hNNNNNd-    `dmNNNNNNNNNNNNdo-`.hNNh              -dNNNNNh`
-                     `yNNNNNm+`   oNNmmNNNNNNNNNy.   `sNNdo.         `+mNNNNNy`
-                      `oNNNNNNh:   ....++///+++++.     -+++.        :hNNNNNNo`
-                        :dNNNNNNh/`                              `/hNNNNNNd:
-                         `omNNNNNNdo-`                        `-odNNNNNNmo`
-                           .odNNNNNNNdy+-.`              `.-+ydNNNNNNNdo.
-                             `/hmNNNNNNNNmdys+//:::://+sydmNNNNNNNNmh/`
-                                .+ymNNNNNNNNNNNNNNNNNNNNNNNNNNNNmy+.
-                                   .:+ydmNNNNNNNNNNNNNNNNNNmdy+:.
-                                       `.-:+yourewelcome+:-.`
- /$$$$$$$  /$$                                               /$$      /$$
-| $$__  $$| $$                                              | $$$    /$$$
-| $$  \ $$| $$  /$$$$$$  /$$   /$$ /$$   /$$  /$$$$$$$      | $$$$  /$$$$  /$$$$$$  /$$$$$$$   /$$$$$$  /$$   /$$
-| $$$$$$$/| $$ /$$__  $$|  $$ /$$/| $$  | $$ /$$_____/      | $$ $$/$$ $$ /$$__  $$| $$__  $$ /$$__  $$| $$  | $$
-| $$____/ | $$| $$$$$$$$ \  $$$$/ | $$  | $$|  $$$$$$       | $$  $$$| $$| $$  \ $$| $$  \ $$| $$$$$$$$| $$  | $$
-| $$      | $$| $$_____/  >$$  $$ | $$  | $$ \____  $$      | $$\  $ | $$| $$  | $$| $$  | $$| $$_____/| $$  | $$
-| $$      | $$|  $$$$$$$ /$$/\  $$|  $$$$$$/ /$$$$$$$/      | $$ \/  | $$|  $$$$$$/| $$  | $$|  $$$$$$$|  $$$$$$$
-|__/      |__/ \_______/|__/  \__/ \______/ |_______/       |__/     |__/ \______/ |__/  |__/ \_______/ \____  $$
-                                                                                                        /$$  | $$
-                                                                                                       |  $$$$$$/
-                                                                                                       \______/
-*/
-
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -71,13 +10,15 @@ import "./interfaces/token/ILPERC20.sol";
 import "./interfaces/sushiswap/ISushiV2.sol";
 import "./interfaces/uniswap/IUniswapFactory.sol";
 
+/// @title Plexus LP Wrapper Contract - SushiSwap
+/// @author Team Plexus
 contract WrapAndUnWrapSushi is OwnableUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    //placehodler token address for specifying eth tokens
-    address public ETH_TOKEN_ADDRESS;
-    address public WETH_TOKEN_ADDRESS;
+    // Contract state variables
+    address public ETH_TOKEN_ADDRESS; // Contract address for ETH tokens
+    address public WETH_TOKEN_ADDRESS; // Contract address for WETH tokens
     bool public changeRecpientIsOwner;
     address private sushiAddress;
     address private uniFactoryAddress;
@@ -94,6 +35,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
 
     constructor() payable {}
 
+    /**
+     * @notice Initialize the Sushi Wrapper contract
+     * @param _weth Address to the WETH token contract
+     * @param _sushiAddress Address to the SushiSwap contract
+     * @param _uniFactoryAddress Address to the Uniswap factory contract
+     * @param _dai Address to the DAI token contract
+     * @param _usdt Address to the USDT token contract
+     * @param _usdc Address to the USDC token contract
+     */
     function initialize(
         address _weth,
         address _sushiAddress,
@@ -122,15 +72,34 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         changeRecpientIsOwner = false;
     }
 
+    /**
+     * @notice Modifier check to ensure that a function is executed only if it 
+     * was called with a non-zero amount value 
+     * @param amount Amount value 
+     */
     modifier nonZeroAmount(uint256 amount) {
         require(amount > 0, "Amount specified is zero");
         _;
     }
 
+    /**
+     * @notice Executed on a call to the contract if none of the other 
+     * functions match the given function signature, or if no data was 
+     * supplied at all and there is no receive Ether function
+     */
     fallback() external payable {}
 
+     /**
+     * @notice Function executed on plain ether transfers and on a call to the 
+     * contract with empty calldata 
+     */
     receive() external payable {}
 
+    /**
+     * @notice Update token contract address for a given stablecoin
+     * @param coinName String identifier to the given stablecoin
+     * @param newAddress Updated contract address for the stablecoin
+     */
     function updateStableCoinAddress(string memory coinName, address newAddress)
         external
         onlyOwner
@@ -140,6 +109,13 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Update the preset path to implement a swap between two tokens
+     * @param sellToken Contract address for the token swap's sell token
+     * @param buyToken Contract address for the token swap's buy token 
+     * @param newPath Array representing the updated path between the two 
+     * tokens
+     */
     function updatePresetPaths(
         address sellToken,
         address buyToken,
@@ -153,7 +129,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
-    // Owner can turn on ability to collect a small fee from trade imbalances on LP conversions
+    /**
+     * @notice Allow owner to collect a small fee from trade imbalances on 
+     * LP conversions 
+     * @param changeRecpientIsOwnerBool If set to true, allows owner to collect
+     * fees from pair imbalances
+     */
     function updateChangeRecipientBool(bool changeRecpientIsOwnerBool)
         external
         onlyOwner
@@ -163,6 +144,10 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Update the SushiSwap exchange contract address
+     * @param newAddress SushiSwap exchange contract address to be updated
+     */
     function updateSushiExchange(address newAddress)
         external
         onlyOwner
@@ -173,6 +158,10 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+     /**
+     * @notice Update the Uniswap factory contract address
+     * @param newAddress Uniswap factory contract address to be updated
+     */
     function updateUniswapFactory(address newAddress)
         external
         onlyOwner
@@ -183,6 +172,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Register a LP token with the underlying token pair
+     * @param lpAddress Address to the LP token's contract
+     * @param token1 Address to the LP's first token
+     * @param token2 Address to the LP's second token
+     */
     function addLPPair(
         address lpAddress,
         address token1,
@@ -196,6 +191,13 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Retrieve the LP token address for a given pair of tokens
+     * @param token1 Address to the first token in the LP pair
+     * @param token2 Address to the second token in the LP pair
+     * @return lpAddr Address to the LP token contract composed of the given 
+     * token pair 
+     */
     function getLPTokenByPair(
         address token1, 
         address token2
@@ -208,6 +210,13 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return thisPairAddress;
     }
 
+    /**
+     * @notice Retrieve the balance of a given token for a specified user
+     * @param userAddress Address to the user's wallet 
+     * @param tokenAddress Address to the token for which the balance is to be 
+     * retrieved
+     * @return Balance of the given token in the specified user wallet
+     */
     function getUserTokenBalance(
         address userAddress, 
         address tokenAddress
@@ -220,6 +229,13 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return token.balanceOf(userAddress);
     }
 
+    /**
+    * @notice Allow admins to withdraw accidentally deposited tokens 
+    * @param token Address to the token to be withdrawn 
+    * @param amount Amount of specified token to be withdrawn 
+    * @param destination Address where the withdrawn tokens should be 
+    * transferred
+    */
     function adminEmergencyWithdrawTokens(
         address token,
         uint256 amount,
@@ -238,6 +254,10 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Update the protocol fee rate
+     * @param newFee Updated fee rate to be charged 
+     */
     function setFee(uint256 newFee) public onlyOwner returns (bool) {
         require(
             newFee <= maxfee,
@@ -247,12 +267,27 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return true;
     }
 
+     /**
+     * @notice Set the max protocol fee rate
+     * @param newMax Updated maximum fee rate value
+     */
     function setMaxFee(uint256 newMax) public onlyOwner returns (bool) {
         require(maxfee == 0, "Admin can only set max fee once and it is perm");
         maxfee = newMax;
         return true;
     }
 
+    /**
+     * @notice Wrap a source token based on the specified 
+     * destination token(s) 
+     * @param sourceToken Address to the source token contract
+     * @param destinationTokens Array describing the token(s) which the source
+     * token will be wrapped into
+     * @param amount Amount of source token to be wrapped
+     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @return Address to the token contract for the destination token and the 
+     * amount of wrapped tokens
+     */
     function wrap(
         address sourceToken,
         address[] memory destinationTokens,
@@ -417,6 +452,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
+    /**
+     * @notice Unwrap a source token based to the specified destination token 
+     * @param sourceToken Address to the source token contract
+     * @param destinationToken Address to the destination token contract
+     * @param amount Amount of source token to be unwrapped
+     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @return Amount of the destination token returned from unwrapping the
+     * source token
+     */
     function unwrap(
         address sourceToken,
         address destinationToken,
@@ -550,7 +594,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
-    // Gets the best path to route the transaction on Uniswap
+    /**
+     * @notice Get the best path to route a swap transaction between two tokens
+     * on SushiSwap
+     * @param sellToken Address to the sell token of the swap transaction 
+     * @param buyToken Address to the buy token of the swap transaction
+     * @param amount Amount of selling token which is to be swapped
+     * @return Array of token addresses that represent the most optimal
+     * transaction path for the swap
+     */
     function getBestPath(
         address sellToken,
         address buyToken,
@@ -661,6 +713,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
+    /**
+     * @notice Given an input asset amount and an array of token addresses, 
+     * calculates all subsequent maximum output token amounts for each pair of 
+     * token addresses in the path using SushiSwap
+     * @param theAddresses Array of addresses that form the Routing swap path 
+     * @param amount Amount of input asset token
+     * @return amounts1 Array with maximum output token amounts for all token
+     * pairs in the swap path
+     */
     function getPriceFromSushiswap(
         address[] memory theAddresses,
         uint256 amount
@@ -681,6 +742,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
+    /**
+     * @notice Retrieve minimum output amount required based on uniswap routing 
+     * path and maximum permissible slippage
+     * @param theAddresses Array list describing the SushiSwap swap path
+     * @param amount Amount of input tokens to be swapped
+     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @return Minimum amount of output tokens the input token can be swapped
+     * for, based on the Uniswap prices and Slippage tolerance thresholds
+     */
     function getAmountOutMin(
         address[] memory theAddresses,
         uint256 amount,
@@ -705,6 +775,15 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             );
     }
 
+     /**
+     * @notice Perform a SushiSwap transaction to swap between a given pair of 
+     * tokens of the specified amount 
+     * @param sellToken Address to the token being sold as part of the swap
+     * @param buyToken Address to the token being bought as part of the swap
+     * @param amount Transaction amount denoted in terms of the token sold
+     * @param userSlippageTolerance Maximum permissible slippage limit
+     * @return amounts1 Tokens received once the swap is completed
+     */
     function conductUniswap(
         address sellToken,
         address buyToken,
@@ -776,6 +855,17 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         }
     }
 
+    /**
+     * @notice Using SushiSwap, exchange an exact amount of input tokens for as 
+     * many output tokens as possible, along the route determined by the path. 
+     * @param theAddresses Array of addresses representing the path where the 
+     * first address is the input token and the last address is the output 
+     * token
+     * @param amount Amount of input tokens to be swapped
+     * @param userSlippageTolerance Maximum permissible slippage tolerance
+     * @return amounts1 The input token amount and all subsequent output token 
+     * amounts
+     */
     function conductUniswapT4T(
         address[] memory theAddresses,
         uint256 amount,
