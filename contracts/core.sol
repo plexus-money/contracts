@@ -20,6 +20,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     // Global state variables
     address public oracleAddress;
     address public converterAddress;
+    address public converterAddressV3;
     address public stakingAddress;
     address public ETH_TOKEN_ADDRESS;
     address public WETH_TOKEN_ADDRESS;
@@ -27,6 +28,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     IPlexusOracle private oracle;
     ITier1Staking private staking;
     IConverter private converter;
+    IConverter private converterV3;
     IWETH private wethToken;
 
     constructor() payable {
@@ -61,14 +63,16 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     /**
      * @notice Initialize the core contract 
      * @param _weth Address to the WETH token contract 
-     * @param _converter Address to the converter contract 
+     * @param _converter Address to the converter contract based on UniswapV2
+     * @param _converterV3 Address to the converter contract based on UniswapV3
      */
-    function initialize(address _weth, address _converter) external initializeOnceOnly {
+    function initialize(address _weth, address _converter, address _converterV3) external initializeOnceOnly {
         ETH_TOKEN_ADDRESS = address(0x0);
         WETH_TOKEN_ADDRESS = _weth;
         wethToken = IWETH(WETH_TOKEN_ADDRESS);
         approvalAmount = 1000000000000000000000000000000;
         setConverterAddress(_converter);
+        setConverterAddress(_converterV3);
     }
 
     /**
@@ -101,12 +105,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) 
-        external 
-        payable 
-        nonReentrant 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        external
+        payable
+        nonReentrant
+        nonZeroAmount(amount)
+        returns (bool)
     {
         IERC20 token;
         if (tokenAddress == ETH_TOKEN_ADDRESS) {
@@ -134,12 +138,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) 
-        external 
-        payable 
-        nonReentrant 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        external
+        payable
+        nonReentrant
+        nonZeroAmount(amount)
+        returns (bool)
     {
         bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request.");
@@ -173,7 +177,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
             srcToken.safeTransferFrom(msg.sender, address(this), amount);
         }
         (
-            address destinationTokenAddress, 
+            address destinationTokenAddress,
             uint256 _amount
         ) = converter.wrap{
                 value: msg.value
@@ -205,7 +209,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         payable 
         returns (uint256) 
     {
-        uint256 _amount = 
+        uint256 _amount =
             converter.unwrap{value: msg.value}(
                 sourceToken, 
                 destinationToken, 
@@ -219,13 +223,101 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
+     * @notice Convert a provided source token to multiple output tokens (Based on UniswapV3)
+     * @dev Converting is mostly for removing liquidity from LP tokens by  
+     * swapping them for their underlying assets
+     * @param sourceToken Address to provided source LP tokens
+     * @param destinationTokens Address list for output destination tokens
+     * @param amount Amount of provided LP tokens to be converted
+     * @param tickLower The lower tick of the range
+     * @param tickUpper The upper tick of the range
+     * @param fee The fee type, 0.05%, 0.30%, and 1.00%
+     * @param userSlippageTolerance Maximum slippage tolerance limit
+     * @return Output tokens acquired by swapping provided source tokens
+     */
+    function convertV3(
+        address sourceToken,
+        address[] memory destinationTokens,
+        uint256 amount,
+        uint256 userSlippageTolerance,
+        int24 tickLower,
+        int24 tickUpper,
+        uint24 fee,
+        uint256 deadline
+    )
+        external
+        payable
+        nonZeroAmount(amount)
+        returns (address, uint256)
+    {
+        if (sourceToken != ETH_TOKEN_ADDRESS) {
+            IERC20 srcToken = IERC20(sourceToken);
+            srcToken.safeTransferFrom(msg.sender, address(this), amount);
+        }
+        (
+        address destinationTokenAddress,
+        uint256 _amount
+        ) = converterV3.wrapV3{ value: msg.value }(
+            sourceToken, 
+            destinationTokens, 
+            amount, 
+            userSlippageTolerance, 
+            tickLower, 
+            tickUpper, 
+            fee, 
+            deadline
+        );
+
+        IERC20 dstToken = IERC20(destinationTokenAddress);
+        dstToken.safeTransfer(msg.sender, _amount);
+        return (destinationTokenAddress, _amount);
+    }
+
+    /**
+     * @notice Convert provided LP tokens to a common output token (Based on UniswapV3)
+     * @dev De-converting is mostly for LP tokens back to another token, as  
+     * these cant be simply swapped on uniswap
+     * @param tokenId Nonfungiable LP tokenId
+     * @param sourceToken Address to source token to be converted to destinationToken if tokenId is invalid
+     * @param destinationToken Address to desired output destination tokens
+     * @param amount Amount of provided LP tokens to be converted
+     * @param userSlippageTolerance Maximum slippage tolerance limit
+     * @return Destination tokens acquired by converting provided LP tokens
+     */
+    function deconvertV3(
+        uint256 tokenId,
+        address sourceToken,
+        address destinationToken,
+        uint256 amount,
+        uint256 userSlippageTolerance,
+        uint256 deadline
+    )
+        external
+        payable
+        returns (uint256)
+    {
+        uint256 _amount =
+        converterV3.unwrapV3{value: msg.value}(
+            tokenId,
+            sourceToken,
+            destinationToken,
+            amount,
+            userSlippageTolerance,
+            deadline
+        );
+        IERC20 token = IERC20(destinationToken);
+        token.safeTransfer(msg.sender, _amount);
+        return _amount;
+    }
+
+    /**
      * @notice Retrieve details about all tokens that can be staked 
      * @return Two arrays - one containing a list of addresses to all tokens 
      * that can be staked and another containing their respective token names 
      */
     function getStakableTokens() external view returns (address[] memory, string[] memory) {
         (
-            address[] memory stakableAddresses, 
+            address[] memory stakableAddresses,
             string[] memory stakableTokenNames
         ) = oracle.getStakableTokens();
         return (stakableAddresses, stakableTokenNames);
@@ -326,12 +418,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
      * @return Balance of the given token in the specified user wallet
      */
     function getUserWalletBalance(
-        address userAddress, 
+        address userAddress,
         address tokenAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         uint256 result = oracle.getUserWalletBalance(userAddress, tokenAddress);
         return result;
@@ -376,6 +468,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function setConverterAddress(address theAddress) public onlyOwner returns (bool) {
         converterAddress = theAddress;
         converter = IConverter(theAddress);
+        return true;
+    }
+
+    function setConverterAddressV3(address theAddress) public onlyOwner returns (bool) {
+        converterAddressV3 = theAddress;
+        converterV3 = IConverter(theAddress);
         return true;
     }
 }

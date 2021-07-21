@@ -2,11 +2,12 @@ const { expect } = require('chai');
 const { setupContracts, log } = require('./helper');
 
 describe('Deploying the plexus contracts', () => {
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, airdrop, owner, addr1;
+  let wrapper, wrapperV3, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, airdrop, owner, addr1;
 
   before(async () => {
     const { deployedContracts } = await setupContracts();
     wrapper = deployedContracts.wrapper;
+    wrapperV3 = deployedContracts.wrapperV3;
     wrapperSushi = deployedContracts.wrapperSushi;
     tokenRewards = deployedContracts.tokenRewards;
     plexusOracle = deployedContracts.plexusOracle;
@@ -25,6 +26,7 @@ describe('Deploying the plexus contracts', () => {
 
     it('Should set the deployed contracts to the correct owner', async function () {
       expect(await wrapper.owner()).to.equal(owner.address);
+      expect(await wrapperV3.owner()).to.equal(owner.address);
       expect(await wrapperSushi.owner()).to.equal(owner.address);
       expect(await tokenRewards.owner()).to.equal(owner.address);
       expect(await plexusOracle.owner()).to.equal(owner.address);
@@ -42,13 +44,14 @@ describe('Deploying the plexus contracts', () => {
 
     it('Should setup the contracts addresses correctly after deployment', async function () {
       expect(await tokenRewards.oracleAddress()).to.equal(plexusOracle.address);
-      
+
       expect(await plexusOracle.rewardAddress()).to.equal(tokenRewards.address);
       expect(await plexusOracle.coreAddress()).to.equal(core.address);
       expect(await plexusOracle.tier1Address()).to.equal(tier1Staking.address);
 
       expect(await core.oracleAddress()).to.equal(plexusOracle.address);
       expect(await core.converterAddress()).to.equal(wrapper.address);
+      expect(await core.converterAddressV3()).to.equal(wrapperV3.address);
       expect(await core.stakingAddress()).to.equal(tier1Staking.address);
 
       expect(await tier1Staking.oracleAddress()).to.equal(plexusOracle.address);
@@ -62,7 +65,7 @@ describe('Deploying the plexus contracts', () => {
       expect(ethbalance).to.be.gte(100);
     });
 
-   
+
   });
 
 });
