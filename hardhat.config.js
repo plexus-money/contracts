@@ -6,11 +6,12 @@
  require('@nomiclabs/hardhat-solhint');
  require('solidity-coverage');
  require("@nomiclabs/hardhat-etherscan");
-
+ require('@eth-optimism/hardhat-ovm');
+ 
  module.exports = {
-   defaultNetwork: "hardhat",
+   defaultNetwork: "optimism",
    solidity: {
-     version: "0.8.0",
+     version: "0.7.6",
      settings: {
        optimizer: {
          enabled: true,
@@ -18,6 +19,10 @@
        }
      }
    },
+   
+   ovm: {
+    solcVersion: '0.7.6' // Your version goes here.
+  },  
    networks: {
      hardhat: {
        gas: "auto",
@@ -29,6 +34,13 @@
          blockNumber: 12829900,
        }
      },
+
+    optimism: {
+      url: process.env.L2_NODE_URL,
+      accounts: [process.env.PRIVATE_KEY],
+      gasPrice: 15000000,
+      ovm: true
+    },
 
      mainnet: {
        accounts: {

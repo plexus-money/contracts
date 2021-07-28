@@ -62,15 +62,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity ^0.7.6;
+pragma abicoder v2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@eth-optimism/contracts/OVM/predeploys/OVM_ETH.sol";
 import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/token/IWETH.sol";
-import "./interfaces/token/ILPERC20.sol";
+import "./OVM_SafeERC20.sol";
+//import "./interfaces/token/ILPERC20.sol";
 import "./interfaces/uniswap/v3/INonfungiblePositionManager.sol";
 import "./interfaces/uniswap/v3/ISwapRouter.sol";
 import "./interfaces/uniswap/v3/IQuoter.sol";
@@ -79,7 +81,7 @@ import "./interfaces/uniswap/v3/IUniswapV3Pool.sol";
 
 contract WrapAndUnWrapV3 is OwnableUpgradeable, IERC721Receiver {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using OVM_SafeERC20 for IERC20;
     //  address payable public owner;
     //placehodler token address for specifying eth tokens
     address public ETH_TOKEN_ADDRESS;
@@ -89,7 +91,7 @@ contract WrapAndUnWrapV3 is OwnableUpgradeable, IERC721Receiver {
     uint256 public fee;
     uint256 public maxfee;
     uint256 private longTimeFromNow;
-    IWETH private wethToken;
+    OVM_ETH private wethToken;
     INonfungiblePositionManager private nonfungiblePositionManager;
     ISwapRouter private swapRouter;
     IUniswapV3Factory private factory;
@@ -134,7 +136,7 @@ contract WrapAndUnWrapV3 is OwnableUpgradeable, IERC721Receiver {
     {
         ETH_TOKEN_ADDRESS = address(0x0);
         WETH_TOKEN_ADDRESS = _weth;
-        wethToken = IWETH(WETH_TOKEN_ADDRESS);
+        wethToken = OVM_ETH(0x4200000000000000000000000000000000000006);
         longTimeFromNow = 1000000000000000000000000000;
         nonfungiblePositionManagerAddress = _nonfungiblePositionManagerAddress;
         nonfungiblePositionManager = INonfungiblePositionManager(_nonfungiblePositionManagerAddress);
@@ -701,13 +703,16 @@ contract WrapAndUnWrapV3 is OwnableUpgradeable, IERC721Receiver {
             if (originalDestinationToken == ETH_TOKEN_ADDRESS) {
                 wethToken.withdraw(destinationTokenBalance);
                 if (fee > 0) {
-                    uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
+                    uint256 balance = ERC20(0x4200000000000000000000000000000000000006).balanceOf(address(this));
+                    uint256 totalFee = (balance.mul(fee)).div(10000);
                     if (totalFee > 0) {
                         payable(owner()).transfer(totalFee);
                     }
-                    payable(msg.sender).transfer(address(this).balance);
+                    balance = ERC20(0x4200000000000000000000000000000000000006).balanceOf(address(this));
+                    payable(msg.sender).transfer(balance);
                 } else {
-                    payable(msg.sender).transfer(address(this).balance);
+                    uint256 balance = ERC20(0x4200000000000000000000000000000000000006).balanceOf(address(this));
+                    payable(msg.sender).transfer(balance);
                 }
             } else {
                 if (fee > 0) {
