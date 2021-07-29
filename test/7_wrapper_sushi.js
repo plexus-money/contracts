@@ -46,7 +46,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
      // Conversions From ETH
      it('Should convert 2 ETH to Farm token from harvest.finance via Sushiswap', async () => {
 
-        const zeroAddress = process.env.ZERO_ADDRESS;
+        const zeroAddress = process.env.WETH_TOKEN_MAINNET_ADDRESS;
         const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
   
@@ -60,7 +60,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
         // Convert the 2 ETH to Farm Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, [zeroAddress], overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -85,7 +85,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via Sushiswap', async () => {
   
-        const zeroAddress = process.env.ZERO_ADDRESS;
+        const zeroAddress = process.env.WETH_TOKEN_MAINNET_ADDRESS;
         const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
   
@@ -99,7 +99,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
         // Convert the 2 ETH to Dai Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, [zeroAddress], overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -124,7 +124,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
       it('Should convert 2 ETH to Pickle Token(s) via Sushiswap', async () => {
   
-        const zeroAddress = process.env.ZERO_ADDRESS;
+        const zeroAddress = process.env.WETH_TOKEN_MAINNET_ADDRESS;
         const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
         const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
   
@@ -138,7 +138,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
         // Convert the 2 ETH to Pickle Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, [zeroAddress], overrides)).wait();
   
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -163,7 +163,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   
     it('Should revert via Sushiswap after the deadline has passed', async () => {
 
-      const zeroAddress = process.env.ZERO_ADDRESS;
+      const zeroAddress = process.env.WETH_TOKEN_MAINNET_ADDRESS;
       const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
 
       // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -175,7 +175,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
       };
 
       // Check if the txn reverts after it has passed
-      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, 10, overrides)).to.be.revertedWith("revert UniswapV2Router: EXPIRED");
+      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, 10, [zeroAddress], overrides)).to.be.revertedWith("revert UniswapV2Router: EXPIRED");
         
   });
 
