@@ -32,7 +32,7 @@ const setupContracts = async() => {
     // get the signers
     let owner, addr1;
     [owner, addr1, ...addrs] = await ethers.getSigners();
-
+    
     // then deploy the contracts and wait for them to be mined
     const wrapper = await deployWithProxy(
         Wrapper, 
@@ -40,10 +40,7 @@ const setupContracts = async() => {
         'WrapAndUnWrap',
 		addr.tokens.WETH[network],
 		addr.swaps.uniswap[network],
-		addr.swaps.uniswapFactory[network],
-		addr.tokens.DAI[network],
-		addr.tokens.USDT[network],
-		addr.tokens.USDC[network]
+		addr.swaps.uniswapFactory[network]
     );
 
     const wrapperSushi = await deployWithProxy(

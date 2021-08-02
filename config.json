@@ -65,6 +65,20 @@
 				"binance": "",
 				"matic": "",
 				"description": "Uniswap V2: ETH/USDT LP (UNI-V2) Token"
+			},
+			"SUSHI": {
+				"mainnet": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+				"kovan": "",
+				"binance": "",
+				"matic": "",
+				"description": ""
+			},
+			"COMP": {
+				"mainnet": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
+				"kovan": "",
+				"binance": "",
+				"matic": "",
+				"description": ""
 			}
 		},
 
