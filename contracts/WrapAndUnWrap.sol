@@ -406,6 +406,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
      * @param sourceToken Address to the source token contract
      * @param destinationToken Address to the destination token contract
      * @param paths Paths for uniswap
+     * @param lpTokenPairAddress address for lp token
      * @param amount Amount of source token to be unwrapped
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Amount of the destination token returned from unwrapping the
