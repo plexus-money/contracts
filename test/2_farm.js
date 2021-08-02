@@ -1,20 +1,26 @@
 require("dotenv").config();
 
+const config = require('../config.json');
 const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
+const addr = config.addresses;
 
 describe('Re-deploying the plexus ecosystem for Farm test', () => {
 
   // Global test vars
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let netinfo;
+  let network = 'unknown';
+  let wethAddress;
+  let farmTokenAddress;
 
   const tier2ContractName = "FARM";
-  const farmTokenAddress = process.env.FARM_TOKEN_MAINNET_ADDRESS;
-  const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
+  let erc20;
   const unitAmount = "2";
+
 
   // Deploy and setup the contracts
   before(async () => {
@@ -32,6 +38,14 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
 
+    netinfo = await ethers.provider.getNetwork();
+    network = netinfo.chainId === 1 ? "mainnet" :
+    netinfo.chainId === 42 ? "kovan" :
+    netinfo.chainId === 56 ? "binance" :
+    netinfo.chainId === 137 ? "matic" : 'mainnet';
+    farmTokenAddress = addr.tokens.FARM[network];
+    wethAddress = addr.tokens.WETH[network];
+    erc20 = new ethers.Contract(farmTokenAddress, abi, provider)
     // Use contract as user/addr1
     coreAsSigner1 = core.connect(addr1);
   });
@@ -61,7 +75,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
     it('Plexus test user wallet Farm Token balance is equal to zero', async () => {
         // Check the farm token balance in the contract account
         const userFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
-    
+
         // Before conversion usser Farm Token balance should be zero
         log("User farm token balance BEFORE ETH conversion: ", userFarmTokenBalance);
         expect(userFarmTokenBalance).to.be.lte(0);
@@ -75,7 +89,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
 
        // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
-    
+
        // We send 2 ETH to the wrapper for conversion
        let overrides = {
             value: ethers.utils.parseEther("2")
@@ -85,8 +99,9 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
        let coreAsSigner1 = core.connect(addr1);
 
        // Convert the 2 ETH to Farm Token(s)
-        const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-       const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+       const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+       const paths = [[wethAddress, farmTokenAddress]];
+       const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
        // Check if the txn is successful
        expect(status).to.equal(1);
@@ -96,7 +111,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
 
           // Check the farm token balance in the contract account
           const userFarmTokenBalance = Number(ethers.utils.formatUnits(await erc20.balanceOf(addr1.address), `ether`));
-      
+
           // Check if the conversion is successful and the user has some farm tokens in their wallet
           log("User farm token balance AFTER ETH conversion: ", userFarmTokenBalance);
           expect(userFarmTokenBalance).to.be.gt(0);
@@ -106,17 +121,17 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
        const ethbalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
        log('User ETH balance AFTER ETH conversion is: ', ethbalance);
        expect(ethbalance).to.be.lt(10000);
- 
+
     });
 
     it("User should be able to deposit Farm Tokens via the core contract", async () => {
-    
+
         const farmTokenDepositAmount = ethers.utils.parseEther(unitAmount);
 
         // Check the user farm token balance in the token contract before deposit
         const initialUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
         log("User farm token balance, BEFORE deposit is: ", initialUserFarmTokenBalance);
-        
+
         // Approve the core contract to spend the tokens
         let erc20AsSigner1 =  erc20.connect(addr1);
         const approved = await(await erc20AsSigner1.approve(core.address, farmTokenDepositAmount)).wait();
@@ -140,7 +155,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
           // Check the user farm token balance in the contract account after deposit
           const currUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
           log("User farm token balance, AFTER deposit is: ", currUserFarmTokenBalance);
-          
+
           // Check that the initial user Farm token balance is less 2 Tokens
           expect(currUserFarmTokenBalance).to.be.lt(initialUserFarmTokenBalance);
 
@@ -148,7 +163,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
     });
 
     it('User should be able to withdraw deposited Farm tokens via the Core Contract', async () => {
-    
+
       const farmTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
 
       // Check the user's Farm Token balance in the token contract before withdrawal
@@ -167,7 +182,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
         // Check the user farm token balance in the contract account after deposit
         const currUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
         log("User farm token balance, AFTER withdrawal is: ", currUserFarmTokenBalance);
-         
+
         // Check that the initial user Farm token balance is less 2 Tokens
         expect(currUserFarmTokenBalance).to.be.gte(initialUserFarmTokenBalance);
 

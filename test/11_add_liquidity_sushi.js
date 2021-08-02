@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const config = require('../config.json');
 const { expect } = require('chai');
 const { waffle } = require("hardhat");
@@ -6,6 +7,7 @@ const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
+
 describe('Re-deploying the plexus contracts for Wrapper test', () => {
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
   let netinfo;

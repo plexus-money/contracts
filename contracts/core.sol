@@ -33,25 +33,25 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Executed on a call to the contract if none of the other 
-     * functions match the given function signature, or if no data was 
+     * @notice Executed on a call to the contract if none of the other
+     * functions match the given function signature, or if no data was
      * supplied at all and there is no receive Ether function
-     * @dev For the converter to unwrap ETH when delegate calling. The 
-     * contract has to be able to accept ETH for this reason. The emergency 
-     * withdrawal call is to pick any change up for these conversions 
+     * @dev For the converter to unwrap ETH when delegate calling. The
+     * contract has to be able to accept ETH for this reason. The emergency
+     * withdrawal call is to pick any change up for these conversions
      */
     fallback() external payable { }
 
     /**
-     * @notice Function executed on plain ether transfers and on a call to the 
-     * contract with empty calldata 
+     * @notice Function executed on plain ether transfers and on a call to the
+     * contract with empty calldata
      */
     receive() external payable { }
 
     /**
-     * @notice Modifier check to ensure that a function is executed only if it 
-     * was called with a non-zero amount value 
-     * @param amount Amount value 
+     * @notice Modifier check to ensure that a function is executed only if it
+     * was called with a non-zero amount value
+     * @param amount Amount value
      */
     modifier nonZeroAmount(uint256 amount) {
         require(amount > 0, "Amount specified is zero");
@@ -59,9 +59,9 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Initialize the core contract 
-     * @param _weth Address to the WETH token contract 
-     * @param _converter Address to the converter contract 
+     * @notice Initialize the core contract
+     * @param _weth Address to the WETH token contract
+     * @param _converter Address to the converter contract
      */
     function initialize(address _weth, address _converter) external initializeOnceOnly {
         ETH_TOKEN_ADDRESS = address(0x0);
@@ -73,7 +73,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Set the oracle contract address
-     * @param theAddress Oracle contract address 
+     * @param theAddress Oracle contract address
      */
     function setOracleAddress(address theAddress) external onlyOwner returns (bool) {
         oracleAddress = theAddress;
@@ -83,7 +83,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Set the Tier1 staking contract address
-     * @param theAddress Tier 1 staking contract address 
+     * @param theAddress Tier 1 staking contract address
      */
     function setStakingAddress(address theAddress) external onlyOwner returns (bool) {
         stakingAddress = theAddress;
@@ -101,12 +101,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) 
-        external 
-        payable 
-        nonReentrant 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        external
+        payable
+        nonReentrant
+        nonZeroAmount(amount)
+        returns (bool)
     {
         IERC20 token;
         if (tokenAddress == ETH_TOKEN_ADDRESS) {
@@ -134,12 +134,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         string memory tier2ContractName,
         address tokenAddress,
         uint256 amount
-    ) 
-        external 
-        payable 
-        nonReentrant 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        external
+        payable
+        nonReentrant
+        nonZeroAmount(amount)
+        returns (bool)
     {
         bool result = staking.withdraw(tier2ContractName, tokenAddress, amount, msg.sender);
         require(result, "There was an issue in core with your withdrawal request.");
@@ -148,10 +148,11 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Convert a provided source token to multiple output tokens
-     * @dev Converting is mostly for removing liquidity from LP tokens by  
+     * @dev Converting is mostly for removing liquidity from LP tokens by
      * swapping them for their underlying assets
      * @param sourceToken Address to provided source LP tokens
      * @param destinationTokens Address list for output destination tokens
+     * @param paths Paths for uniswap
      * @param amount Amount of provided LP tokens to be converted
      * @param userSlippageTolerance Maximum slippage tolerance limit
      * @return Output tokens acquired by swapping provided source tokens
@@ -159,25 +160,26 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function convert(
         address sourceToken,
         address[] memory destinationTokens,
+        address[][] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
-    ) 
-        external 
-        payable 
-        nonZeroAmount(amount) 
-        returns (address, uint256) 
+    )
+        external
+        payable
+        nonZeroAmount(amount)
+        returns (address, uint256)
     {
         if (sourceToken != ETH_TOKEN_ADDRESS) {
             IERC20 srcToken = IERC20(sourceToken);
             srcToken.safeTransferFrom(msg.sender, address(this), amount);
         }
         (
-            address destinationTokenAddress, 
+            address destinationTokenAddress,
             uint256 _amount
         ) = converter.wrap{
                 value: msg.value
-            }(sourceToken, destinationTokens, amount, userSlippageTolerance, deadline);
+            }(sourceToken, destinationTokens, paths, amount, userSlippageTolerance, deadline);
 
         IERC20 dstToken = IERC20(destinationTokenAddress);
         dstToken.safeTransfer(msg.sender, _amount);
@@ -186,10 +188,12 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Convert provided LP tokens to a common output token
-     * @dev De-converting is mostly for LP tokens back to another token, as  
+     * @dev De-converting is mostly for LP tokens back to another token, as
      * these cant be simply swapped on uniswap
      * @param sourceToken Address to provided source LP tokens
      * @param destinationToken Address to desired output destination tokens
+     * @param paths Paths for uniswap
+     * @param lpTokenPairAddress address for lp token
      * @param amount Amount of provided LP tokens to be converted
      * @param userSlippageTolerance Maximum slippage tolerance limit
      * @return Destination tokens acquired by converting provided LP tokens
@@ -197,19 +201,23 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function deconvert(
         address sourceToken,
         address destinationToken,
+        address lpTokenPairAddress,
+        address[][] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
-    ) 
-        external 
-        payable 
-        returns (uint256) 
+    )
+        external
+        payable
+        returns (uint256)
     {
-        uint256 _amount = 
+        uint256 _amount =
             converter.unwrap{value: msg.value}(
-                sourceToken, 
-                destinationToken, 
-                amount, 
+                sourceToken,
+                destinationToken,
+                lpTokenPairAddress,
+                paths,
+                amount,
                 userSlippageTolerance,
                 deadline
             );
@@ -219,13 +227,13 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Retrieve details about all tokens that can be staked 
-     * @return Two arrays - one containing a list of addresses to all tokens 
-     * that can be staked and another containing their respective token names 
+     * @notice Retrieve details about all tokens that can be staked
+     * @return Two arrays - one containing a list of addresses to all tokens
+     * that can be staked and another containing their respective token names
      */
     function getStakableTokens() external view returns (address[] memory, string[] memory) {
         (
-            address[] memory stakableAddresses, 
+            address[] memory stakableAddresses,
             string[] memory stakableTokenNames
         ) = oracle.getStakableTokens();
         return (stakableAddresses, stakableTokenNames);
@@ -236,8 +244,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
      * Tier 2 contract
      * @param tier2Address Address to the specified Tier 2 contract
      * @param tokenAddress Address to the given token for which the APR
-     * yield is to be retrieved 
-     * @return APR yield for the given token address from the specified Tier 2 
+     * yield is to be retrieved
+     * @return APR yield for the given token address from the specified Tier 2
      * contract
      */
     function getAPR(address tier2Address, address tokenAddress) external view returns (uint256) {
@@ -253,8 +261,8 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     /**
      * @notice Retrieve the TVL for a given token from the specified Tier 2
      * contract
-     * @param tokenAddress Address to the given token for which the TVL is to 
-     * be retrieved 
+     * @param tokenAddress Address to the given token for which the TVL is to
+     * be retrieved
      * @param tier2Address Address to the Tier 2 contract to retrieve the TVL
      * from
      * @return TVL for the given token from the specified Tier 2 contract
@@ -270,11 +278,11 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     /**
      * @notice Retrieve the amount of a given token staked by a particular user
      * using a specified Tier 2 contract
-     * @param tokenAddress Address to the given token for which the staked 
+     * @param tokenAddress Address to the given token for which the staked
      * amount is to be retrieved
      * @param userAddress Address to the user's wallet
-     * @param tier2Address Address to the Tier 2 contract used to stake the 
-     * specified tokens 
+     * @param tier2Address Address to the Tier 2 contract used to stake the
+     * specified tokens
      * @return Amount of specified tokens staked by the given user via the
      * provided Tier 2 contract
      */
@@ -288,15 +296,15 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-     * @notice Retrieve the rewards accumulated by a given user for a specified 
-     * token deposited in a particular Tier 2 contract 
+     * @notice Retrieve the rewards accumulated by a given user for a specified
+     * token deposited in a particular Tier 2 contract
      * @param userAddress Address to the user's wallet
      * @param tokenAddress Address to the token for which reward value is to be
-     * retrieved 
-     * @param tier2FarmAddress Address to the Tier 2 contract where the given 
+     * retrieved
+     * @param tier2FarmAddress Address to the Tier 2 contract where the given
      * token was deposited
-     * @return Rewards accumulated by the given user for the particular token 
-     * from the specified Tier 2 contract address 
+     * @return Rewards accumulated by the given user for the particular token
+     * from the specified Tier 2 contract address
      */
     function getUserCurrentReward(
         address userAddress,
@@ -306,11 +314,11 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         return oracle.getUserCurrentReward( userAddress, tokenAddress, tier2FarmAddress);
     }
 
-    /** 
+    /**
      * @notice Retrieve the current price of a token
-     * @param tokenAddress Address to the token for which the price is to be 
+     * @param tokenAddress Address to the token for which the price is to be
      * retrieved
-     * @return Current price of the specified token 
+     * @return Current price of the specified token
      */
     function getTokenPrice(address tokenAddress) external view returns (uint256) {
         uint256 result = oracle.getTokenPrice(tokenAddress);
@@ -319,19 +327,19 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Retrieve the balance of a given token from a specified user
-     * wallet 
-     * @param userAddress Address to the user's wallet 
-     * @param tokenAddress Address to the token for which the balance is to be 
+     * wallet
+     * @param userAddress Address to the user's wallet
+     * @param tokenAddress Address to the token for which the balance is to be
      * retrieved
      * @return Balance of the given token in the specified user wallet
      */
     function getUserWalletBalance(
-        address userAddress, 
+        address userAddress,
         address tokenAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         uint256 result = oracle.getUserWalletBalance(userAddress, tokenAddress);
         return result;
@@ -348,10 +356,10 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     }
 
     /**
-    * @notice Function allowing admins to revert accidentally deposited tokens 
-    * @param token Address to the token to be withdrawn 
-    * @param amount Amount of specified token to be withdrawn 
-    * @param destination Address where the withdrawn tokens should be 
+    * @notice Function allowing admins to revert accidentally deposited tokens
+    * @param token Address to the token to be withdrawn
+    * @param amount Amount of specified token to be withdrawn
+    * @param destination Address where the withdrawn tokens should be
     * transferred
     */
     function adminEmergencyWithdrawAccidentallyDepositedTokens(
@@ -371,7 +379,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
 
     /**
      * @notice Set converter contract address
-     * @param theAddress Converter contract address 
+     * @param theAddress Converter contract address
      */
     function setConverterAddress(address theAddress) public onlyOwner returns (bool) {
         converterAddress = theAddress;

@@ -1,20 +1,23 @@
 require("dotenv").config();
 
+const config = require('../config.json');
 const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
 const { setupContracts, log, mineBlocks } = require('./helper');
+const addr = config.addresses;
 
 describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
   // Global test vars
   let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
-
-  const farmTokenAddress = process.env.FARM_TOKEN_MAINNET_ADDRESS;
-  const daiTokenAddress = process.env.DAI_TOKEN_MAINNET_ADDRESS;
-  const pickleTokenAddress = process.env.PICKLE_TOKEN_MAINNET_ADDRESS;
-
+  let netinfo;
+  let network = 'unknown';
+  let daiTokenAddress;
+  let farmTokenAddress;
+  let pickleTokenAddress;
+  let wethAddress;
   const unitAmount = "2";
 
   // Deploy and setup the contracts
@@ -32,6 +35,17 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
+
+    netinfo = await ethers.provider.getNetwork();
+    network = netinfo.chainId === 1 ? "mainnet" :
+    netinfo.chainId === 42 ? "kovan" :
+    netinfo.chainId === 56 ? "binance" :
+    netinfo.chainId === 137 ? "matic" : 'mainnet';
+    daiTokenAddress = addr.tokens.DAI[network];
+    farmTokenAddress = addr.tokens.FARM[network];
+    pickleTokenAddress = addr.tokens.PICKLE[network];
+    wethAddress = addr.tokens.WETH[network];
+
     // Use contract as user/addr1
     coreAsSigner1 = core.connect(addr1);
   });
@@ -66,7 +80,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
       const amountPlaceholder = ethers.utils.parseEther(unitAmount)
-   
+
       // We send 2 ETH to the wrapper for conversion
       let overrides = {
         value: ethers.utils.parseEther("2")
@@ -77,7 +91,8 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Convert the 2 ETH to Farm Token(s)
       const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+      const paths = [[wethAddress, farmTokenAddress]];
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [farmTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
@@ -87,7 +102,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
          // Check the farm token balance in the contract account
          const userFarmTokenBalance = Number(ethers.utils.formatUnits(await erc20.balanceOf(addr1.address), `ether`));
-     
+
          // Check if the conversion is successful and the user has some farm tokens their wallet
          log("User farm token balance AFTER ETH conversion: ", userFarmTokenBalance);
          expect(userFarmTokenBalance).to.be.gt(0);
@@ -108,7 +123,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
       const amountPlaceholder = ethers.utils.parseEther(unitAmount)
-   
+
       // We send 2 ETH to the wrapper for conversion
       let overrides = {
            value: ethers.utils.parseEther("2")
@@ -119,7 +134,8 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Convert the 2 ETH to Dai Token(s)
       const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+      const paths = [[wethAddress, daiTokenAddress]];
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
@@ -150,7 +166,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
       const amountPlaceholder = ethers.utils.parseEther(unitAmount)
-   
+
       // We send 2 ETH to the wrapper for conversion
       let overrides = {
            value: ethers.utils.parseEther("2")
@@ -161,7 +177,8 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
       // Convert the 2 ETH to Pickle Token(s)
       const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-      const { status } = await (await coreAsSigner1.convert(zeroAddress, [pickleTokenAddress], amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+      const paths = [[wethAddress, pickleTokenAddress]];
+      const { status } = await (await coreAsSigner1.convert(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
       // Check if the txn is successful
       expect(status).to.equal(1);
@@ -171,7 +188,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
          // Check the pickle token balance in the contract account
          const userPickleTokenBalance = Number(ethers.utils.formatUnits(await erc20.balanceOf(addr1.address), `ether`));
-     
+
          // Check if the conversion is successful and the user has some pickle tokens in their wallet
          log("User pickle token balance AFTER ETH conversion: ", userPickleTokenBalance);
          expect(userPickleTokenBalance).to.be.gt(0);
@@ -224,17 +241,17 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
           expect(farmAPR).to.be.equal(APR);
           expect(daiAPR).to.be.equal(APR);
           expect(pickleAPR).to.be.equal(APR);
-          
+
           log("Farm Token APR is: ", farmAPR);
           log("DAI Token APR is: ", daiAPR);
           log("Pickle Token APR is: ", pickleAPR);
-          
+
         }
     });
 
     // Deposit tokens to Plexus
     it("User should be able to deposit Farm Tokens via the core contract", async () => {
-    
+
         const farmTokenDepositAmount = ethers.utils.parseEther(unitAmount);
         const tier2ContractName = "FARM";
         const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
@@ -242,7 +259,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user farm token balance in the token contract before deposit
         const initialUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
         log("User farm token balance, BEFORE deposit is: ", initialUserFarmTokenBalance);
-        
+
         // Approve the core contract to spend the tokens
         let erc20AsSigner1 =  erc20.connect(addr1);
         const approved = await(await erc20AsSigner1.approve(core.address, farmTokenDepositAmount)).wait();
@@ -266,7 +283,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
           // Check the user farm token balance in the contract account after deposit
           const currUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
           log("User farm token balance, AFTER deposit is: ", currUserFarmTokenBalance);
-          
+
           // Check that the initial user Farm token balance is less 2 Tokens
           expect(currUserFarmTokenBalance).to.be.lt(initialUserFarmTokenBalance);
 
@@ -275,7 +292,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     });
 
     it("User should be able to deposit DAI Tokens via the core contract", async () => {
-    
+
         const daiTokenDepositAmount = ethers.utils.parseEther(unitAmount);
         const tier2ContractName = "DAI";
         const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
@@ -283,7 +300,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user dai token balance in the token contract before deposit
         const initialUserDaiTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
         log("User DAI Token balance, BEFORE deposit is: ", initialUserDaiTokenBalance);
-        
+
         // Approve the core contract to spend the tokens
         let erc20AsSigner1 =  erc20.connect(addr1);
         const approved = await(await erc20AsSigner1.approve(core.address, daiTokenDepositAmount)).wait();
@@ -306,7 +323,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
           // Check the user dai token balance in their account after deposit
           const currUserDaiTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
           log("User DAI token balance, AFTER deposit is: ", currUserDaiTokenBalance);
-          
+
           // Check that the initial user Dai token balance is less 2 Tokens
           expect(currUserDaiTokenBalance).to.be.lt(initialUserDaiTokenBalance);
 
@@ -315,7 +332,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     });
 
     it("User should be able to deposit Pickle Tokens via the core contract", async () => {
-    
+
         const pickleTokenDepositAmount = ethers.utils.parseEther(unitAmount);
         const tier2ContractName = "PICKLE";
         const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
@@ -323,7 +340,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user pickle token balance in the token contract before deposit
         const initialUserPickleTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
         log("User pickle token balance, BEFORE deposit is: ", initialUserPickleTokenBalance);
-        
+
         // Approve the core contract to spend the tokens
         let erc20AsSigner1 =  erc20.connect(addr1);
         const approved = await(await erc20AsSigner1.approve(core.address, pickleTokenDepositAmount)).wait();
@@ -347,7 +364,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
           // Check the user pickle token balance in the contract account after deposit
           const currUserPickleTokenBalance = Number(ethers.utils.formatEther(await erc20.balanceOf(addr1.address)));
           log("User pickle token balance, AFTER deposit is: ", currUserPickleTokenBalance);
-          
+
           // Check that the initial user Pickle token balance is less 2 Tokens
           expect(currUserPickleTokenBalance).to.be.lt(initialUserPickleTokenBalance);
 
@@ -368,7 +385,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
     // Withdraw tokens from Plexus + Token Rewards based on the set APR
     it('User should be able to withdraw deposited Farm tokens + PLX Token Rewards via the Core Contract', async () => {
-  
+
       const farmTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
       const erc20Farm = new ethers.Contract(farmTokenAddress, abi, provider);
       const erc20PlexusCoin = new ethers.Contract(plexusCoin.address, abi, provider);
@@ -394,24 +411,24 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user farm token balance in the contract account after withdrawal
         const currUserFarmTokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
         log("User Farm Token balance, AFTER withdrawal is: ", currUserFarmTokenBalance);
-          
+
         // Check that the initial user Farm Token balance is less than the current token balance
         expect(currUserFarmTokenBalance).to.be.gte(initialUserFarmTokenBalance);
 
         // Check the user Plexus Reward Token balance in the contract account after withdrawal
         const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
         log("User Plexus Reward Token balance, AFTER Farm Token withdrawal is: ", currUserPlexusTokenBalance);
-           
+
         // Check that the initial user Plexus Token balance is less than the current token balance
         expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
 
       }
-    
+
     });
 
      // Withdraw tokens from Plexus + Token Rewards based on the set APR
     it('User should be able to withdraw deposited DAI tokens + PLX Token Rewards via the Core Contract', async () => {
-  
+
       const daiTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
       const erc20Farm = new ethers.Contract(daiTokenAddress, abi, provider);
       const erc20PlexusCoin = new ethers.Contract(plexusCoin.address, abi, provider);
@@ -437,24 +454,24 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user DAI token balance in the contract account after withdrawal
         const currUserDAITokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
         log("User DAI Token balance, AFTER withdrawal is: ", currUserDAITokenBalance);
-          
+
         // Check that the initial user DAI Token balance is less than the current token balance
         expect(currUserDAITokenBalance).to.be.gte(initialUserDAITokenBalance);
 
         // Check the user Plexus Reward Token balance in the contract account after withdrawal
         const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
         log("User Plexus Reward Token balance, AFTER DAI Token withdrawal is: ", currUserPlexusTokenBalance);
-           
+
         // Check that the initial user Plexus Token balance is less than the current token balance
         expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
 
       }
-    
+
     });
 
      // Withdraw tokens from Plexus + Token Rewards based on the set APR
      it('User should be able to withdraw deposited DAI tokens + PLX Token Rewards via the Core Contract', async () => {
-  
+
       const pickleTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
       const erc20Farm = new ethers.Contract(pickleTokenAddress, abi, provider);
       const erc20PlexusCoin = new ethers.Contract(plexusCoin.address, abi, provider);
@@ -480,21 +497,21 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
         // Check the user Pickle token balance in the contract account after withdrawal
         const currUserPickleTokenBalance = Number(ethers.utils.formatEther(await erc20Farm.balanceOf(addr1.address)));
         log("User Pickle Token balance, AFTER withdrawal is: ", currUserPickleTokenBalance);
-          
+
         // Check that the initial user Pickle Token balance is less than the current token balance
         expect(currUserPickleTokenBalance).to.be.gte(initialUserPickleTokenBalance);
 
         // Check the user Plexus Reward Token balance in the contract account after withdrawal
         const currUserPlexusTokenBalance = Number(ethers.utils.formatEther(await erc20PlexusCoin.balanceOf(addr1.address)));
         log("User Plexus Reward Token balance, AFTER Pickle Token withdrawal is: ", currUserPlexusTokenBalance);
-           
+
         // Check that the initial user Plexus Token balance is less than the current token balance
         expect(currUserPlexusTokenBalance).to.be.gte(initialUserPlexusTokenBalance);
 
       }
-    
+
     });
-    
+
   });
 
 
