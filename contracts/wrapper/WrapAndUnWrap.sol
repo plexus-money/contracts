@@ -5,11 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/token/IWETH.sol";
-import "./interfaces/token/ILPERC20.sol";
-import "./interfaces/uniswap/IUniswapV2.sol";
-import "./interfaces/uniswap/IUniswapFactory.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/token/IWETH.sol";
+import "../interfaces/token/ILPERC20.sol";
+import "../interfaces/uniswap/IUniswapV2.sol";
+import "../interfaces/uniswap/IUniswapFactory.sol";
 
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus

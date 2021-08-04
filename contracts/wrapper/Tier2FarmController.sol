@@ -10,8 +10,8 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/staking/IStaking3.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/staking/IStaking3.sol";
 
 contract Tier2FarmController is OwnableUpgradeable {
     using SafeMath for uint256;
@@ -35,11 +35,11 @@ contract Tier2FarmController is OwnableUpgradeable {
     }
 
     function initialize(
-        address _stakingContracts_farm, 
+        address _stakingContracts_farm,
         address _stakingContractsStakingToken
-    ) 
-        public 
-        initializeOnceOnly 
+    )
+        public
+        initializeOnceOnly
     {
         ETH_TOKEN_ADDRESS  = address(0x0);
         commission  = 400; // Default is 4 percent
@@ -95,11 +95,11 @@ contract Tier2FarmController is OwnableUpgradeable {
         IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        depositBalances[onBehalfOf][tokenAddress] = 
+        depositBalances[onBehalfOf][tokenAddress] =
             depositBalances[onBehalfOf][tokenAddress] + amount;
 
         uint256 approvedAmount = thisToken.allowance(
-            address(this), 
+            address(this),
             tokenToFarmMapping[tokenAddress]
         );
 
@@ -119,11 +119,11 @@ contract Tier2FarmController is OwnableUpgradeable {
         address tokenAddress,
         uint256 amount,
         address payable onBehalfOf
-    ) 
-        public 
-        payable 
-        onlyOwner 
-        returns (bool) 
+    )
+        public
+        payable
+        onlyOwner
+        returns (bool)
     {
         IERC20 thisToken = IERC20(tokenAddress);
         // uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
@@ -134,9 +134,9 @@ contract Tier2FarmController is OwnableUpgradeable {
                 "You didnt deposit enough eth"
             );
 
-            totalAmountStaked[tokenAddress] = 
+            totalAmountStaked[tokenAddress] =
                 totalAmountStaked[tokenAddress].sub(depositBalances[onBehalfOf][tokenAddress]);
-            depositBalances[onBehalfOf][tokenAddress] = 
+            depositBalances[onBehalfOf][tokenAddress] =
                 depositBalances[onBehalfOf][tokenAddress] - amount;
             onBehalfOf.transfer(amount);
             return true;
@@ -149,15 +149,15 @@ contract Tier2FarmController is OwnableUpgradeable {
 
         // uint256 numberTokensPostWithdrawal = thisToken.balanceOf(address(this));
 
-        // uint256 usersBalancePercentage = 
+        // uint256 usersBalancePercentage =
         //      depositBalances[onBehalfOf][tokenAddress].div(totalAmountStaked[tokenAddress]);
 
         uint256 numberTokensPlusRewardsForUser1 = getStakedPoolBalanceByUser(
-            onBehalfOf, 
+            onBehalfOf,
             tokenAddress
         );
         uint256 commissionForDAO1 = calculateCommission(numberTokensPlusRewardsForUser1);
-        uint256 numberTokensPlusRewardsForUserMinusCommission = 
+        uint256 numberTokensPlusRewardsForUserMinusCommission =
             numberTokensPlusRewardsForUser1 - commissionForDAO1;
 
         unstake(amount, onBehalfOf, tokenAddress);
@@ -191,12 +191,12 @@ contract Tier2FarmController is OwnableUpgradeable {
     }
 
     function getStakedPoolBalanceByUser(
-        address _owner, 
+        address _owner,
         address tokenAddress
-    ) 
-        public 
-        view 
-        returns (uint256) 
+    )
+        public
+        view
+        returns (uint256)
     {
         IStaking3 staker = IStaking3(tokenToFarmMapping[tokenAddress]);
 

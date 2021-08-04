@@ -5,10 +5,10 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IPlexusOracle.sol";
-import "./interfaces/staking/ITokenRewards.sol";
-import "./interfaces/staking/ITier2Staking.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/IPlexusOracle.sol";
+import "../interfaces/staking/ITokenRewards.sol";
+import "../interfaces/staking/ITier2Staking.sol";
 
 // Tier1FarmController contract on Mainnet: 0x97b00db19bAe93389ba652845150CAdc597C6B2F
 
@@ -28,7 +28,7 @@ contract Tier1FarmController is OwnableUpgradeable {
     }
 
     function initialize(
-        address tier2StakingContracts_farm_, 
+        address tier2StakingContracts_farm_,
         address oracleAddress_
     ) public initializeOnceOnly {
         ETH_TOKEN_ADDRESS  = address(0x0);
@@ -77,12 +77,12 @@ contract Tier1FarmController is OwnableUpgradeable {
     }
 
     function updateCommissionTier2(
-        address tier2Contract, 
+        address tier2Contract,
         uint256 amount
-    ) 
-        external 
-        onlyOwner 
-        returns (bool) 
+    )
+        external
+        onlyOwner
+        returns (bool)
     {
         ITier2Staking tier2Con = ITier2Staking(tier2Contract);
         tier2Con.updateCommission(amount);

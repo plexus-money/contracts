@@ -5,8 +5,8 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IPlexusOracle.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/IPlexusOracle.sol";
 
 // TokenRewards contract on Mainnet: 0x2ae7b37ab144b5f8c803546b83e81ad297d8c2c4
 
@@ -77,15 +77,15 @@ contract TokenRewards is OwnableUpgradeable {
         return true;
     }
 
-    // APR should have be in this format (uint representing decimals): 
+    // APR should have be in this format (uint representing decimals):
     // (100% APR = 100000), .01% APR = 10)
     function updateAPR(
-        uint256 newAPR, 
+        uint256 newAPR,
         address stakedToken
-    ) 
-        external 
-        onlyOwner 
-        returns (bool) 
+    )
+        external
+        onlyOwner
+        returns (bool)
     {
         tokenAPRs[stakedToken] = newAPR;
         return true;
@@ -93,11 +93,11 @@ contract TokenRewards is OwnableUpgradeable {
 
     function getTokenWhiteListValue(
         address newTokenAddress
-    ) 
-        external 
-        view 
-        onlyOwner 
-        returns(bool) 
+    )
+        external
+        view
+        onlyOwner
+        returns(bool)
     {
         return stakingTokenWhitelist[newTokenAddress];
     }
@@ -106,8 +106,8 @@ contract TokenRewards is OwnableUpgradeable {
         address tokenAddress
     )
         external
-        view 
-        returns (bool) 
+        view
+        returns (bool)
     {
         return stakingTokenWhitelist[tokenAddress];
     }
@@ -116,10 +116,10 @@ contract TokenRewards is OwnableUpgradeable {
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) 
-        public 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        public
+        nonZeroAmount(amount)
+        returns (bool)
     {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
@@ -138,9 +138,9 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         if (redepositing == true) {
-            depositBalances[onBehalfOf][tokenAddress] = 
+            depositBalances[onBehalfOf][tokenAddress] =
                 [block.timestamp, (tokenDeposits[onBehalfOf][tokenAddress].add(amount))];
-            tokenDeposits[onBehalfOf][tokenAddress] = 
+            tokenDeposits[onBehalfOf][tokenAddress] =
                 tokenDeposits[onBehalfOf][tokenAddress].add(amount);
         } else {
             depositBalances[onBehalfOf][tokenAddress] = [block.timestamp, amount];
@@ -154,11 +154,11 @@ contract TokenRewards is OwnableUpgradeable {
         uint256 amount,
         address tokenAddress,
         address onBehalfOf
-    ) 
-        public 
-        onlyTier1 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        public
+        onlyTier1
+        nonZeroAmount(amount)
+        returns (bool)
     {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
@@ -174,9 +174,9 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         if (redepositing == true) {
-            depositBalancesDelegated[onBehalfOf][tokenAddress] = 
+            depositBalancesDelegated[onBehalfOf][tokenAddress] =
                 [block.timestamp, (tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount))];
-            tokenDepositsDelegated[onBehalfOf][tokenAddress] = 
+            tokenDepositsDelegated[onBehalfOf][tokenAddress] =
                 tokenDepositsDelegated[onBehalfOf][tokenAddress].add(amount);
         } else {
             depositBalancesDelegated[onBehalfOf][tokenAddress] = [block.timestamp, amount];
@@ -186,15 +186,15 @@ contract TokenRewards is OwnableUpgradeable {
         return true;
     }
 
-    // when standalone, this is called. It's brother 
+    // when standalone, this is called. It's brother
     // (delegated version that does not deal with transfers is called in other instances)
     function unstakeAndClaim(
         address onBehalfOf,
         address tokenAddress,
         address recipient
-    ) 
-        public 
-        returns (uint256) 
+    )
+        public
+        returns (uint256)
     {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
@@ -213,7 +213,7 @@ contract TokenRewards is OwnableUpgradeable {
                 tokenDeposits[onBehalfOf][tokenAddress],
                 tokenAPRs[tokenAddress]
             );
-        
+
         IERC20Metadata principalToken = IERC20Metadata(tokenAddress);
         IERC20Metadata rewardToken = IERC20Metadata(stakingTokensAddress);
 
@@ -250,10 +250,10 @@ contract TokenRewards is OwnableUpgradeable {
         address onBehalfOf,
         address tokenAddress,
         address recipient
-    ) 
-        public 
-        onlyTier1 
-        returns (uint256) 
+    )
+        public
+        onlyTier1
+        returns (uint256)
     {
         require(
             stakingTokenWhitelist[tokenAddress] == true,
@@ -272,7 +272,7 @@ contract TokenRewards is OwnableUpgradeable {
                 tokenDepositsDelegated[onBehalfOf][tokenAddress],
                 tokenAPRs[tokenAddress]
             );
-        // uint256 principalPlusRewards = 
+        // uint256 principalPlusRewards =
         //     tokenDepositsDelegated[onBehalfOf][tokenAddress].add(rewards);
 
         IERC20Metadata principalToken = IERC20Metadata(tokenAddress);
@@ -304,10 +304,10 @@ contract TokenRewards is OwnableUpgradeable {
         address token,
         uint256 amount,
         address payable destination
-    ) 
-        public 
-        onlyOwner 
-        returns (bool) 
+    )
+        public
+        onlyOwner
+        returns (bool)
     {
         if (address(token) == ETH_TOKEN_ADDRESS) {
             destination.transfer(amount);
@@ -332,13 +332,13 @@ contract TokenRewards is OwnableUpgradeable {
         }
 
         apr = apr.mul(10000000);
-        
+
         // 365.25 days, accounting for leap years. We should just have 1/4 days
-        // at the end of each year and cause more mass confusion than daylight savings. 
+        // at the end of each year and cause more mass confusion than daylight savings.
         // "Please set your clocks back 6 hours on Jan 1st, Thank you""
-        // Imagine new years. 
-        // You get to do it twice after 6hours. 
-        // Or would it be recursive and end up in an infinite loop. 
+        // Imagine new years.
+        // You get to do it twice after 6hours.
+        // Or would it be recursive and end up in an infinite loop.
         // Is that the secret to freezing time and staying young?
         // Maybe because it's 2020.
         uint256 secondsInAvgYear = 31557600;

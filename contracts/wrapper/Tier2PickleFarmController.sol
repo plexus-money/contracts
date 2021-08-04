@@ -1,37 +1,31 @@
 // SPDX-License-Identifier: MIT
 
-// Aave AToken Deposit 
-// Converts from regular token to aToken, stores in this contract, 
-// and withdraws based on percentage of pool
+// PICKLE-UNI-USDT/ETH contract name for parent tier 1
+// This contract will not support rebasing tokens
 
 pragma solidity >=0.8.0 <0.9.0;
+
+// Tier2PickleFarmController contract on Mainnet: 0xA320c4442542E6CD793Fb5F46c18fB7A6213615C
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "hardhat/console.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IWrapper.sol";
-import "./interfaces/staking/IStaking1.sol";
-import "./utils/Adminable.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/staking/IStaking2.sol";
 
-//This contract will not support rebasing tokens
-
-contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
+contract Tier2PickleFarmController is OwnableUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    //address public platformToken = 0x25550Cccbd68533Fa04bFD3e3AC4D09f9e00Fc50;
-    //address public tokenStakingContract = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
-    address private ETH_TOKEN_ADDRESS;
+    address public platformToken;
+    address public tokenStakingContract;
+    address ETH_TOKEN_ADDRESS;
     uint256 public commission; // Default is 4 percent
     string public farmName;
     mapping (string => address) public stakingContracts;
     mapping (address => address) public tokenToFarmMapping;
     mapping (string => address) public stakingContractsStakingToken;
     mapping (address => mapping (address => uint256)) public depositBalances;
-    mapping (address => address) public tokenToAToken;
-    mapping (address => address) public aTokenToToken;
     mapping (address => uint256) public totalAmountStaked;
 
     event Deposit(address indexed user, uint256 amount, address token);
@@ -52,46 +46,34 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
     }
 
     function initialize(
-        address tokenStakingContract, 
-        address daiToken, 
-        address aDaiToken
-    ) 
-        external 
+        address _stakingRewardsContract,
+        address _pickleToken
+    )
+        external
         initializeOnceOnly
     {
+        platformToken = _pickleToken;
+        tokenStakingContract = _stakingRewardsContract;
         ETH_TOKEN_ADDRESS  = address(0x0);
         commission  = 400; // Default is 4 percent
-        farmName = "Aave";
-        stakingContracts["DAI"] = tokenStakingContract ;
-        stakingContracts["ALL"] = tokenStakingContract ;
-        stakingContractsStakingToken["DAI"] = daiToken;
-        tokenToAToken[daiToken] = aDaiToken;
-        aTokenToToken[aDaiToken] = daiToken;
-        tokenToFarmMapping[stakingContractsStakingToken["DAI"]] = stakingContracts["DAI"];
-    }
-
-    function updateATokens(
-        address tokenAddress, 
-        address aTokenAddress
-    ) 
-        external 
-        onlyAdmin 
-        returns (bool) 
-    {
-        tokenToAToken[tokenAddress] = aTokenAddress;
-        aTokenToToken[aTokenAddress] = tokenAddress;
-        return true;
+        farmName = "Pickle.Finance";
+        stakingContracts["PICKLE"] = _stakingRewardsContract;
+        stakingContractsStakingToken["PICKLE"] = _pickleToken;
+        tokenToFarmMapping[stakingContractsStakingToken["PICKLE"]] = stakingContracts["PICKLE"];
     }
 
     function addOrEditStakingContract(
         string memory name,
         address stakingAddress,
         address stakingToken
-    ) public onlyOwner returns (bool) {
+    )
+        public
+        onlyOwner
+        returns (bool)
+    {
         stakingContracts[name] = stakingAddress;
         stakingContractsStakingToken[name] = stakingToken;
         tokenToFarmMapping[stakingToken] = stakingAddress;
-
         return true;
     }
 
@@ -101,21 +83,11 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return true;
     }
 
-    function changeAdmin(address payable newAdmin) public onlyAdmin returns (bool) {
-        transferAdmin(newAdmin);
-        return true;
-    }
-
     function adminEmergencyWithdrawTokens(
         address token,
         uint256 amount,
         address payable destination
-    ) 
-        public 
-        onlyOwner 
-        nonZeroAmount(amount) 
-        returns (bool) 
-    {
+    ) public onlyOwner nonZeroAmount(amount) returns (bool) {
         if (address(token) == ETH_TOKEN_ADDRESS) {
             destination.transfer(amount);
         } else {
@@ -130,22 +102,18 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         address tokenAddress,
         uint256 amount,
         address onBehalfOf
-    ) 
-        public 
-        payable 
-        onlyOwner 
-        returns (bool) 
-    {
+    ) public payable onlyOwner returns (bool) {
         IERC20 thisToken = IERC20(tokenAddress);
         thisToken.safeTransferFrom(msg.sender, address(this), amount);
 
         depositBalances[onBehalfOf][tokenAddress] =
-            depositBalances[onBehalfOf][tokenAddress].add(amount);
+            depositBalances[onBehalfOf][tokenAddress] + amount;
 
         uint256 approvedAmount = thisToken.allowance(
-            address(this), 
+            address(this),
             tokenToFarmMapping[tokenAddress]
         );
+
         if (approvedAmount < amount) {
             thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
             thisToken.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(100));
@@ -162,26 +130,47 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         address tokenAddress,
         uint256 amount,
         address payable onBehalfOf
-    ) 
-        public 
-        payable 
-        onlyOwner 
-        nonZeroAmount(amount) 
-        returns (bool) 
+    )
+        public
+        payable
+        onlyOwner
+        nonZeroAmount(amount)
+        returns (bool)
     {
         IERC20 thisToken = IERC20(tokenAddress);
+        // uint256 numberTokensPreWithdrawal = getStakedBalance(address(this), tokenAddress);
+
+        if (tokenAddress == 0x0000000000000000000000000000000000000000) {
+            require(
+                depositBalances[msg.sender][tokenAddress] >= amount,
+                "You didnt deposit enough eth"
+            );
+
+            totalAmountStaked[tokenAddress] = totalAmountStaked[tokenAddress]
+                .sub(depositBalances[onBehalfOf][tokenAddress]);
+            depositBalances[onBehalfOf][tokenAddress] =
+                depositBalances[onBehalfOf][tokenAddress] -
+                amount;
+            onBehalfOf.transfer(amount);
+            return true;
+        }
 
         require(
             depositBalances[onBehalfOf][tokenAddress] > 0,
             "You dont have any tokens deposited"
         );
 
+        // uint256 numberTokensPostWithdrawal = thisToken.balanceOf(address(this));
+
+        // uint256 usersBalancePercentage =
+        //      depositBalances[onBehalfOf][tokenAddress].div(totalAmountStaked[tokenAddress]);
+
         uint256 numberTokensPlusRewardsForUser1 = getStakedPoolBalanceByUser(
-            onBehalfOf, 
+            onBehalfOf,
             tokenAddress
         );
         uint256 commissionForDAO1 = calculateCommission(numberTokensPlusRewardsForUser1);
-        uint256 numberTokensPlusRewardsForUserMinusCommission = 
+        uint256 numberTokensPlusRewardsForUserMinusCommission =
             numberTokensPlusRewardsForUser1 - commissionForDAO1;
 
         unstake(amount, onBehalfOf, tokenAddress);
@@ -192,15 +181,18 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         );
 
         depositBalances[onBehalfOf][tokenAddress] = 0;
+
         require(
             numberTokensPlusRewardsForUserMinusCommission > 0,
             "numberTokensPlusRewardsForUserMinusCommission is zero"
         );
 
         thisToken.safeTransfer(onBehalfOf, numberTokensPlusRewardsForUserMinusCommission);
+
         if (numberTokensPlusRewardsForUserMinusCommission > 0) {
             thisToken.safeTransfer(owner(), commissionForDAO1);
         }
+
         uint256 remainingBalance = thisToken.balanceOf(address(this));
         if (remainingBalance > 0) {
             stake(remainingBalance, address(this), tokenAddress);
@@ -210,22 +202,17 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return true;
     }
 
-    function calculateCommission(uint256 amount) public view returns (uint256) {
-        uint256 commissionForDAO =
-            (amount.mul(1000).mul(commission)).div(10000000);
-        return commissionForDAO;
-    }
-
     function getStakedPoolBalanceByUser(
-        address _owner, 
+        address _owner,
         address tokenAddress
-    ) 
-        public 
-        view 
-        returns (uint256) 
+    )
+        public
+        view
+        returns (uint256)
     {
-        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
-        uint256 numberTokens = aToken.balanceOf(address(this));
+        IStaking2 staker = IStaking2(tokenToFarmMapping[tokenAddress]);
+
+        uint256 numberTokens = staker.balanceOf(address(this));
 
         uint256 usersBalancePercentage =
             (depositBalances[_owner][tokenAddress].mul(1000000)).div(
@@ -239,8 +226,13 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         return numberTokensPlusRewardsForUser;
     }
 
+    function calculateCommission(uint256 amount) public view returns (uint256) {
+        uint256 commissionForDAO = (amount.mul(1000).mul(commission)).div(10000000);
+        return commissionForDAO;
+    }
+
     function getStakedBalance(address _owner, address tokenAddress) public view returns (uint256) {
-        IERC20 staker = IERC20(tokenToAToken[tokenAddress]);
+        IStaking2 staker = IStaking2(tokenToFarmMapping[tokenAddress]);
         return staker.balanceOf(_owner);
     }
 
@@ -248,16 +240,9 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         uint256 amount,
         address onBehalfOf,
         address tokenAddress
-    )
-        internal 
-        nonZeroAmount(amount) 
-        returns (bool) 
-    {
-        IERC20 tokenStaked = IERC20(tokenAddress);
-        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], 0);
-        tokenStaked.safeIncreaseAllowance(tokenToFarmMapping[tokenAddress], amount.mul(2));
-        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
-        staker.deposit(tokenAddress, amount, address(this), 0);
+    ) internal nonZeroAmount(amount) returns (bool) {
+        IStaking2 staker = IStaking2(tokenToFarmMapping[tokenAddress]);
+        staker.stake(amount);
         return true;
     }
 
@@ -265,14 +250,9 @@ contract Tier2AaveFarmController is OwnableUpgradeable, Adminable {
         uint256 amount,
         address onBehalfOf,
         address tokenAddress
-    ) 
-        internal 
-        nonZeroAmount(amount) 
-        returns (bool) 
-    {
-        IERC20 aToken = IERC20(tokenToAToken[tokenAddress]);
-        IStaking1 staker = IStaking1(tokenToFarmMapping[tokenAddress]);
-        staker.withdraw(tokenAddress, aToken.balanceOf(address(this)), address(this));
+    ) internal nonZeroAmount(amount) returns (bool) {
+        IStaking2 staker = IStaking2(tokenToFarmMapping[tokenAddress]);
+        staker.withdraw(amount);
         return true;
     }
 }
