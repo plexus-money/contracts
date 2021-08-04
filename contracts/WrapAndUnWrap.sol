@@ -10,11 +10,9 @@ import "./interfaces/token/IWETH.sol";
 import "./interfaces/token/ILPERC20.sol";
 import "./interfaces/uniswap/IUniswapV2.sol";
 import "./interfaces/uniswap/IUniswapFactory.sol";
-import "hardhat/console.sol";
 
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
-
 contract WrapAndUnWrap is OwnableUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -604,7 +602,6 @@ contract WrapAndUnWrap is OwnableUpgradeable {
                 address(this),
                 deadline
             );
-        console.log('comp', theAddresses[1]);
         return amounts;
     }
 }
