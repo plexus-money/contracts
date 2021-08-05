@@ -5,11 +5,11 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IExternalPlatform.sol";
-import "./interfaces/uniswap/IUniswapV2RouterLite.sol";
-import "./interfaces/staking/ITokenRewards.sol";
-import "./interfaces/ITVLOracle.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/IExternalPlatform.sol";
+import "../interfaces/uniswap/IUniswapV2RouterLite.sol";
+import "../interfaces/staking/ITokenRewards.sol";
+import "../interfaces/ITVLOracle.sol";
 
 /// @title Plexus Oracle Contract
 /// @author Team Plexus
@@ -39,23 +39,23 @@ contract PlexusOracle is OwnableUpgradeable {
     }
 
     /**
-     * @notice Executed on a call to the contract if none of the other 
-     * functions match the given function signature, or if no data was 
+     * @notice Executed on a call to the contract if none of the other
+     * functions match the given function signature, or if no data was
      * supplied at all and there is no receive Ether function
      */
     fallback() external payable {
     }
 
     /**
-     * @notice Function executed on plain ether transfers and on a call to the 
-     * contract with empty calldata 
+     * @notice Function executed on plain ether transfers and on a call to the
+     * contract with empty calldata
      */
     receive() external payable {
     }
 
     /**
-     * @notice Initialize the core contract 
-     * @param _uniswap Address to the Uniswap V2 router contract 
+     * @notice Initialize the core contract
+     * @param _uniswap Address to the Uniswap V2 router contract
      * @param _usdc Address to the USDC token contract
      */
     function initialize(address _uniswap, address _usdc) external initializeOnceOnly {
@@ -127,8 +127,8 @@ contract PlexusOracle is OwnableUpgradeable {
         return true;
     }
 
-    /** 
-     * @notice Add farming platform details to the oracle contract registries 
+    /**
+     * @notice Add farming platform details to the oracle contract registries
      * @param name Farm platform name
      * @param farmAddress Address to the farming contract
      * @param farmToken Address to the token contract deposited in the farm
@@ -167,8 +167,8 @@ contract PlexusOracle is OwnableUpgradeable {
     /**
      * @notice Retrieve the TVL for a given token from the specified Tier 2
      * contract
-     * @param tokenAddress Address to the given token for which the TVL is to 
-     * be retrieved 
+     * @param tokenAddress Address to the given token for which the TVL is to
+     * be retrieved
      * @param tier2Address Address to the Tier 2 contract to retrieve the TVL
      * from
      * @return TVL for the given token from the specified Tier 2 contract
@@ -187,9 +187,9 @@ contract PlexusOracle is OwnableUpgradeable {
     }
 
     /**
-     * @notice Retrieve details about all tokens that can be staked 
-     * @return Two arrays - one containing a list of addresses to all tokens 
-     * that can be staked and another containing their respective token names 
+     * @notice Retrieve details about all tokens that can be staked
+     * @return Two arrays - one containing a list of addresses to all tokens
+     * that can be staked and another containing their respective token names
      */
     function getStakableTokens() external view returns (address[] memory, string[] memory) {
         address[] memory stakableAddrs = farmAddresses;
@@ -200,11 +200,11 @@ contract PlexusOracle is OwnableUpgradeable {
     /**
      * @notice Retrieve the amount of a given token staked by a particular user
      * using a specified Tier 2 contract
-     * @param tokenAddress Address to the given token for which the staked 
+     * @param tokenAddress Address to the given token for which the staked
      * amount is to be retrieved
      * @param userAddress Address to the user's wallet
-     * @param tier2Address Address to the Tier 2 contract used to stake the 
-     * specified tokens 
+     * @param tier2Address Address to the Tier 2 contract used to stake the
+     * specified tokens
      * @return Amount of specified tokens staked by the given user via the
      * provided Tier 2 contract
      */
@@ -218,15 +218,15 @@ contract PlexusOracle is OwnableUpgradeable {
     }
 
     /**
-     * @notice Retrieve the rewards accumulated by a given user for a specified 
-     * token deposited in a particular Tier 2 contract 
+     * @notice Retrieve the rewards accumulated by a given user for a specified
+     * token deposited in a particular Tier 2 contract
      * @param userAddress Address to the user's wallet
      * @param tokenAddress Address to the token for which reward value is to be
-     * retrieved 
-     * @param tier2FarmAddress Address to the Tier 2 contract where the given 
+     * retrieved
+     * @param tier2FarmAddress Address to the Tier 2 contract where the given
      * token was deposited
-     * @return Rewards accumulated by the given user for the particular token 
-     * from the specified Tier 2 contract address 
+     * @return Rewards accumulated by the given user for the particular token
+     * from the specified Tier 2 contract address
      */
     function getUserCurrentReward(
         address userAddress,
@@ -238,19 +238,19 @@ contract PlexusOracle is OwnableUpgradeable {
         uint256 principalAmount = reward.depositBalancesDelegated(userAddress, tokenAddress, 1);
         uint256 apr = reward.tokenAPRs(tokenAddress);
         uint256 result = reward.calculateRewards(
-            userStartTime, 
-            block.timestamp, 
-            principalAmount, 
+            userStartTime,
+            block.timestamp,
+            principalAmount,
             apr
         );
         return result;
     }
 
-    /** 
+    /**
      * @notice Retrieve the current price of a token
-     * @param tokenAddress Address to the token for which the price is to be 
+     * @param tokenAddress Address to the token for which the price is to be
      * retrieved
-     * @return Current price of the specified token 
+     * @return Current price of the specified token
      */
     function getTokenPrice(address tokenAddress, uint256 amount) external view returns (uint256) {
         address[] memory addresses = new address[](2);
@@ -263,19 +263,19 @@ contract PlexusOracle is OwnableUpgradeable {
 
     /**
      * @notice Retrieve the balance of a given token from a specified user
-     * wallet 
-     * @param userAddress Address to the user's wallet 
-     * @param tokenAddress Address to the token for which the balance is to be 
+     * wallet
+     * @param userAddress Address to the user's wallet
+     * @param tokenAddress Address to the token for which the balance is to be
      * retrieved
      * @return Balance of the given token in the specified user wallet
      */
     function getUserWalletBalance(
-        address userAddress, 
+        address userAddress,
         address tokenAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         IERC20 token = IERC20(tokenAddress);
         return token.balanceOf(userAddress);
@@ -284,7 +284,7 @@ contract PlexusOracle is OwnableUpgradeable {
     /**
      * @notice Retrieve the commission rates for a given platform
      * @param platformContract Address to the given platform contract
-     * @return Commission rate for the given platform contract 
+     * @return Commission rate for the given platform contract
      */
     function getCommissionByContract(address platformContract) external view returns (uint256) {
         IExternalPlatform exContract = IExternalPlatform(platformContract);
@@ -294,56 +294,56 @@ contract PlexusOracle is OwnableUpgradeable {
     function getTotalStakedByContract(
         address platformContract,
         address tokenAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         IExternalPlatform exContract = IExternalPlatform(platformContract);
         return exContract.totalAmountStaked(tokenAddress);
     }
-    
+
     /**
-     * @notice Retrieve the amount of a given token deposited by a specified 
+     * @notice Retrieve the amount of a given token deposited by a specified
      * using a particular platform
      * @param platformContract Address to the platform where the tokens were
      * deposited
      * @param tokenAddress Address to the contract for the deposited token
      * @param userAddress Address to the user's wallet
-     * @return The amount of tokens deposited by the given user via the 
+     * @return The amount of tokens deposited by the given user via the
      * provided platform contract
      */
     function getAmountCurrentlyDepositedByContract(
         address platformContract,
         address tokenAddress,
         address userAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         IExternalPlatform exContract = IExternalPlatform(platformContract);
         return exContract.depositBalances(userAddress, tokenAddress);
     }
 
     /**
-     * @notice Retrieve the amount of a given token staked by a specified 
+     * @notice Retrieve the amount of a given token staked by a specified
      * using a particular platform
      * @param platformContract Address to the platform where the tokens were
      * staked
      * @param tokenAddress Address to the contract for the staked token
      * @param userAddress Address to the user's wallet
-     * @return The amount of tokens staked by the given user via the 
+     * @return The amount of tokens staked by the given user via the
      * provided platform contract
      */
     function getAmountCurrentlyFarmStakedByContract(
         address platformContract,
         address tokenAddress,
         address userAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         IExternalPlatform exContract = IExternalPlatform(platformContract);
         return exContract.getStakedPoolBalanceByUser(userAddress, tokenAddress);
@@ -351,36 +351,36 @@ contract PlexusOracle is OwnableUpgradeable {
 
    /**
      * @notice Retrieve the balance of a given token for a specified user
-     * @param userAddress Address to the user's wallet 
-     * @param tokenAddress Address to the token for which the balance is to be 
+     * @param userAddress Address to the user's wallet
+     * @param tokenAddress Address to the token for which the balance is to be
      * retrieved
      * @return Balance of the given token in the specified user wallet
      */
     function getUserTokenBalance(
-        address userAddress, 
+        address userAddress,
         address tokenAddress
-    ) 
-        external 
-        view 
-        returns (uint256) 
+    )
+        external
+        view
+        returns (uint256)
     {
         IERC20 token = IERC20(tokenAddress);
         return token.balanceOf(userAddress);
     }
 
-    /** 
-     * @notice Allows contract owner to update the contract address for a given 
-     * platform 
+    /**
+     * @notice Allows contract owner to update the contract address for a given
+     * platform
      * @param name String identifier for the platform
      * @param theAddress New address to the platform contract
      */
     function updateDirectory(
-        string memory name, 
+        string memory name,
         address theAddress
-    ) 
-        public 
-        onlyOwner 
-        returns (bool) 
+    )
+        public
+        onlyOwner
+        returns (bool)
     {
         platformDirectory[name] = theAddress;
         return true;
@@ -391,8 +391,8 @@ contract PlexusOracle is OwnableUpgradeable {
      * yield farm
      * @param farmAddress Address to the specified yield farm contract
      * @param farmToken Address to the given token for which the APR
-     * yield is to be retrieved 
-     * @return APR yield for the given token address from the specified yield 
+     * yield is to be retrieved
+     * @return APR yield for the given token address from the specified yield
      * farm
      */
     function getAPR(address farmAddress, address farmToken) public view returns (uint256) {
@@ -414,47 +414,47 @@ contract PlexusOracle is OwnableUpgradeable {
 
     /**
      * @notice Retrieve the given platform component's address
-     * @param component String identifier for the given platform component 
+     * @param component String identifier for the given platform component
      * @return Address to the given platform component
      */
     function getAddress(string memory component) public view returns (address) {
         return platformDirectory[component];
     }
 
-    /** 
-     * @notice Calculate the DAOs commission earnings for a given amount 
+    /**
+     * @notice Calculate the DAOs commission earnings for a given amount
      * @param amount Amount value to compute the commission for
      * @param commission Current DAO commission rate
      * @return Commission amount earned by the DAO
      */
     function calculateCommission(
-        uint256 amount, 
+        uint256 amount,
         uint256 commission
-    ) 
-        public 
-        pure 
-        returns (uint256) 
+    )
+        public
+        pure
+        returns (uint256)
     {
         uint256 commissionForDAO = (amount.mul(1000).mul(commission)).div(10000000);
         return commissionForDAO;
     }
 
     /**
-     * @notice Given an input asset amount and an array of token addresses, 
-     * calculates all subsequent maximum output token amounts for each pair of 
+     * @notice Given an input asset amount and an array of token addresses,
+     * calculates all subsequent maximum output token amounts for each pair of
      * token addresses in the path
      * @param theAddresses Array of token contract addresses in the path
-     * @param amount Given input asset amount 
+     * @param amount Given input asset amount
      * @return amounts1 Array containing maximum output token amounts for each
      * pair of token addresses in the swap path
      */
     function getUniswapPrice(
-        address[] memory theAddresses, 
+        address[] memory theAddresses,
         uint256 amount
-    ) 
-        internal 
-        view 
-        returns (uint256[] memory amounts1) 
+    )
+        internal
+        view
+        returns (uint256[] memory amounts1)
     {
         uint256[] memory amounts = uniswap.getAmountsOut(amount, theAddresses);
         return amounts;

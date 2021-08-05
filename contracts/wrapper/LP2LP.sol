@@ -69,8 +69,8 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IWrapper.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/IWrapper.sol";
 
 contract LP2LP is OwnableUpgradeable {
     using SafeMath for uint256;
@@ -138,12 +138,12 @@ contract LP2LP is OwnableUpgradeable {
     }
 
     function updatePlatform(
-        uint256 platformId, 
+        uint256 platformId,
         address wrapperAddress
-    ) 
-        external 
-        onlyOwner 
-        returns (bool) 
+    )
+        external
+        onlyOwner
+        returns (bool)
     {
         platforms[platformId] = wrapperAddress;
         return true;

@@ -5,11 +5,11 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./proxyLib/OwnableUpgradeable.sol";
-import "./interfaces/IPlexusOracle.sol";
-import "./interfaces/staking/ITier1Staking.sol";
-import "./interfaces/IConverter.sol";
-import "./interfaces/token/IWETH.sol";
+import "../proxyLib/OwnableUpgradeable.sol";
+import "../interfaces/IPlexusOracle.sol";
+import "../interfaces/staking/ITier1Staking.sol";
+import "../interfaces/IConverter.sol";
+import "../interfaces/token/IWETH.sol";
 
 /// @title Plexus Core Contract
 /// @author Team Plexus
