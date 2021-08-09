@@ -9,7 +9,7 @@ const config = require('../config.json');
 const addr = config.addresses;
 
 describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let wrapperSushi, owner;
   let netinfo;
   let network = 'unknown';
   let daiTokenAddress;
@@ -21,18 +21,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
   // Deploy and setup the contracts
   before(async () => {
     const { deployedContracts } = await setupContracts();
-    wrapper = deployedContracts.wrapper;
     wrapperSushi = deployedContracts.wrapperSushi;
-    tokenRewards = deployedContracts.tokenRewards;
-    plexusOracle = deployedContracts.plexusOracle;
-    tier1Staking = deployedContracts.tier1Staking;
-    core = deployedContracts.core;
-    tier2Farm = deployedContracts.tier2Farm;
-    tier2Aave = deployedContracts.tier2Aave;
-    tier2Pickle = deployedContracts.tier2Pickle;
-    plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
-    addr1 = deployedContracts.addr1;
 
     netinfo = await ethers.provider.getNetwork();
     network = netinfo.chainId === 1 ? "mainnet" :
@@ -45,7 +35,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Test Plexus SushiSwap wrapper', () => {
+  describe('Test Plexus SushiSwap swapping from ETH TO ERC20 tokens', () => {
 
     // we'll always need the user ETH balance to be greater than 3 ETH, because we use 2 ETH as the base amount for token conversions e.t.c
     it('User wallet balance is greater than 3 ETH', async () => {

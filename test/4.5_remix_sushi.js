@@ -40,7 +40,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Test Sushiliquidity pool', () => {
+  describe('Testing Sushi remixing liquidity', () => {
 
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via SushiSwap', async () => {
 

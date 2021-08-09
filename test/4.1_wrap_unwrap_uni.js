@@ -9,13 +9,11 @@ const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
 
 describe('Re-deploying the plexus contracts for Wrapper test', () => {
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let wrapper, owner;
   let netinfo;
   let network = 'unknown';
   let tokenPairAddress = '';
   let daiTokenAddress;
-  let farmTokenAddress;
-  let pickleTokenAddress;
   let sushiTokenAddress;
   let compoundTokenAddress;
   let wethAddress;
@@ -26,17 +24,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
   before(async () => {
     const { deployedContracts } = await setupContracts();
     wrapper = deployedContracts.wrapper;
-    wrapperSushi = deployedContracts.wrapperSushi;
-    tokenRewards = deployedContracts.tokenRewards;
-    plexusOracle = deployedContracts.plexusOracle;
-    tier1Staking = deployedContracts.tier1Staking;
-    core = deployedContracts.core;
-    tier2Farm = deployedContracts.tier2Farm;
-    tier2Aave = deployedContracts.tier2Aave;
-    tier2Pickle = deployedContracts.tier2Pickle;
-    plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
-    addr1 = deployedContracts.addr1;
 
     netinfo = await ethers.provider.getNetwork();
     network = netinfo.chainId === 1 ? "mainnet" :

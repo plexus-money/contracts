@@ -40,7 +40,7 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Test Uni V2 liquidity pool', () => {
+  describe('Testing Uni V2 remixing liquidity', () => {
 
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
 
