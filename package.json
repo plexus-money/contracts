@@ -12,8 +12,12 @@
     "hint": "solhint \"contracts/**/*.sol\"",
     "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
     "upgrade-checks": "npx hardhat run scripts/upgradeChecks.js",
-    "verify": "npx hardhat run scripts/verify.js",
+    "deploy:all": "npx hardhat run scripts/deployAll.js",
+    "deploy:wrappers": "npx hardhat run scripts/deployWrappers.js",
+    "verify:all": "npx hardhat run scripts/verifyAll.js",
+    "verify:wrappers": "npx hardhat run scripts/verifyWrappers.js",
     "generate-docs": "node node_modules/solidity-docgen/dist/cli.js --solc-module=solc"
+   
   },
   "repository": {
     "type": "git",
