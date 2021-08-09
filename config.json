@@ -83,7 +83,7 @@
 		},
 
 		"swaps": {
-			"uniswap": {
+			"uniswapRouter": {
 				"mainnet": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
 				"kovan": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 			},
@@ -93,7 +93,7 @@
 				"kovan": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
 			},
 
-			"sushiswap": {
+			"sushiswapRouter": {
 				"mainnet": "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F",
 				"kovan": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
 			},
@@ -103,14 +103,14 @@
 				"kovan": "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
 			},
 
-			"pancakeswap": {
+			"pancakeswapRouter": {
 				"binance": "0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F"
 			},
 			"pancakeswapFactory": {
 				"binance": "0xBCfCcbde45cE874adCB698cC183deBcF17952812"
 			},
 
-			"quickswap": {
+			"quickswapRouter": {
 				"matic": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"
 			},
 			"quickswapFactory": {

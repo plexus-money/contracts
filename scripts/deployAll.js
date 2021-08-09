@@ -55,11 +55,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrap',
 			addr.tokens.WETH[network],
-			addr.swaps.uniswap[network],
-			addr.swaps.uniswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.uniswapRouter[network],
+			addr.swaps.uniswapFactory[network]
 		);
 		console.log("Wrapper is deployed at: ", wrapper.address);
 
@@ -68,11 +65,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrapSushi',
 			addr.tokens.WETH[network],
-			addr.swaps.sushiswap[network],
-			addr.swaps.uniswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.sushiswapRouter[network],
+			addr.swaps.sushiswapFactory[network]
 		);
 		console.log("WrapperSushi is deployed at: ", wrapperSushi.address);
 
@@ -87,7 +81,7 @@ async function main() {
 			PlexusOracle,
 			OwnableProxy,
 			'PlexusOracle',
-			addr.swaps.uniswap[network],
+			addr.swaps.uniswapRouter[network],
 			addr.tokens.USDC[network]
 		);
 		console.log("PlexusOracle is deployed at: ", plexusOracle.address);
@@ -203,11 +197,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrap',
 			addr.tokens.WETH[network],
-			addr.swaps.pancakeswap[network],
-			addr.swaps.pancakeswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.pancakeswapRouter[network],
+			addr.swaps.pancakeswapFactory[network]
 		);
 		console.log("Wrapper is deployed at: ", wrapper.address);
 
@@ -222,7 +213,7 @@ async function main() {
 			PlexusOracle,
 			OwnableProxy,
 			'PlexusOracle',
-			addr.swaps.pancakeswap[network],
+			addr.swaps.pancakeswapRouter[network],
 			addr.tokens.USDC[network]
 		);
 		console.log("PlexusOracle is deployed at: ", plexusOracle.address);
@@ -267,11 +258,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrap',
 			addr.tokens.WETH[network],
-			addr.swaps.quickswap[network],
-			addr.swaps.quickswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.quickswapRouter[network],
+			addr.swaps.quickswapFactory[network]
 		);
 		console.log("Wrapper is deployed at: ", wrapper.address);
 
@@ -286,7 +274,7 @@ async function main() {
 			PlexusOracle,
 			OwnableProxy,
 			'PlexusOracle',
-			addr.swaps.quickswap[network],
+			addr.swaps.quickswapRouter[network],
 			addr.tokens.USDC[network]
 		);
 		console.log("PlexusOracle is deployed at: ", plexusOracle.address);
@@ -331,11 +319,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrap',
 			addr.tokens.WETH[network],
-			addr.swaps.uniswap[network],
-			addr.swaps.uniswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.uniswapRouter[network],
+			addr.swaps.uniswapFactory[network]
 		);
 		console.log("Wrapper is deployed at: ", wrapper.address);
 
@@ -344,11 +329,8 @@ async function main() {
 			OwnableProxy,
 			'WrapAndUnWrapSushi',
 			addr.tokens.WETH[network],
-			addr.swaps.sushiswap[network],
-			addr.swaps.uniswapFactory[network],
-			addr.tokens.DAI[network],
-			addr.tokens.USDT[network],
-			addr.tokens.USDC[network]
+			addr.swaps.sushiswapRouter[network],
+			addr.swaps.sushiswapFactory[network]
 		);
 		console.log("WrapperSushi is deployed at: ", wrapperSushi.address);
 
@@ -363,7 +345,7 @@ async function main() {
 			PlexusOracle,
 			OwnableProxy,
 			'PlexusOracle',
-			addr.swaps.uniswap[network],
+			addr.swaps.uniswapRouter[network],
 			addr.tokens.USDC[network]
 		);
 		console.log("PlexusOracle is deployed at: ", plexusOracle.address);

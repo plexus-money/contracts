@@ -1,7 +1,7 @@
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
- require("dotenv").config();
+ require('dotenv').config();
  require('@nomiclabs/hardhat-waffle');
  require('@nomiclabs/hardhat-solhint');
  require('solidity-coverage');

@@ -39,7 +39,7 @@ const setupContracts = async() => {
         OwnableProxy,
         'WrapAndUnWrap',
 		addr.tokens.WETH[network],
-		addr.swaps.uniswap[network],
+		addr.swaps.uniswapRouter[network],
 		addr.swaps.uniswapFactory[network]
     );
 
@@ -48,7 +48,7 @@ const setupContracts = async() => {
         OwnableProxy,
         'WrapAndUnWrapSushi',
 		addr.tokens.WETH[network],
-		addr.swaps.sushiswap[network],
+		addr.swaps.sushiswapRouter[network],
 		addr.swaps.sushiswapFactory[network]
     );
 
@@ -62,7 +62,7 @@ const setupContracts = async() => {
         PlexusOracle,
         OwnableProxy,
         'PlexusOracle',
-		addr.swaps.uniswap[network],
+		addr.swaps.uniswapRouter[network],
 		addr.tokens.USDC[network]
     );
 

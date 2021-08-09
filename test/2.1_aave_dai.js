@@ -60,6 +60,10 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
 
 
     it('tier2Aave (DAI) contract should have the correct Token and Token Staking Addresses', async () => {
+      console.log(tier2Aave.address);
+      console.log(tier2ContractName);
+      console.log(process.env.AAVE_STAKING_MAINNET_ADDRESS);
+      console.log(process.env.DAI_TOKEN_MAINNET_ADDRESS);
 
         const { status } = await (await tier1Staking.addOrEditTier2ChildsChildStakingContract(tier2Aave.address, tier2ContractName, process.env.AAVE_STAKING_MAINNET_ADDRESS, process.env.DAI_TOKEN_MAINNET_ADDRESS)).wait();
 
