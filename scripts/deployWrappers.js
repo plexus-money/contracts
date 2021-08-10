@@ -111,17 +111,24 @@ async function main() {
 }
 
 const deployWithProxy = async(contractFactory, proxyFactory, factoryName, ...params) => {
-	console.log('factory name being deployed', factoryName);
-	console.log('Params ', ...params);
+	console.log('Factory name being DEPLOYED: ', factoryName);
 	let deployedContract = await (await contractFactory.deploy()).deployed();
-	console.log('factory name deployed', factoryName);
+	console.log('Factory name DEPLOYED: ', factoryName);
 	const logicContractAddr = deployedContract.address;
-	console.log('address', logicContractAddr);
-	await writeAddress(factoryName, deployedContract.address, [])
+	console.log('FactoryName deployed address', logicContractAddr);
+	console.log("============================================================");
+	console.log("Saving factory addresses for, ", factoryName);
+	await writeAddress(factoryName, deployedContract.address, []);
+
+	console.log("Deploying proxy contract for: ", factoryName);
 	const deployedProxy = await (await proxyFactory.deploy(deployedContract.address)).deployed();
+	console.log("Setting proxy contract for ", factoryName);
 	await deployedContract.setProxy(deployedProxy.address);
 	deployedContract = await ethers.getContractAt(factoryName, deployedProxy.address);
+	console.log("Initializing deployed contract: ", factoryName);
 	await deployedContract.initialize(...params);
+	console.log("============================================================");
+	console.log("Saving proxy address for, ", factoryName);
 	await writeAddress(factoryName + 'Proxy', deployedProxy.address, [logicContractAddr])
 
 	return deployedContract;

@@ -181,7 +181,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi swap test', () => {
 
       // Check if the txn reverts after it has passed
       const paths = [[wethAddress, pickleTokenAddress]];
-      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, 10, overrides)).to.be.revertedWith("revert UniswapV2Router: EXPIRED");
+      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, 10, overrides))
+      .to.be.revertedWith("reverted with reason string 'UniswapV2Router: EXPIRED'");
     });
   });
 

@@ -162,7 +162,7 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
         }
     });
 
-    it('User should be able to withdraw deposited Farm tokens via the Core Contract', async () => {
+    /* it('User should be able to withdraw deposited Farm tokens via the Core Contract', async () => {
 
       const farmTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
 
@@ -187,6 +187,6 @@ describe('Re-deploying the plexus ecosystem for Farm test', () => {
         expect(currUserFarmTokenBalance).to.be.gte(initialUserFarmTokenBalance);
 
       }
-    });
+    }); */
   });
 });
