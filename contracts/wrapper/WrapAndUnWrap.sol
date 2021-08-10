@@ -10,6 +10,8 @@ import "../interfaces/token/ILPERC20.sol";
 import "../interfaces/uniswap/IUniswapV2.sol";
 import "../interfaces/uniswap/IUniswapFactory.sol";
 
+import "hardhat/console.sol";
+
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
 contract WrapAndUnWrap is OwnableUpgradeable {
@@ -466,8 +468,8 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         address lpTokenPairAddress,
         address unwrapOutputToken,
         address[] memory destinationTokens,
-        address[][] calldata unwrapPaths,
-        address[][] calldata wrapPaths,
+        address[][] memory unwrapPaths,
+        address[][] memory wrapPaths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
@@ -482,12 +484,12 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         IERC20 dToken = IERC20(unwrapOutputToken);
         uint256 destinationTokenBalance = dToken.balanceOf(address(this));
 
-        require(destAmount == destinationTokenBalance, "Error: Remix output balance not correct");
+        require(destAmount == destinationTokenBalance, "Error: Remix output token balance not correct");
        
         // then now we create the new LP token
         address outputToken = unwrapOutputToken;
         address [] memory dTokens = destinationTokens;
-        address [][] calldata paths = wrapPaths;
+        address [][] memory paths = wrapPaths;
         uint256 slippageTolerance = userSlippageTolerance;
         uint256 timeout = deadline;
         bool remixingToken = true; //flag indicates whether we're remixing or not
@@ -567,14 +569,14 @@ contract WrapAndUnWrap is OwnableUpgradeable {
     /**
      * @notice Retrieve minimum output amount required based on uniswap routing
      * path and maximum permissible slippage
-     * @param theAddresses Array list describing the Uniswap router swap path
+     * @param paths Array list describing the Uniswap router swap path
      * @param amount Amount of input tokens to be swapped
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Minimum amount of output tokens the input token can be swapped
      * for, based on the Uniswap prices and Slippage tolerance thresholds
      */
     function getAmountOutMin(
-        address[] memory theAddresses,
+        address[] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance
     )
@@ -582,9 +584,13 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         view
         returns (uint256)
     {
-        uint256[] memory assetAmounts = getPriceFromUniswap(theAddresses, amount);
+        uint256[] memory assetAmounts = getPriceFromUniswap(paths, amount);
+        
+
+        // this is the index of the output token we're swapping to based on the paths
+        uint outputTokenIndex = assetAmounts.length - 1;
         require(userSlippageTolerance <= 100, "userSlippageTolerance can not be larger than 100");
-        return SafeMath.div(SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)), 100);
+        return SafeMath.div(SafeMath.mul(assetAmounts[outputTokenIndex], (100 - userSlippageTolerance)), 100);
     }
 
     /**
@@ -643,7 +649,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
     /**
      * @notice Using Uniswap, exchange an exact amount of input tokens for as
      * many output tokens as possible, along the route determined by the path.
-     * @param theAddresses Array of addresses representing the path where the
+     * @param paths Array of addresses representing the path where the
      * first address is the input token and the last address is the output
      * token
      * @param amount Amount of input tokens to be swapped
@@ -652,7 +658,7 @@ contract WrapAndUnWrap is OwnableUpgradeable {
      * amounts
      */
     function conductUniswapT4T(
-        address[] memory theAddresses,
+        address[] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
@@ -660,13 +666,12 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         internal
         returns (uint256[] memory amounts_)
     {
-        uint256 amountOutMin = getAmountOutMin(theAddresses, amount, userSlippageTolerance);
-     
+        uint256 amountOutMin = getAmountOutMin(paths, amount, userSlippageTolerance);
         uint256[] memory amounts =
             uniswapExchange.swapExactTokensForTokens(
                 amount,
-                0,
-                theAddresses,
+                amountOutMin,
+                paths,
                 address(this),
                 deadline
             );

@@ -8,7 +8,7 @@ const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
+describe('Re-deploying the plexus contracts for WrapperSushi add liquidity test', () => {
   let wrapperSushi, owner;
   let netinfo;
   let network = 'unknown';

@@ -8,7 +8,7 @@ const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for Wrapper test', () => {
+describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
   let wrapper, owner, addr1;
   let netinfo;
   let network = 'unknown';
@@ -138,7 +138,8 @@ describe('Re-deploying the plexus contracts for Wrapper test', () => {
           // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in uni v2
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           const unwrapPaths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
-          const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, wethAddress, usdcTokenAddress]];
+          // for uni because the 2 pairs exist, the paths are straightforward
+          const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, usdcTokenAddress]];
           const outputToken = daiTokenAddress;
           const destinationTokens = [wethAddress, usdcTokenAddress];
           const { status, events } = await (await wrapper

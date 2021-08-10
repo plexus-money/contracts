@@ -8,7 +8,7 @@ const { setupContracts, log } = require('./helper');
 const config = require('../config.json');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperUni test', () => {
+describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
   let wrapper, owner;
 
   let netinfo;

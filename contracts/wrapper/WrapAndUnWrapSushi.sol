@@ -609,9 +609,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
             userSlippageTolerance <= 100,
             "userSlippageTolerance can not be larger than 100"
         );
+
+          // this is the index of the output token we're swapping to based on the paths
+        uint outputTokenIndex = assetAmounts.length - 1;
         return
             SafeMath.div(
-                SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)),
+                SafeMath.mul(assetAmounts[outputTokenIndex], (100 - userSlippageTolerance)),
                 100
             );
     }
@@ -695,7 +698,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         );
         uint256[] memory amounts = sushiExchange.swapExactTokensForTokens(
             amount,
-            0,
+            amountOutMin,
             theAddresses,
             address(this),
             deadline
