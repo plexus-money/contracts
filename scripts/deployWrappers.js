@@ -111,8 +111,10 @@ async function main() {
 }
 
 const deployWithProxy = async(contractFactory, proxyFactory, factoryName, ...params) => {
+	console.log('factory name being deployed', factoryName);
+	console.log('Params ', ...params);
 	let deployedContract = await (await contractFactory.deploy()).deployed();
-	console.log('factoryName', factoryName)
+	console.log('factory name deployed', factoryName);
 	const logicContractAddr = deployedContract.address;
 	console.log('address', logicContractAddr);
 	await writeAddress(factoryName, deployedContract.address, [])
