@@ -9,7 +9,7 @@ const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
 
 describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
-  let wrapper, owner, addr1;
+  let wrapper, owner;
   let netinfo;
   let network = 'unknown';
   let tokenPairAddress = '';
@@ -26,7 +26,6 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
     const { deployedContracts } = await setupContracts();
     wrapper = deployedContracts.wrapper;
     owner = deployedContracts.owner;
-    addr1 = deployedContracts.addr1;
 
     netinfo = await ethers.provider.getNetwork();
     network = netinfo.chainId === 1 ? "mainnet" :

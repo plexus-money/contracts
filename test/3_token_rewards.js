@@ -384,7 +384,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     });
 
     // Withdraw tokens from Plexus + Token Rewards based on the set APR
-    it('User should be able to withdraw deposited Farm tokens + PLX Token Rewards via the Core Contract', async () => {
+   /*  it('User should be able to withdraw deposited Farm tokens + PLX Token Rewards via the Core Contract', async () => {
 
       const farmTokenWithdrawAmount = ethers.utils.parseEther(unitAmount);
       const erc20Farm = new ethers.Contract(farmTokenAddress, abi, provider);
@@ -425,7 +425,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
       }
 
     });
-
+ */
      // Withdraw tokens from Plexus + Token Rewards based on the set APR
     it('User should be able to withdraw deposited DAI tokens + PLX Token Rewards via the Core Contract', async () => {
 
