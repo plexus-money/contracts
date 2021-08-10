@@ -30,7 +30,10 @@ jobs:
       env:
         RPC_NODE_URL: ${{ secrets.ALCHEMY_API_URL }}
         RPC_NODE_URL_KOVAN: ${{ secrets.ALCHEMY_KOVAN_API_URL }}
-        MNEMONIC: "control fever web opera gap need return attract hundred often someone option"
+        MAINNET_PRIVATE_KEY: 6167036e414ac165be1f4b741820abb920a11b2db571ea6acf0f8086197a5915
+        KOVAN_PRIVATE_KEY: 6167036e414ac165be1f4b741820abb920a11b2db571ea6acf0f8086197a5915
+        BINANCE_PRIVATE_KEY: 6167036e414ac165be1f4b741820abb920a11b2db571ea6acf0f8086197a5915
+        MATIC_PRIVATE_KEY: 6167036e414ac165be1f4b741820abb920a11b2db571ea6acf0f8086197a5915
     - run: yarn test 
       env:
         RPC_NODE_URL: ${{ secrets.ALCHEMY_API_URL }} 
