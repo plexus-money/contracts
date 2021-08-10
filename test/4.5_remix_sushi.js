@@ -8,7 +8,7 @@ const abi = require('human-standard-token-abi');
 const { setupContracts, log } = require('./helper');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
+describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => {
   let wrapperSushi, owner, addr1;
   let netinfo;
   let network = 'unknown';
@@ -40,7 +40,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Test Sushiliquidity pool', () => {
+  describe('Testing Sushi remixing liquidity', () => {
 
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via SushiSwap', async () => {
 
@@ -94,8 +94,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
           await daiToken.approve(wrapperSushi.address, amountPlaceholder);
           // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          log('sushiToken Address', sushiTokenAddress);
-          log('compoundToken Address', compoundTokenAddress);
+          log('Sushi Token Address', sushiTokenAddress);
+          log('Compound Token Address', compoundTokenAddress);
           const paths = [[daiTokenAddress, wethAddress, sushiTokenAddress], [daiTokenAddress, wethAddress, compoundTokenAddress]];
           const { status, events } = await (await wrapperSushi.wrap(daiTokenAddress, [sushiTokenAddress, compoundTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
           // Check if the txn is successful
@@ -138,6 +138,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi test', () => {
             // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in Sushi
             const deadline = Math.floor(new Date().getTime() / 1000) + 10;
             const unwrapPaths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
+
+            // for sushi because the DAI-USDC pair has low liquidity, we have to go through WETH for the second path
             const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, wethAddress, usdcTokenAddress]];
             const outputToken = daiTokenAddress;
             const destinationTokens = [wethAddress, usdcTokenAddress];
