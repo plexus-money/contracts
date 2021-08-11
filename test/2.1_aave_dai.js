@@ -11,7 +11,7 @@ const addr = config.addresses;
 describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
 
   // Global test vars
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let tier1Staking, core, tier2Aave, owner, addr1;
   let netinfo;
   let network = 'unknown';
   let wethAddress;
@@ -23,16 +23,10 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
   // Deploy and setup the contracts
   before(async () => {
     const { deployedContracts } = await setupContracts();
-    wrapper = deployedContracts.wrapper;
-    wrapperSushi = deployedContracts.wrapperSushi;
-    tokenRewards = deployedContracts.tokenRewards;
-    plexusOracle = deployedContracts.plexusOracle;
+
     tier1Staking = deployedContracts.tier1Staking;
     core = deployedContracts.core;
-    tier2Farm = deployedContracts.tier2Farm;
     tier2Aave = deployedContracts.tier2Aave;
-    tier2Pickle = deployedContracts.tier2Pickle;
-    plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
 
@@ -60,11 +54,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
 
 
     it('tier2Aave (DAI) contract should have the correct Token and Token Staking Addresses', async () => {
-      console.log(tier2Aave.address);
-      console.log(tier2ContractName);
-      console.log(process.env.AAVE_STAKING_MAINNET_ADDRESS);
-      console.log(process.env.DAI_TOKEN_MAINNET_ADDRESS);
-
+     
         const { status } = await (await tier1Staking.addOrEditTier2ChildsChildStakingContract(tier2Aave.address, tier2ContractName, process.env.AAVE_STAKING_MAINNET_ADDRESS, process.env.DAI_TOKEN_MAINNET_ADDRESS)).wait();
 
         // Check if the txn is successful
@@ -90,7 +80,7 @@ describe('Re-deploying the plexus ecosystem for Aave (DAI) test', () => {
     it('Should convert 2 ETH to DAI Token from MakerDao', async () => {
 
        const zeroAddress = process.env.ZERO_ADDRESS;
-       const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+       const userSlippageTolerance = config.userSlippageTolerance;
        // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
 

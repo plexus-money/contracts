@@ -1,4 +1,5 @@
 {
+	"userSlippageTolerance": 1,
 	"addresses": {
 		"tokens": {
 			"USDT": {

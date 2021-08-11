@@ -10,8 +10,6 @@ import "../interfaces/token/ILPERC20.sol";
 import "../interfaces/uniswap/IUniswapV2.sol";
 import "../interfaces/uniswap/IUniswapFactory.sol";
 
-import "hardhat/console.sol";
-
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
 contract WrapAndUnWrap is OwnableUpgradeable {
@@ -419,19 +417,17 @@ contract WrapAndUnWrap is OwnableUpgradeable {
 
     /**
      * @notice Unwrap a source token based to the specified destination token
-     * @param sourceToken Address to the source token contract
-     * @param destinationToken Address to the destination token contract
-     * @param paths Paths for uniswap
      * @param lpTokenPairAddress address for lp token
+     * @param destinationToken Address of the destination token contract
+     * @param paths Paths for uniswap
      * @param amount Amount of source token to be unwrapped
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Amount of the destination token returned from unwrapping the
      * source token
      */
     function unwrap(
-        address sourceToken,
-        address destinationToken,
         address lpTokenPairAddress,
+        address destinationToken,
         address[][] calldata paths,
         uint256 amount,
         uint256 userSlippageTolerance,
@@ -442,14 +438,12 @@ contract WrapAndUnWrap is OwnableUpgradeable {
         returns (uint256)
     {
 
-        if (lpTokenPairAddress == address(0x0)) {
-            return swap(sourceToken, destinationToken, paths[0], amount, userSlippageTolerance, deadline);
-        } else {
-            bool remixing = false; //flag indicates whether we're remixing or not
-            uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, paths, amount, userSlippageTolerance, deadline, remixing);
-            emit UnWrapV2(destAmount);
-            return destAmount;
-        }
+      
+        bool remixing = false; //flag indicates whether we're remixing or not
+        uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, paths, amount, userSlippageTolerance, deadline, remixing);
+        emit UnWrapV2(destAmount);
+        return destAmount;
+    
     }
 
      /**
