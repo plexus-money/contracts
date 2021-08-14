@@ -142,7 +142,7 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
           const outputToken = daiTokenAddress;
           const destinationTokens = [wethAddress, usdcTokenAddress];
           const { status, events } = await (await wrapper
-            .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
+            .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, false)).wait();
 
              // Check if the txn is successful
              expect(status).to.equal(1);

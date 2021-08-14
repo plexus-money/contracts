@@ -4,18 +4,17 @@ pragma solidity >=0.8.0 <0.9.0;
 
 interface IRemix {
 
-    function remix(
-        address lpTokenPairAddress,
-        address unwrapOutputToken,
+   function createWrap(
+        address sourceToken,
         address[] memory destinationTokens,
-        address[][] memory unwrapPaths,
-        address[][] memory wrapPaths,
+        address[][] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
-        uint256 deadline
+        uint256 deadline,
+        bool remixing
     )
         external
         payable
-        returns (uint256);
+        returns (address, uint256);
 
 }  
