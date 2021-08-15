@@ -5,11 +5,11 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { setupContracts, log } = require('./helper');
+const { deployWrappersOnly, log } = require('./helper');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => {
-  let wrapperSushi, owner, addr1;
+describe('Deploying the plexus contracts for WrapperSushi add liquidity test', () => {
+  let wrapperSushi, owner;
   let netinfo;
   let network = 'unknown';
   let tokenPairAddress = '';
@@ -17,16 +17,15 @@ describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => 
   let sushiTokenAddress;
   let compoundTokenAddress;
   let wethAddress;
-  let usdcTokenAddress;
 
   const unitAmount = "2";
 
   // Deploy and setup the contracts
   before(async () => {
-    const { deployedContracts } = await setupContracts();
+    const { deployedContracts } = await deployWrappersOnly();
+   
     wrapperSushi = deployedContracts.wrapperSushi;
     owner = deployedContracts.owner;
-    addr1 = deployedContracts.addr1;
 
     netinfo = await ethers.provider.getNetwork();
     network = netinfo.chainId === 1 ? "mainnet" :
@@ -34,13 +33,14 @@ describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => 
     netinfo.chainId === 56 ? "binance" :
     netinfo.chainId === 137 ? "matic" : 'mainnet';
     daiTokenAddress = addr.tokens.DAI[network];
-    usdcTokenAddress = addr.tokens.USDC[network];
+    farmTokenAddress = addr.tokens.FARM[network];
+    pickleTokenAddress = addr.tokens.PICKLE[network];
     sushiTokenAddress = addr.tokens.SUSHI[network];
     compoundTokenAddress = addr.tokens.COMP[network];
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Testing Sushi remixing liquidity', () => {
+  describe('Test Sushiliquidity pool', () => {
 
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via SushiSwap', async () => {
 
@@ -94,8 +94,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => 
           await daiToken.approve(wrapperSushi.address, amountPlaceholder);
           // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          log('Sushi Token Address', sushiTokenAddress);
-          log('Compound Token Address', compoundTokenAddress);
+          log('sushiToken Address', sushiTokenAddress);
+          log('compoundToken Address', compoundTokenAddress);
           const paths = [[daiTokenAddress, wethAddress, sushiTokenAddress], [daiTokenAddress, wethAddress, compoundTokenAddress]];
           const { status, events } = await (await wrapperSushi.wrap(daiTokenAddress, [sushiTokenAddress, compoundTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
           // Check if the txn is successful
@@ -122,53 +122,36 @@ describe('Re-deploying the plexus contracts for WrapperSushi remix test', () => 
 
       });
 
-       it('Should remix the (SUSHI-COMPOUND) LP Token to the (ETH-USDC) LP Token in SUSHI', async () => {
-            const userSlippageTolerance = config.userSlippageTolerance;
-            let lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
-            lpToken = await lpToken.connect(owner);
-            const amountPlaceholder = await lpToken.balanceOf(owner.address);
-            await lpToken.approve(wrapperSushi.address, amountPlaceholder);
+      it('Should return DAI from pool when unwrap with token pair via SushiSwap', async () => {
+          const userSlippageTolerance = config.userSlippageTolerance;
+          let daiToken = new ethers.Contract(daiTokenAddress, abi, provider);
+          let lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
+          lpToken = await lpToken.connect(owner);
+          const amountPlaceholder = await lpToken.balanceOf(owner.address);
+          await lpToken.approve(wrapperSushi.address, amountPlaceholder);
 
-            // Check that the users initial LP Token balance is greater than zero
-            const initialLpToken = new ethers.Contract(tokenPairAddress, abi, provider);
-            let initialLpTokenBalance = Number(ethers.utils.formatUnits(await initialLpToken.balanceOf(owner.address), `ether`));
-            log("Initial LP Token balance for (SUSHI-COMPOUND) is greater than zero: ", initialLpTokenBalance);
-            expect(initialLpTokenBalance).to.be.gte(0);
+          // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
+          const deadline = Math.floor(new Date().getTime() / 1000) + 10;
+          const paths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
+          const { status, events } = await (await wrapperSushi.unwrap(tokenPairAddress, daiTokenAddress, paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
 
-            // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in Sushi
-            const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-            const unwrapPaths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
+          // Check if the txn is successful
+          expect(status).to.equal(1);
 
-            // for sushi because the DAI-USDC pair has low liquidity, we have to go through WETH for the second path
-            const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, wethAddress, usdcTokenAddress]];
-            const outputToken = daiTokenAddress;
-            const destinationTokens = [wethAddress, usdcTokenAddress];
-            const { status, events } = await (await wrapperSushi
-            .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, false)).wait();
+          // Check conversion is successful
+          if (status === 1) {
+              const event = events.find((item)=>{
+                  return item.event === "UnWrapSushi";
+              })
 
-            // Check if the txn is successful
-            expect(status).to.equal(1);
-
-            // Check conversion is successful
-            if (status === 1) {
-                const event = events.find((item)=>{
-                    return item.event === "RemixWrap";
-                })
-                const remixedTokenPairAddress = event.args.lpTokenPairAddress;
-                log("Remixed LP Token pair address for (ETH-USDC): ", remixedTokenPairAddress);
-
-                const lpToken = new ethers.Contract(remixedTokenPairAddress, abi, provider);
-                const lpTokenBalance = Number(ethers.utils.formatUnits(await lpToken.balanceOf(owner.address), `ether`));
-                log("Remixed LP Token balance for (ETH-USDC): ", lpTokenBalance);
-                expect(lpTokenBalance).to.be.gt(0);
-
-                // Check that the users initial LP Token balance is zero
-                initialLpTokenBalance = Number(ethers.utils.formatUnits(await initialLpToken.balanceOf(owner.address), `ether`));
-                log("Final LP Token balance for (SUSHI-COMPOUND) should be zero after remix: ", initialLpTokenBalance);
-                expect(initialLpTokenBalance).to.be.lte(0);
-            }
-
-        });
+              const destinationTokenBalance = Number(ethers.utils.formatUnits(event.args.amount, `ether`));
+              log("Dai balance after call unwrap function: ", destinationTokenBalance);
+              const daiTokenBalance = Number(ethers.utils.formatUnits(await daiToken.balanceOf(owner.address), `ether`));
+              // Check if the conversion is successful and the user has some sushi, dai tokens in their wallet
+              log("User Dai Token balance AFTER DAI conversion: ", daiTokenBalance);
+              expect(destinationTokenBalance).to.equal(daiTokenBalance);
+          }
+      });
   });
 
 });

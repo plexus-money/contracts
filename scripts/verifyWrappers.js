@@ -24,14 +24,10 @@ async function main() {
 		// Verify Wrapper and Wrapper Proxy
 		const wrapper = addresses.WrapAndUnWrap
 		await verifyContract(wrapper, network);
-		const wrapperProxy = addresses.WrapAndUnWrapProxy
-		await verifyContract(wrapperProxy, network);
+		
 		const wrapperSushi = addresses.WrapAndUnWrapSushi
 		await verifyContract(wrapperSushi, network);
-		const wrapperSushiProxy = addresses.WrapAndUnWrapSushiProxy
-		await verifyContract(wrapperSushiProxy, network);
-
-
+		
 		console.log("");
 		console.log("Successfully Verified Wrapper(s)!");
 		console.log("============================================================");

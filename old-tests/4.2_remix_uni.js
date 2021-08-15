@@ -5,7 +5,7 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { setupContracts, log } = require('./helper');
+const { deployWrappersOnly, log } = require('./helper');
 const addr = config.addresses;
 
 describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
@@ -23,7 +23,7 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
-    const { deployedContracts } = await setupContracts();
+    const { deployedContracts } = await deployWrappersOnly();
     wrapper = deployedContracts.wrapper;
     owner = deployedContracts.owner;
 
@@ -121,7 +121,7 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
 
       });
 
-      it('Should remix the (SUSHI-COMPOUND) LP Token to the (ETH-USDC) LP Token in UNI V2', async () => {
+      it('Should a same-dex remix for the (SUSHI-COMPOUND) LP Token to the (ETH-USDC) LP Token in UNI V2', async () => {
           const userSlippageTolerance = config.userSlippageTolerance;
           let lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
           lpToken = await lpToken.connect(owner);
@@ -141,8 +141,10 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
           const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, usdcTokenAddress]];
           const outputToken = daiTokenAddress;
           const destinationTokens = [wethAddress, usdcTokenAddress];
+          const crossDex = false;
           const { status, events } = await (await wrapper
-            .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, false)).wait();
+            .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, crossDex))
+            .wait();
 
              // Check if the txn is successful
              expect(status).to.equal(1);
@@ -167,6 +169,9 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
             }
 
       });
+
+
+      
   });
 
 });

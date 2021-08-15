@@ -4,13 +4,12 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { setupContracts, log } = require('./helper');
+const { deployWrappersOnly, log } = require('./helper');
 const config = require('../config.json');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
-  let wrapper, owner;
-
+describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () => {
+  let wrapperSushi, owner;
   let netinfo;
   let network = 'unknown';
   let daiTokenAddress;
@@ -21,8 +20,8 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
-    const { deployedContracts } = await setupContracts();
-    wrapper = deployedContracts.wrapper;
+    const { deployedContracts } = await deployWrappersOnly();
+    wrapperSushi = deployedContracts.wrapperSushi;
     owner = deployedContracts.owner;
 
     netinfo = await ethers.provider.getNetwork();
@@ -36,7 +35,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
     wethAddress = addr.tokens.WETH[network];
   });
 
-  describe('Test Plexus Uni V2 swapping from ETH TO ERC20 tokens', () => {
+  describe('Test Plexus SushiSwap swapping from ETH TO ERC20 tokens', () => {
 
     // we'll always need the user ETH balance to be greater than 3 ETH, because we use 2 ETH as the base amount for token conversions e.t.c
     it('User wallet balance is greater than 3 ETH', async () => {
@@ -45,8 +44,9 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
         expect(ethbalance).to.be.gt(3);
     });
 
+
      // Conversions From ETH
-     it('Should convert 2 ETH to Farm token from harvest.finance via Uniswap', async () => {
+     it('Should convert 2 ETH to Farm token from harvest.finance via SushiSwap', async () => {
 
         const zeroAddress = process.env.ZERO_ADDRESS;
         const userSlippageTolerance = config.userSlippageTolerance;
@@ -63,7 +63,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
         // Convert the 2 ETH to Farm Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const paths = [[wethAddress, farmTokenAddress]];
-        const { status } = await (await wrapper.wrap(zeroAddress, [farmTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -86,7 +86,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
 
       });
 
-      it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
+      it('Should convert 2 ETH to DAI Token(s) from MakerDao via SushiSwap', async () => {
 
         const zeroAddress = process.env.ZERO_ADDRESS;
         const userSlippageTolerance = config.userSlippageTolerance;
@@ -103,7 +103,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
         // Convert the 2 ETH to Dai Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const paths = [[wethAddress, daiTokenAddress]];
-        const { status } = await (await wrapper.wrap(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -126,7 +126,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
 
       });
 
-      it('Should convert 2 ETH to Pickle Token(s) via Uniswap', async () => {
+      it('Should convert 2 ETH to Pickle Token(s) via SushiSwap', async () => {
 
         const zeroAddress = process.env.ZERO_ADDRESS;
         const userSlippageTolerance = config.userSlippageTolerance;
@@ -143,7 +143,7 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
         // Convert the 2 ETH to Pickle Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const paths = [[wethAddress, pickleTokenAddress]];
-        const { status } = await (await wrapper.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -164,27 +164,26 @@ describe('Re-deploying the plexus contracts for WrapperUni swap test', () => {
         log('User ETH balance AFTER ETH conversion is: ', ethbalance);
         expect(ethbalance).to.be.lt(10000);
 
-      });
+    });
 
-      it('Should revert via Uniswap after the deadline has passed', async () => {
+    it('Should revert via Sushi after the deadline has passed', async () => {
 
-        const zeroAddress = process.env.ZERO_ADDRESS;
-        const userSlippageTolerance = config.userSlippageTolerance;
+      const zeroAddress = process.env.ZERO_ADDRESS;
+      const userSlippageTolerance = config.userSlippageTolerance;
 
-        // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
-        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
+      // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
+      const amountPlaceholder = ethers.utils.parseEther(unitAmount)
 
-        // We send 2 ETH to the wrapper for conversion
-        let overrides = {
-             value: ethers.utils.parseEther("2")
-        };
+      // We send 2 ETH to the wrapper for conversion
+      let overrides = {
+          value: ethers.utils.parseEther("2")
+      };
 
-        // Check if the txn reverts after it has passed
-        const paths = [[wethAddress, pickleTokenAddress]];
-        await expect(wrapper.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, 10, overrides))
-        .to.be.revertedWith("reverted with reason string 'UniswapV2Router: EXPIRED'");
-      });
-
+      // Check if the txn reverts after it has passed
+      const paths = [[wethAddress, pickleTokenAddress]];
+      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, 10, overrides))
+      .to.be.revertedWith("reverted with reason string 'UniswapV2Router: EXPIRED'");
+    });
   });
 
 });

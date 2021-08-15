@@ -5,10 +5,10 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { setupContracts, log } = require('./helper');
+const { deployWrappersOnly, log } = require('./helper');
 const addr = config.addresses;
 
-describe('Re-deploying the plexus contracts for WrapperUni adding liquidity test', () => {
+describe('Deploying the plexus contracts for WrapperUni adding liquidity test', () => {
   let wrapper, owner;
   let netinfo;
   let network = 'unknown';
@@ -22,7 +22,7 @@ describe('Re-deploying the plexus contracts for WrapperUni adding liquidity test
 
   // Deploy and setup the contracts
   before(async () => {
-    const { deployedContracts } = await setupContracts();
+    const { deployedContracts } = await deployWrappersOnly();
     wrapper = deployedContracts.wrapper;
     owner = deployedContracts.owner;
 
@@ -93,8 +93,8 @@ describe('Re-deploying the plexus contracts for WrapperUni adding liquidity test
           await daiToken.approve(wrapper.address, amountPlaceholder);
           // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          log('sushiToken Address', sushiTokenAddress);
-          log('compoundToken Address', compoundTokenAddress);
+          log('Sushi Token Address', sushiTokenAddress);
+          log('Compound Token Address', compoundTokenAddress);
           const paths = [[daiTokenAddress, wethAddress, sushiTokenAddress], [daiTokenAddress, wethAddress, compoundTokenAddress]];
           const { status, events } = await (await wrapper.wrap(daiTokenAddress, [sushiTokenAddress, compoundTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
           // Check if the txn is successful

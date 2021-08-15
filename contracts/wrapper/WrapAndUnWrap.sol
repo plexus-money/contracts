@@ -194,7 +194,7 @@ contract WrapAndUnWrap  {
         uint256 userSlippageTolerance,
         uint256 deadline,
         bool remixing
-    ) public returns (address, uint256) {
+    ) public payable returns (address, uint256) {
         if (sourceToken == address(0x0)) {
             IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
             amount = msg.value;
@@ -467,7 +467,8 @@ contract WrapAndUnWrap  {
      * @param wrapPaths Paths best uniswap trade paths for doing the wrapping to the new LP token
      * @param amount Amount of LP Token to be remixed
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
-     * @param crossDex Flag that checks whether this is a cross dex remix or not
+     * @param deadline Timeout after which the txn should revert
+     * @param crossDexRemix Indicates whether this is a cross-dex remix or not
      * @return Amount of the destination token returned from unwrapping the
      * source LP token
      */
@@ -487,25 +488,18 @@ contract WrapAndUnWrap  {
         returns (uint256)
     {
         uint lpTokenAmount = 0;
-        bool remixing = true; //flag indicates whether we're remixing or not
 
         // First of all we unwrap the token
-        uint256 destAmount = removeWrap(lpTokenPairAddress, unwrapOutputToken,
-             unwrapPaths, amount, userSlippageTolerance, deadline, remixing);
-
-        IERC20 dToken = IERC20(unwrapOutputToken);
-        uint256 destinationTokenBalance = dToken.balanceOf(address(this));
-
-        require(destAmount == destinationTokenBalance, 
-            "Error: Remix output token balance not correct");
+        uint256 destinationTokenBalance = removeWrap(lpTokenPairAddress, unwrapOutputToken, unwrapPaths, amount, userSlippageTolerance, deadline, true);
 
         if(crossDexRemix) {
 
             // send the unwrapped token to sushi for remixing
-            dToken.safeTransfer(wrapperSushiAddress, destinationTokenBalance);
+            IERC20(unwrapOutputToken).safeTransfer(wrapperSushiAddress, destinationTokenBalance);
 
             // then do the remix
-            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperSushiAddress).createWrap(unwrapOutputToken, destinationTokens, wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, remixing);  
+            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperSushiAddress)
+                .createWrap(unwrapOutputToken, destinationTokens, wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);  
             lpTokenAmount = remixedLpTokenAmount;
             // transfer the remixed lp token back to the user
             IERC20(remixedLpTokenPairAddress).safeTransfer(msg.sender, lpTokenAmount);
@@ -514,12 +508,16 @@ contract WrapAndUnWrap  {
                                    
         } else {
             // then now we create the new LP token
-            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(unwrapOutputToken, destinationTokens, wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, remixing);
+            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(unwrapOutputToken, destinationTokens, 
+                wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);
+            
             lpTokenAmount = remixedLpTokenAmount;
-            emit RemixWrap(remixedLpTokenPairAddress, remixedLpTokenAmount);
 
+            emit RemixWrap(remixedLpTokenPairAddress, remixedLpTokenAmount);
         }
-        return lpTokenAmount;   
+
+        return lpTokenAmount;
+        
     }
 
 
