@@ -11,7 +11,7 @@ const addr = config.addresses;
 describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
 
   // Global test vars
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let tokenRewards, core, plexusCoin, owner, addr1;
   let netinfo;
   let network = 'unknown';
   let daiTokenAddress;
@@ -23,15 +23,9 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
   // Deploy and setup the contracts
   before(async () => {
     const { deployedContracts } = await setupContracts();
-    wrapper = deployedContracts.wrapper;
-    wrapperSushi = deployedContracts.wrapperSushi;
+  
     tokenRewards = deployedContracts.tokenRewards;
-    plexusOracle = deployedContracts.plexusOracle;
-    tier1Staking = deployedContracts.tier1Staking;
     core = deployedContracts.core;
-    tier2Farm = deployedContracts.tier2Farm;
-    tier2Aave = deployedContracts.tier2Aave;
-    tier2Pickle = deployedContracts.tier2Pickle;
     plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
@@ -75,7 +69,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to Farm token from harvest.finance', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
-      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+      const userSlippageTolerance = config.userSlippageTolerance;
       const erc20 = new ethers.Contract(farmTokenAddress, abi, provider);
 
       // Please note, the number of farm tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -118,7 +112,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to DAI Token from MakerDao', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
-      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+      const userSlippageTolerance = config.userSlippageTolerance;
       const erc20 = new ethers.Contract(daiTokenAddress, abi, provider);
 
       // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -161,7 +155,7 @@ describe('Re-deploying the plexus ecosystem for Token Rewards test', () => {
     it('Should convert 2 ETH to Pickle Token', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
-      const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+      const userSlippageTolerance = config.userSlippageTolerance;
       const erc20 = new ethers.Contract(pickleTokenAddress, abi, provider);
 
       // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder

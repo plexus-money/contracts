@@ -42,7 +42,6 @@ describe('Deploying the plexus contracts', () => {
 
     it('Should setup the contracts addresses correctly after deployment', async function () {
       expect(await tokenRewards.oracleAddress()).to.equal(plexusOracle.address);
-      
       expect(await plexusOracle.rewardAddress()).to.equal(tokenRewards.address);
       expect(await plexusOracle.coreAddress()).to.equal(core.address);
       expect(await plexusOracle.tier1Address()).to.equal(tier1Staking.address);

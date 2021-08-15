@@ -11,7 +11,7 @@ const addr = config.addresses;
 describe('Re-deploying the plexus ecosystem for Pickle test', () => {
 
   // Global test vars
-  let wrapper, wrapperSushi, tokenRewards, plexusOracle, tier1Staking, core, tier2Farm, tier2Aave, tier2Pickle, plexusCoin, owner, addr1;
+  let tier1Staking, core, tier2Pickle, owner, addr1;
   let netinfo;
   let network = 'unknown';
   let wethAddress;
@@ -24,16 +24,10 @@ describe('Re-deploying the plexus ecosystem for Pickle test', () => {
   // Deploy and setup the contracts
   before(async () => {
     const { deployedContracts } = await setupContracts();
-    wrapper = deployedContracts.wrapper;
-    wrapperSushi = deployedContracts.wrapperSushi;
-    tokenRewards = deployedContracts.tokenRewards;
-    plexusOracle = deployedContracts.plexusOracle;
+
     tier1Staking = deployedContracts.tier1Staking;
     core = deployedContracts.core;
-    tier2Farm = deployedContracts.tier2Farm;
-    tier2Aave = deployedContracts.tier2Aave;
     tier2Pickle = deployedContracts.tier2Pickle;
-    plexusCoin = deployedContracts.plexusCoin;
     owner = deployedContracts.owner;
     addr1 = deployedContracts.addr1;
 
@@ -84,7 +78,7 @@ describe('Re-deploying the plexus ecosystem for Pickle test', () => {
     it('Should convert 2 ETH to Pickle Token', async () => {
 
        const zeroAddress = process.env.ZERO_ADDRESS;
-       const userSlippageTolerance = process.env.SLIPPAGE_TOLERANCE;
+       const userSlippageTolerance = config.userSlippageTolerance;
        // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
        const amountPlaceholder = ethers.utils.parseEther(unitAmount)
 

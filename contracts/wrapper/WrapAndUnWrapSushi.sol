@@ -4,50 +4,54 @@ pragma solidity >=0.8.0 <0.9.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "../proxyLib/OwnableUpgradeable.sol";
 import "../interfaces/token/IWETH.sol";
 import "../interfaces/token/ILPERC20.sol";
 import "../interfaces/sushiswap/ISushiV2.sol";
 import "../interfaces/sushiswap/ISushiSwapFactory.sol";
+import "../interfaces/IRemix.sol";
 
 /// @title Plexus LP Wrapper Contract - SushiSwap
 /// @author Team Plexus
-contract WrapAndUnWrapSushi is OwnableUpgradeable {
+contract WrapAndUnWrapSushi {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // Contract state variables
-    address public WETH_TOKEN_ADDRESS; // Contract address for WETH tokens
     bool public changeRecpientIsOwner;
+    address public WETH_TOKEN_ADDRESS; // Contract address for WETH tokenss
     address private sushiAddress;
     address private sushiFactoryAddress;
     uint256 public fee;
     uint256 public maxfee;
-    mapping(address => address[]) public lpTokenAddressToPairs;
-    mapping(string => address) public stablecoins;
-    mapping(address => mapping(address => address[])) public presetPaths;
+    address public owner;
+    address public wrapperUniAddress;
+    ISushiV2 private sushiExchange;
+    ISushiSwapFactory private factory;
+
+    struct RemixParams {
+        address lpTokenPairAddress;
+        address unwrapOutputToken;
+        address [] destinationTokens;
+        address [][] unwrapPaths;
+        address [][] wrapPaths;
+        uint256 amount;
+        uint256 userSlippageTolerance;
+        uint256 deadline;
+        bool crossDexRemix;
+    }
+
+    // events
     event WrapSushi(address lpTokenPairAddress, uint256 amount);
     event UnWrapSushi(uint256 amount);
     event RemixUnwrap(uint256 amount);
     event RemixWrap(address lpTokenPairAddress, uint256 amount);
-    ISushiV2 private sushiExchange;
-    ISushiSwapFactory private factory;
 
-    constructor() payable {}
-
-    /**
-     * @notice Initialize the Sushi Wrapper contract
-     * @param _weth Address to the WETH token contract
-     * @param _sushiAddress Address to the SushiSwap contract
-     * @param _sushiFactoryAddress Address to the SushiV2 factory contract
-     */
-    function initialize(
+    constructor(
         address _weth,
         address _sushiAddress,
         address _sushiFactoryAddress
     )
-        public
-        initializeOnceOnly
+        payable
     {
         WETH_TOKEN_ADDRESS = _weth;
         sushiAddress = _sushiAddress;
@@ -57,6 +61,13 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         fee = 0;
         maxfee = 0;
         changeRecpientIsOwner = false;
+        owner = msg.sender;
+    }
+
+
+    modifier onlyOwner {
+      require(msg.sender == owner, "Not contract owner!");
+      _;
     }
 
     /**
@@ -81,6 +92,16 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
      * contract with empty calldata
      */
     receive() external payable {}
+
+     /**
+     * @notice Set the WrapperUni contract address
+     * @param newAddress WrapperUni contract address to be updated
+     */
+    function setWrapperUniAddress(address newAddress) external onlyOwner returns (bool) {
+        wrapperUniAddress = newAddress;
+        return true;
+    }
+
 
     /**
      * @notice Allow owner to collect a small fee from trade imbalances on
@@ -236,7 +257,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         uint256 userSlippageTolerance,
         uint256 deadline,
         bool remixing
-    ) private returns (address, uint256) {
+    ) public payable returns (address, uint256) {
         if (sourceToken == address(0x0)) {
             IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
             amount = msg.value;
@@ -307,7 +328,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         if (fee > 0) {
             uint256 totalFee = (thisBalance.mul(fee)).div(10000);
             if (totalFee > 0) {
-                lpToken.safeTransfer(owner(), totalFee);
+                lpToken.safeTransfer(owner, totalFee);
             }
             thisBalance = lpToken.balanceOf(address(this));
             lpToken.safeTransfer(msg.sender, thisBalance);
@@ -319,7 +340,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         // (from a pair imbalance. Should never be more than a few basis points)
         address changeRecipient = msg.sender;
         if (changeRecpientIsOwner == true) {
-            changeRecipient = owner();
+            changeRecipient = owner;
         }
         if (dToken1.balanceOf(address(this)) > 0) {
             dToken1.safeTransfer(changeRecipient, dToken1.balanceOf(address(this)));
@@ -444,7 +465,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 if (fee > 0) {
                     uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
                     if (totalFee > 0) {
-                        payable(owner()).transfer(totalFee);
+                        payable(owner).transfer(totalFee);
                     }
                         payable(msg.sender).transfer(address(this).balance);
                 } else {
@@ -454,7 +475,7 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
                 if (fee > 0) {
                     uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                     if (totalFee > 0) {
-                        dToken.safeTransfer(owner(), totalFee);
+                        dToken.safeTransfer(owner, totalFee);
                     }
                     destinationTokenBalance = dToken.balanceOf(address(this));
                     dToken.safeTransfer(msg.sender, destinationTokenBalance);
@@ -468,21 +489,19 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         return destinationTokenBalance;
     }
 
-    /**
+     /**
      * @notice Unwrap a source token based to the specified destination token
-     * @param sourceToken Address to the source token contract
-     * @param destinationToken Address to the destination token contract
-     * @param paths Paths for uniswap
      * @param lpTokenPairAddress address for lp token
+     * @param destinationToken Address of the destination token contract
+     * @param paths Paths for uniswap
      * @param amount Amount of source token to be unwrapped
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Amount of the destination token returned from unwrapping the
      * source token
      */
     function unwrap(
-        address sourceToken,
-        address destinationToken,
         address lpTokenPairAddress,
+        address destinationToken,
         address[][] calldata paths,
         uint256 amount,
         uint256 userSlippageTolerance,
@@ -492,15 +511,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         payable
         returns (uint256)
     {
-
-        if (lpTokenPairAddress == address(0x0)) {
-            return swap(sourceToken, destinationToken, paths[0], amount, userSlippageTolerance, deadline);
-        } else {
-            bool remixing = false; //flag indicates whether we're remixing or not
-            uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, paths, amount, userSlippageTolerance, deadline, remixing);
-            emit UnWrapSushi(destAmount);
-            return destAmount;
-        }
+       
+        bool remixing = false; //flag indicates whether we're remixing or not
+        uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, paths, amount, userSlippageTolerance, deadline, remixing);
+        emit UnWrapSushi(destAmount);
+        return destAmount;
+        
     }
 
      /**
@@ -508,10 +524,12 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
      * @param lpTokenPairAddress Address for the LP pair to remix
      * @param unwrapOutputToken Address for the initial output token of remix
      * @param destinationTokens Address to the destination tokens to be remixed to
-     * @param unwrapPaths Paths best sushi trade paths for doing the unwrapping
-     * @param wrapPaths Paths best sushi trade paths for doing the wrapping to the new LP token
+     * @param unwrapPaths Paths best uniswap trade paths for doing the unwrapping
+     * @param wrapPaths Paths best uniswap trade paths for doing the wrapping to the new LP token
      * @param amount Amount of LP Token to be remixed
      * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @param deadline Timeout after which the txn should revert
+     * @param crossDexRemix Indicates whether this is a cross-dex remix or not
      * @return Amount of the destination token returned from unwrapping the
      * source LP token
      */
@@ -519,39 +537,49 @@ contract WrapAndUnWrapSushi is OwnableUpgradeable {
         address lpTokenPairAddress,
         address unwrapOutputToken,
         address[] memory destinationTokens,
-        address[][] calldata unwrapPaths,
-        address[][] calldata wrapPaths,
+        address[][] memory unwrapPaths,
+        address[][] memory wrapPaths,
         uint256 amount,
         uint256 userSlippageTolerance,
-        uint256 deadline
+        uint256 deadline,
+        bool crossDexRemix
     )
         public
         payable
         returns (uint256)
     {
-        bool remixing = true; //flag indicates whether we're remixing or not
-        uint256 destAmount = removeWrap(lpTokenPairAddress, unwrapOutputToken, unwrapPaths, amount, userSlippageTolerance, deadline, remixing);
+        uint lpTokenAmount = 0;
 
-        IERC20 dToken = IERC20(unwrapOutputToken);
-        uint256 destinationTokenBalance = dToken.balanceOf(address(this));
+        // First of all we unwrap the token
+        uint256 destinationTokenBalance = removeWrap(lpTokenPairAddress, unwrapOutputToken, unwrapPaths, amount, userSlippageTolerance, deadline, true);
 
-        require(destAmount == destinationTokenBalance, "Error: Remix output balance not correct");
-       
-        // then now we create the new LP token
-        address outputToken = unwrapOutputToken;
-        address [] memory dTokens = destinationTokens;
-        address [][] calldata paths = wrapPaths;
-        uint256 slippageTolerance = userSlippageTolerance;
-        uint256 timeout = deadline;
-        bool remixingToken = true; //flag indicates whether we're remixing or not
+        if(crossDexRemix) {
 
-        (address remixedLpTokenPairAddress, uint256 lpTokenAmount) = createWrap(outputToken, dTokens, paths, destinationTokenBalance, slippageTolerance, timeout, remixingToken);
-                                                                
-        emit RemixWrap(remixedLpTokenPairAddress, lpTokenAmount);
+            // send the unwrapped token to uni for remixing
+            IERC20(unwrapOutputToken).safeTransfer(wrapperUniAddress, destinationTokenBalance);
+
+            // then do the remix
+            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperUniAddress)
+                .createWrap(unwrapOutputToken, destinationTokens, wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);  
+            lpTokenAmount = remixedLpTokenAmount;
+            // transfer the remixed lp token back to the user
+            IERC20(remixedLpTokenPairAddress).safeTransfer(msg.sender, lpTokenAmount);
+
+            emit RemixWrap(remixedLpTokenPairAddress, lpTokenAmount);
+                                   
+        } else {
+            // then now we create the new LP token
+            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(unwrapOutputToken, destinationTokens, 
+                wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);
+            
+            lpTokenAmount = remixedLpTokenAmount;
+
+            emit RemixWrap(remixedLpTokenPairAddress, remixedLpTokenAmount);
+        }
+
         return lpTokenAmount;
         
     }
-
 
     /**
      * @notice Given an input asset amount and an array of token addresses,
