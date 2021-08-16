@@ -7,7 +7,6 @@ const addr = config.addresses;
 const { UniswapPriceOracle } = require('../scripts/uniswapPriceOracle');
 
 describe('Re-deploying the plexus contracts for PriceOracleUni test', () => {
-  let priceOracleUni, owner;
   let usdtTokenAddress;
   let daiTokenAddress;
   let wethTokenAddress;
@@ -16,10 +15,6 @@ describe('Re-deploying the plexus contracts for PriceOracleUni test', () => {
 
   // Deploy and setup the contracts
   before(async () => {
-    const { deployedContracts } = await setupContracts();
-    priceOracleUni = deployedContracts.priceOracleUni;
-    owner = deployedContracts.owner;
-
     let netinfo = await ethers.provider.getNetwork();
     network = netinfo.chainId === 1 ? "mainnet" :
     netinfo.chainId === 42 ? "kovan" :
