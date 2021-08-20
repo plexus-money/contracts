@@ -366,7 +366,7 @@ contract WrapAndUnWrapSushi {
     function wrap(
         address sourceToken,
         address[] memory destinationTokens,
-        address[][] memory paths,
+        address[] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
@@ -375,12 +375,13 @@ contract WrapAndUnWrapSushi {
         payable
         returns (address, uint256)
     {
+        address[][] memory _paths = splitPath(paths, destinationTokens[0]);
         if (destinationTokens.length == 1) {
-            uint256 swapAmount = swap(sourceToken, destinationTokens[0], paths[0], amount, userSlippageTolerance, deadline);
+            uint256 swapAmount = swap(sourceToken, destinationTokens[0], _paths[0], amount, userSlippageTolerance, deadline);
             return (destinationTokens[0], swapAmount);
         } else {
             bool remixing = false;
-            (address lpTokenPairAddress, uint256 lpTokenAmount) = createWrap(sourceToken, destinationTokens, paths, amount, userSlippageTolerance, deadline, remixing);
+            (address lpTokenPairAddress, uint256 lpTokenAmount) = createWrap(sourceToken, destinationTokens, _paths, amount, userSlippageTolerance, deadline, remixing);
             emit WrapSushi(lpTokenPairAddress, lpTokenAmount);
             return (lpTokenPairAddress, lpTokenAmount);
         }
@@ -502,7 +503,7 @@ contract WrapAndUnWrapSushi {
     function unwrap(
         address lpTokenPairAddress,
         address destinationToken,
-        address[][] calldata paths,
+        address[] calldata paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
@@ -513,7 +514,8 @@ contract WrapAndUnWrapSushi {
     {
        
         bool remixing = false; //flag indicates whether we're remixing or not
-        uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, paths, amount, userSlippageTolerance, deadline, remixing);
+        address[][] memory _paths = splitPath(paths, destinationToken);
+        uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, _paths, amount, userSlippageTolerance, deadline, remixing);
         emit UnWrapSushi(destAmount);
         return destAmount;
         
@@ -537,8 +539,8 @@ contract WrapAndUnWrapSushi {
         address lpTokenPairAddress,
         address unwrapOutputToken,
         address[] memory destinationTokens,
-        address[][] memory unwrapPaths,
-        address[][] memory wrapPaths,
+        address[] memory unwrapPaths,
+        address[] memory wrapPaths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline,
@@ -551,8 +553,10 @@ contract WrapAndUnWrapSushi {
         uint lpTokenAmount = 0;
 
         // First of all we unwrap the token
-        uint256 destinationTokenBalance = removeWrap(lpTokenPairAddress, unwrapOutputToken, unwrapPaths, amount, userSlippageTolerance, deadline, true);
+        address[][] memory _paths = splitPath(unwrapPaths, unwrapOutputToken);
+        uint256 destinationTokenBalance = removeWrap(lpTokenPairAddress, unwrapOutputToken, _paths, amount, userSlippageTolerance, deadline, true);
 
+        _paths = splitPath(wrapPaths, destinationTokens[0]);
         if(crossDexRemix) {
 
             // send the unwrapped token to uni for remixing
@@ -560,7 +564,7 @@ contract WrapAndUnWrapSushi {
 
             // then do the remix
             (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperUniAddress)
-                .createWrap(unwrapOutputToken, destinationTokens, wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);  
+                .createWrap(unwrapOutputToken, destinationTokens, _paths, destinationTokenBalance, userSlippageTolerance, deadline, true);  
             lpTokenAmount = remixedLpTokenAmount;
             // transfer the remixed lp token back to the user
             IERC20(remixedLpTokenPairAddress).safeTransfer(msg.sender, lpTokenAmount);
@@ -570,7 +574,7 @@ contract WrapAndUnWrapSushi {
         } else {
             // then now we create the new LP token
             (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(unwrapOutputToken, destinationTokens, 
-                wrapPaths, destinationTokenBalance, userSlippageTolerance, deadline, true);
+                _paths, destinationTokenBalance, userSlippageTolerance, deadline, true);
             
             lpTokenAmount = remixedLpTokenAmount;
 
@@ -732,5 +736,35 @@ contract WrapAndUnWrapSushi {
             deadline
         );
         return amounts;
+    }
+
+    function splitPath(
+        address[] memory paths,
+        address targetAddress
+    )
+        internal
+        returns(address[][] memory) 
+    {
+        uint splitIndex = 0;
+        for(uint i = 0; i < paths.length; i++) {
+            if(paths[i] == targetAddress) {
+                splitIndex = i;
+                break;
+            }
+        }
+        address[] memory path0 = new address[](splitIndex + 1);
+        address[] memory path1 = new address[](paths.length - splitIndex - 1);
+        for(uint i = 0; i < paths.length; i++) {
+            if(i <= splitIndex)
+                path0[i] = paths[i];
+            else 
+                path1[i - splitIndex - 1] = paths[i];
+        }
+
+        address[][] memory _paths = new address[][](2);
+        _paths[0] = path0;
+        _paths[1] = path1;
+
+        return _paths;
     }
 }

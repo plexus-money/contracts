@@ -57,7 +57,7 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
 
           // Convert the 2 ETH to Dai Token(s)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          const paths = [[wethAddress, daiTokenAddress]];
+          const paths = [wethAddress, daiTokenAddress];
           const { status } = await (await wrapper.wrap(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
 
           // Check if the txn is successful
@@ -95,7 +95,7 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           log('Sushi Token Address', sushiTokenAddress);
           log('Compound Token Address', compoundTokenAddress);
-          const paths = [[daiTokenAddress, wethAddress, sushiTokenAddress], [daiTokenAddress, wethAddress, compoundTokenAddress]];
+          const paths = [daiTokenAddress, wethAddress, sushiTokenAddress, daiTokenAddress, wethAddress, compoundTokenAddress];
           const { status, events } = await (await wrapper.wrap(daiTokenAddress, [sushiTokenAddress, compoundTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
           // Check if the txn is successful
           expect(status).to.equal(1);
@@ -131,7 +131,7 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
 
           // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          const paths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
+          const paths = [sushiTokenAddress, wethAddress, daiTokenAddress, compoundTokenAddress, wethAddress, daiTokenAddress];
           const { status, events } = await (await wrapper.unwrap(tokenPairAddress, daiTokenAddress, paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
 
           // Check if the txn is successful
