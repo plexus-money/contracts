@@ -160,7 +160,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
     function convert(
         address sourceToken,
         address[] memory destinationTokens,
-        address[][] memory paths,
+        address[] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
@@ -202,7 +202,7 @@ contract Core is OwnableUpgradeable, ReentrancyGuard {
         address sourceToken,
         address destinationToken,
         address lpTokenPairAddress,
-        address[][] memory paths,
+        address[] memory paths,
         uint256 amount,
         uint256 userSlippageTolerance,
         uint256 deadline
