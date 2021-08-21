@@ -13,6 +13,7 @@ import "../interfaces/uniswap/IUniswapV2.sol";
 import "../interfaces/uniswap/IUniswapV3Factory.sol";
 import "../interfaces/uniswap/IUniswapV3Router.sol";
 import "../interfaces/uniswap/INonfungiblePositionManager.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "../interfaces/uniswap/IERC721Receiver.sol";
 
 /// @title Plexus LP Wrapper Contract
@@ -31,6 +32,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     IUniswapV3Factory private factory;
     ISwapRouter private router;
     INonfungiblePositionManager private positionManager;
+    IQuoter private quoter;
     event WrapV2(address lpTokenPairAddress, uint256 amount);
     event UnWrapV2(uint256 amount);
 
@@ -52,6 +54,25 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     receive() external payable {
     }
 
+    struct ReturnParams {
+        uint256 tokenId;
+        uint128 liquidity;
+        uint256 amount0;
+        uint256 amount1;
+    }
+     struct WrapParams {
+        address sourceToken;
+        address[] destinationTokens;
+        bytes []  paths;
+        uint256 amount;
+        uint256[] minAmounts;
+        uint24 poolFee;
+        int24 tickLower;
+        int24 tickUpper;  
+        uint256 userSlippageTolerance;
+        uint256 deadline;
+     }
+
     /**
      * @notice Initialize the Wrapper contract
      * @param _weth Address to the WETH token contract
@@ -62,7 +83,8 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         address _weth,
         address _uniAddress,
         address _uniFactoryAddress,
-        address _positionManager
+        address _positionManager,
+        address _quoter
     )
         public
         initializeOnceOnly
@@ -73,6 +95,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         uniFactoryAddress = _uniFactoryAddress;
         factory = IUniswapV3Factory(uniFactoryAddress);
         positionManager = INonfungiblePositionManager(_positionManager);
+        quoter = IQuoter(_quoter);
         fee = 0;
         maxfee = 0;
         changeRecpientIsOwner = false;
@@ -194,56 +217,47 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     }
 
     function createWrap(
-        address sourceToken,
-        address[] memory destinationTokens,
-        bytes [] memory paths,
-        uint256 amount,
-        uint256[] memory minAmounts,
-        uint24 poolFee,
-        int24 tickLower,
-        int24 tickUpper,  
-        uint256 userSlippageTolerance,
-        uint256 deadline
+        WrapParams memory params
     ) private returns (uint256, uint128, uint256, uint256) {
-        if (sourceToken == address(0x0)) {
+        if (params.sourceToken == address(0x0)) {
             IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
-            amount = msg.value;
+            params.amount = msg.value;
         } else {
-            IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(params.sourceToken).safeTransferFrom(msg.sender, address(this), params.amount);
         }
 
-        if (destinationTokens[0] == address(0x0)) {
-            destinationTokens[0] = WETH_TOKEN_ADDRESS;
+        if (params.destinationTokens[0] == address(0x0)) {
+            params.destinationTokens[0] = WETH_TOKEN_ADDRESS;
         }
-        if (destinationTokens[1] == address(0x0)) {
-            destinationTokens[1] = WETH_TOKEN_ADDRESS;
+        if (params.destinationTokens[1] == address(0x0)) {
+            params.destinationTokens[1] = WETH_TOKEN_ADDRESS;
         }
 
-        if (sourceToken != destinationTokens[0]) {
+        if (params.sourceToken != params.destinationTokens[0]) {
             conductUniswap(
-                sourceToken,
-                destinationTokens[0],
-                paths[0],
-                amount,
-                minAmounts[0],
-                userSlippageTolerance,
-                deadline
+                params.sourceToken,
+                params.destinationTokens[0],
+                params.paths[0],
+                params.amount,
+                params.minAmounts[0],
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
-        if (sourceToken != destinationTokens[1]) {
+        if (params.sourceToken != params.destinationTokens[1]) {
             conductUniswap(
-                sourceToken,
-                destinationTokens[1],
-                paths[1],
-                amount,
-                minAmounts[1],
-                userSlippageTolerance,
-                deadline
+                params.sourceToken,
+                params.destinationTokens[1],
+                params.paths[1],
+                params.amount,
+                params.minAmounts[1],
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
 
-        IERC20 dToken1 = IERC20(destinationTokens[0]);
-        IERC20 dToken2 = IERC20(destinationTokens[1]);
+        IERC20 dToken1 = IERC20(params.destinationTokens[0]);
+        IERC20 dToken2 = IERC20(params.destinationTokens[1]);
         uint256 dTokenBalance1 = dToken1.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
@@ -272,15 +286,15 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
 
         INonfungiblePositionManager.MintParams memory params =
             INonfungiblePositionManager.MintParams({
-                token0: destinationTokens[0],
-                token1: destinationTokens[1],
-                fee: poolFee,
-                tickLower: tickLower,
-                tickUpper: tickUpper,
+                token0: params.destinationTokens[0],
+                token1: params.destinationTokens[1],
+                fee: params.poolFee,
+                tickLower: params.tickLower,
+                tickUpper: params.tickUpper,
                 amount0Desired: dTokenBalance1,
                 amount1Desired: dTokenBalance2,
-                amount0Min: minAmounts[0],
-                amount1Min: minAmounts[1],
+                amount0Min: params.minAmounts[0],
+                amount1Min: params.minAmounts[1],
                 recipient: address(this),
                 deadline: 1000000000000000000000000000
             });
@@ -337,7 +351,19 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
             uint256 swapAmount = swap(sourceToken, destinationTokens[0], paths[0], amount, minAmounts[0], userSlippageTolerance, deadline);
             return (0,0,0,swapAmount);
         } else {
-            (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = createWrap(sourceToken, destinationTokens, paths, amount, minAmounts, poolFee, tickLower, tickUpper, userSlippageTolerance, deadline);
+            WrapParams memory params = WrapParams({
+                sourceToken: sourceToken, 
+                destinationTokens : destinationTokens,
+                paths: paths,
+                amount: amount,
+                minAmounts: minAmounts,
+                poolFee : poolFee,
+                tickLower : tickLower,
+                tickUpper : tickUpper,
+                userSlippageTolerance : userSlippageTolerance,
+                deadline : deadline
+            }); 
+            (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = createWrap(params);
             //emit WrapV2(lpTokenPairAddress, lpTokenAmount);
             return (tokenId,liquidity,amount0,amount1);
         }
@@ -386,32 +412,58 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
                 liquidity: liquidity,
                 amount0Min: 0,
                 amount1Min: 0,
-                deadline: block.timestamp
+                deadline: 1000000000000000000000000000
             });
 
-        (amount0, amount1) = nonfungiblePositionManager.decreaseLiquidity(params);
+        (uint256 amount0, uint256 amount1) = positionManager.decreaseLiquidity(params);
 
+        INonfungiblePositionManager.CollectParams memory collectParams =
+            INonfungiblePositionManager.CollectParams({
+                tokenId: tokenId,
+                recipient: address(this),
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            });
+
+        (uint256 remAmount0, uint256 remAmount1) = positionManager.collect(collectParams);
 
         uint256 pTokenBalance = IERC20(token0).balanceOf(address(this));
         uint256 pTokenBalance2 = IERC20(token1).balanceOf(address(this));
-
+        
         if (token0 != destinationToken) {
+            (uint amountsOut0) = quoter.quoteExactInputSingle(
+                token0,
+                destinationToken,
+                3000,
+                pTokenBalance,
+                0
+                );
             conductUniswap(
                 token0,
                 destinationToken,
                 paths[0],
                 pTokenBalance,
+                amountsOut0,
                 userSlippageTolerance,
                 deadline
             );
         }
 
         if (token1 != destinationToken) {
+
+            (uint amountsOut1) = quoter.quoteExactInputSingle(
+                token1,
+                destinationToken,
+                3000,
+                pTokenBalance2,
+                0
+                );
             conductUniswap(
                 token1,
                 destinationToken,
                 paths[1],
                 pTokenBalance2,
+                amountsOut1,
                 userSlippageTolerance,
                 deadline
             );
@@ -538,17 +590,19 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
      * for, based on the Uniswap prices and Slippage tolerance thresholds
      */
     function getAmountOutMin(
-        address[] memory theAddresses,
+        bytes memory theAddresses,
         uint256 amount,
         uint256 userSlippageTolerance
     )
         public
-        view
         returns (uint256)
     {
-        uint256[] memory assetAmounts = getPriceFromUniswap(theAddresses, amount);
+        (uint minAmountsOut) = quoter.quoteExactInput(
+                theAddresses,
+                amount
+                );
         require(userSlippageTolerance <= 100, "userSlippageTolerance can not be larger than 100");
-        return SafeMath.div(SafeMath.mul(assetAmounts[1], (100 - userSlippageTolerance)), 100);
+        return SafeMath.div(SafeMath.mul(minAmountsOut, (100 - userSlippageTolerance)), 100);
     }
 
     /**
@@ -603,12 +657,11 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
             if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
                 sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
             }
-
+            (uint minAmountsOut) = getAmountOutMin(path,amount,userSlippageTolerance);
             uint256 amountOut = conductUniswapT4T(
                 path,
                 amount,
-                minAmount,
-                userSlippageTolerance,
+                minAmountsOut,
                 deadline
             );
             return amountOut;
@@ -618,20 +671,18 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     /**
      * @notice Using Uniswap, exchange an exact amount of input tokens for as
      * many output tokens as possible, along the route determined by the path.
-     * @param theAddresses Array of addresses representing the path where the
+     * @param path  representing the path where the
      * first address is the input token and the last address is the output
      * token
      * @param amount Amount of input tokens to be swapped
      * @param minAmount Amount of destination token minimum expected
-     * @param userSlippageTolerance Maximum permissible slippage tolerance
      * @return amountOut The input token amount and all subsequent output token
      * amounts
      */
     function conductUniswapT4T(
-        address[] memory theAddresses,
+        bytes memory path,
         uint256 amount,
         uint256 minAmount,
-        uint256 userSlippageTolerance,
         uint256 deadline
     )
         internal
@@ -639,7 +690,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     {
         
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams(
-                theAddresses,
+                path,
                 address(this),
                 deadline,
                 amount,
