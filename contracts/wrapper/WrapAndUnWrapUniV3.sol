@@ -14,11 +14,15 @@ import "../interfaces/uniswap/IUniswapV3Factory.sol";
 import "../interfaces/uniswap/IUniswapV3Router.sol";
 import "../interfaces/uniswap/INonfungiblePositionManager.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "../interfaces/uniswap/IERC721Receiver.sol";
+import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3MintCallback.sol";
+import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
+import "hardhat/console.sol";
 
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
-contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
+contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswapV3SwapCallback {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Contract state variables
@@ -28,15 +32,39 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     address private uniFactoryAddress;
     uint256 public fee;
     uint256 public maxfee;
+    address public owner;
     IUniswapV2 private uniswapExchange;
     IUniswapV3Factory private factory;
     ISwapRouter private router;
+    address private routerAddress;
     INonfungiblePositionManager private positionManager;
     IQuoter private quoter;
     event WrapV2(address lpTokenPairAddress, uint256 amount);
     event UnWrapV2(uint256 amount);
 
-    constructor() payable {
+    constructor(
+        address _weth,
+        address _routerAddress,
+        address _uniFactoryAddress,
+        address _positionManager,
+        address _quoter
+    ) payable {
+        WETH_TOKEN_ADDRESS = _weth;
+        routerAddress = _routerAddress;
+        router = ISwapRouter(routerAddress);
+        uniFactoryAddress = _uniFactoryAddress;
+        factory = IUniswapV3Factory(uniFactoryAddress);
+        positionManager = INonfungiblePositionManager(_positionManager);
+        quoter = IQuoter(_quoter);
+        fee = 0;
+        maxfee = 0;
+        changeRecpientIsOwner = false;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner {
+      require(msg.sender == owner, "Not contract owner!");
+      _;
     }
 
     /**
@@ -93,33 +121,6 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         uint256 deadline;
      }
 
-    /**
-     * @notice Initialize the Wrapper contract
-     * @param _weth Address to the WETH token contract
-     * @param _uniAddress Address to the Uniswap V2 router contract
-     * @param _uniFactoryAddress Address to the Uniswap factory contract
-     */
-    function initialize(
-        address _weth,
-        address _uniAddress,
-        address _uniFactoryAddress,
-        address _positionManager,
-        address _quoter
-    )
-        public
-        initializeOnceOnly
-    {
-        WETH_TOKEN_ADDRESS = _weth;
-        uniAddress = _uniAddress;
-        uniswapExchange = IUniswapV2(uniAddress);
-        uniFactoryAddress = _uniFactoryAddress;
-        factory = IUniswapV3Factory(uniFactoryAddress);
-        positionManager = INonfungiblePositionManager(_positionManager);
-        quoter = IQuoter(_quoter);
-        fee = 0;
-        maxfee = 0;
-        changeRecpientIsOwner = false;
-    }
 
     /**
      * @notice Allow owner to collect a small fee from trade imbalances on
@@ -209,12 +210,42 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
     // Implementing `onERC721Received` so this contract can receive custody of erc721 tokens
     function onERC721Received(
         address operator,
-        address,
+        address from,
         uint256 tokenId,
         bytes calldata
     ) external override returns (bytes4) {
         // get position information
         return this.onERC721Received.selector;
+    }
+
+    function uniswapV3MintCallback(
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata data
+    ) external override {
+        // require(msg.sender == address(positionManager));
+        // address payer = abi.decode(data, (address));
+
+        // if (payer == address(this)) {
+        //     if (amount0 > 0) token0.safeTransfer(msg.sender, amount0);
+        //     if (amount1 > 0) token1.safeTransfer(msg.sender, amount1);
+        // } else {
+        //     if (amount0 > 0) token0.safeTransferFrom(payer, msg.sender, amount0);
+        //     if (amount1 > 0) token1.safeTransferFrom(payer, msg.sender, amount1);
+        // }
+    }
+
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata data
+    ) external override {
+        address sender = abi.decode(data, (address));
+        if (amount0Delta > 0) {
+            IERC20(IUniswapV3Pool(msg.sender).token0()).transferFrom(sender, msg.sender, uint256(amount0Delta));
+        } else if (amount1Delta > 0) {
+            IERC20(IUniswapV3Pool(msg.sender).token1()).transferFrom(sender, msg.sender, uint256(amount1Delta));
+        }
     }
 
     function swap(
@@ -241,8 +272,8 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         WrapParams memory params
     ) private returns (uint256, uint128, uint256, uint256) {
         if (params.sourceToken == address(0x0)) {
-            IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
-            params.amount = msg.value;
+            //IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
+            // params.amount = msg.value;
         } else {
             IERC20(params.sourceToken).safeTransferFrom(msg.sender, address(this), params.amount);
         }
@@ -256,13 +287,13 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
 
         if (params.sourceToken != params.destinationTokens[0]) {
         conductUniswapParams memory swapParams0 = conductUniswapParams(params.sourceToken,params.destinationTokens[0],params.paths[0],
-                                                                params.amount,params.minAmounts[0],params.userSlippageTolerance,params.deadline
+                                                                params.amount.div(2),params.minAmounts[0],params.userSlippageTolerance,params.deadline
                                                             );
          conductUniswap(swapParams0);
         }
         if (params.sourceToken != params.destinationTokens[1]) {
             conductUniswapParams memory swapParams1 = conductUniswapParams(params.sourceToken,params.destinationTokens[1],params.paths[1],
-                                                                params.amount,params.minAmounts[1],params.userSlippageTolerance,params.deadline
+                                                                params.amount.div(2),params.minAmounts[1],params.userSlippageTolerance,params.deadline
                                                             );
         conductUniswap(swapParams1);
         }
@@ -272,54 +303,52 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         uint256 dTokenBalance1 = dToken1.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-        if (dToken1.allowance(address(this), uniAddress) < dTokenBalance1.mul(2)) {
-            dToken1.safeIncreaseAllowance(uniAddress, dTokenBalance1.mul(3));
+        if (dToken1.allowance(address(this), address(positionManager)) < dTokenBalance1.mul(2)) {
+            dToken1.safeIncreaseAllowance(address(positionManager), dTokenBalance1.mul(3));
         }
 
-        if (dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)) {
-            dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2.mul(3));
+        if (dToken2.allowance(address(this), address(positionManager)) < dTokenBalance2.mul(2)) {
+            dToken2.safeIncreaseAllowance(address(positionManager), dTokenBalance2.mul(3));
         }
-
-        if (fee > 0) {
-            uint256 dToken1Balance = dToken1.balanceOf(address(this));
-            uint256 halfOfFee1 = (dToken1Balance.mul(fee)).div(10000);
-            if (halfOfFee1 > 0) {
-                dToken1.safeTransfer(owner(), halfOfFee1);
-                dToken1Balance = dToken1Balance.sub(halfOfFee1);
-            }
-            uint256 dToken2Balance = dToken2.balanceOf(address(this));
-            uint256 halfOfFee2 = (dToken2Balance.mul(fee)).div(10000);
-            if (halfOfFee2 > 0) {
-                dToken2.safeTransfer(owner(), halfOfFee2);
-                dToken2Balance = dToken2Balance.sub(halfOfFee2);
-            }
-        }
-
-        INonfungiblePositionManager.MintParams memory mint_params =
-            INonfungiblePositionManager.MintParams({
-                token0: params.destinationTokens[0],
-                token1: params.destinationTokens[1],
-                fee: params.poolFee,
-                tickLower: params.tickLower,
-                tickUpper: params.tickUpper,
-                amount0Desired: dTokenBalance1,
-                amount1Desired: dTokenBalance2,
-                amount0Min: params.minAmounts[0],
-                amount1Min: params.minAmounts[1],
-                recipient: address(this),
-                deadline: 1000000000000000000000000000
-            });
-
-        // Note that the pool defined by DAI/USDC and fee tier 0.3% must already be created and initialized in order to mint
-        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
-        positionManager.safeTransferFrom(address(this), msg.sender, tokenId);
 
         // Transfer any change to changeRecipient
         // (from a pair imbalance. Should never be more than a few basis points)
         address changeRecipient = msg.sender;
         if (changeRecpientIsOwner == true) {
-            changeRecipient = owner();
+            changeRecipient = msg.sender;
         }
+        if (fee > 0) {
+            uint256 dToken1Balance = dToken1.balanceOf(address(this));
+            uint256 halfOfFee1 = (dToken1Balance.mul(fee)).div(10000);
+            if (halfOfFee1 > 0) {
+                dToken1.safeTransfer(changeRecipient, halfOfFee1);
+                dTokenBalance1 = dToken1Balance.sub(halfOfFee1);
+            }
+            uint256 dToken2Balance = dToken2.balanceOf(address(this));
+            uint256 halfOfFee2 = (dToken2Balance.mul(fee)).div(10000);
+            if (halfOfFee2 > 0) {
+                dToken2.safeTransfer(changeRecipient, halfOfFee2);
+                dTokenBalance2 = dToken2Balance.sub(halfOfFee2);
+            }
+        }
+        uint256 dTokenBalance11 = dToken1.balanceOf(address(this));
+        uint256 dTokenBalance22 = dToken2.balanceOf(address(this));
+
+        // dToken1.safeApprove(address(positionManager), dTokenBalance11);
+        // dToken2.safeApprove(address(positionManager), dTokenBalance22);
+        INonfungiblePositionManager.MintParams memory mint_params =
+            INonfungiblePositionManager.MintParams(WETH_TOKEN_ADDRESS,params.destinationTokens[1],params.poolFee,params.tickLower,params.tickUpper,
+                dTokenBalance11,dTokenBalance22,params.minAmounts[0], params.minAmounts[1],address(this),params.deadline
+            );
+        console.log("Sender balance is %s tokens %s", dTokenBalance11,dTokenBalance22);
+        console.log("%s - %s",dToken1.allowance(address(this), address(positionManager)),dToken2.allowance(address(this), address(positionManager)));
+        // Note that the pool defined by DAI/USDC and fee tier 0.3% must already be created and initialized in order to mint
+        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
+        console.log("Sender balance is %s tokens %s", tokenId,liquidity);
+        console.log("Sender balance 2 is %s tokens %s ", amount0,amount1);
+        positionManager.safeTransferFrom(address(this), msg.sender, tokenId);
+
+        
         if (dToken1.balanceOf(address(this)) > 0) {
             dToken1.safeTransfer(changeRecipient, dToken1.balanceOf(address(this)));
         }
@@ -423,7 +452,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
             if (fee > 0) {
                 uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
                 if (totalFee > 0) {
-                    payable(owner()).transfer(totalFee);
+                    payable(msg.sender).transfer(totalFee);
                 }
                 payable(msg.sender).transfer(address(this).balance);
             } else {
@@ -433,7 +462,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
             if (fee > 0) {
                 uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
                 if (totalFee > 0) {
-                    dToken.safeTransfer(owner(), totalFee);
+                    dToken.safeTransfer(msg.sender, totalFee);
                 }
                 destinationTokenBalance = dToken.balanceOf(address(this));
                 dToken.safeTransfer(msg.sender, destinationTokenBalance);
@@ -565,7 +594,7 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
         returns (uint256 amountRecieved)
     {
         if (input_params.sellToken == address(0x0) && input_params.buyToken == WETH_TOKEN_ADDRESS) {
-            IWETH(input_params.buyToken).deposit{value: msg.value}();
+            IWETH(input_params.buyToken).deposit{value: input_params.amount}();
             return input_params.amount;
         }
 
@@ -574,18 +603,21 @@ contract WrapAndUnWrap is OwnableUpgradeable, IERC721Receiver {
             // addresses[1] = buyToken;
         uint24 poolFee = 3000;
         uint160 sqrtPriceLimitX96 = 0;
-        
+            IWETH(WETH_TOKEN_ADDRESS).deposit{value: input_params.amount}();
+            IERC20(WETH_TOKEN_ADDRESS).safeApprove(address(router), input_params.amount);
             ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
-                input_params.sellToken,
+                WETH_TOKEN_ADDRESS,
                 input_params.buyToken,
                 poolFee,
-                msg.sender,
+                address(this),
                 input_params.deadline,
                 input_params.amount,
                 input_params.minAmount,
                 sqrtPriceLimitX96
             ) ;
-            router.exactInputSingle{ value: msg.value }(params);
+            uint256 amountOut = router.exactInputSingle(params);
+            console.log("amountOut %s - input_params.amount %s", amountOut, input_params.amount);
+            return amountOut;
             //router.refundETH();
             
         } else {
