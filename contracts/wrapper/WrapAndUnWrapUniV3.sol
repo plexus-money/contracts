@@ -28,7 +28,6 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
     // Contract state variables
     address public WETH_TOKEN_ADDRESS; // Contract address for WETH tokens
     bool public changeRecpientIsOwner;
-    address private uniAddress;
     address private uniFactoryAddress;
     uint256 public fee;
     uint256 public maxfee;
@@ -139,15 +138,6 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         return true;
     }
 
-    /**
-     * @notice Update the Uniswap exchange contract address
-     * @param newAddress Uniswap exchange contract address to be updated
-     */
-    function updateUniswapExchange(address newAddress) external onlyOwner returns (bool) {
-        uniswapExchange = IUniswapV2(newAddress);
-        uniAddress = newAddress;
-        return true;
-    }
 
     /**
      * @notice Update the Uniswap factory contract address
@@ -336,13 +326,13 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
 
         // dToken1.safeApprove(address(positionManager), dTokenBalance11);
         // dToken2.safeApprove(address(positionManager), dTokenBalance22);
+        if(params.sourceToken == address(0x0)) params.sourceToken = WETH_TOKEN_ADDRESS;
         INonfungiblePositionManager.MintParams memory mint_params =
-            INonfungiblePositionManager.MintParams(WETH_TOKEN_ADDRESS,params.destinationTokens[1],params.poolFee,params.tickLower,params.tickUpper,
+            INonfungiblePositionManager.MintParams(params.sourceToken,params.destinationTokens[1],params.poolFee,params.tickLower,params.tickUpper,
                 dTokenBalance11,dTokenBalance22,params.minAmounts[0], params.minAmounts[1],address(this),params.deadline
             );
         console.log("Sender balance is %s tokens %s", dTokenBalance11,dTokenBalance22);
         console.log("%s - %s",dToken1.allowance(address(this), address(positionManager)),dToken2.allowance(address(this), address(positionManager)));
-        // Note that the pool defined by DAI/USDC and fee tier 0.3% must already be created and initialized in order to mint
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
         console.log("Sender balance is %s tokens %s", tokenId,liquidity);
         console.log("Sender balance 2 is %s tokens %s ", amount0,amount1);
@@ -412,12 +402,12 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         if (removeWrap_params.tokenId != 0) {
             positionManager.safeTransferFrom(msg.sender, address(this), removeWrap_params.tokenId);
         }
-        positionManager.approve(uniAddress, removeWrap_params.tokenId);
+        positionManager.approve(router, removeWrap_params.tokenId);
 
         // amount0Min and amount1Min are price slippage checks
         // if the amount received after burning is not greater than these minimums, transaction will fail
         INonfungiblePositionManager.DecreaseLiquidityParams memory params =
-            INonfungiblePositionManager.DecreaseLiquidityParams(removeWrap_params.tokenId,liquidity,0,0,1000000000000000000000000000);
+            INonfungiblePositionManager.DecreaseLiquidityParams(removeWrap_params.tokenId,liquidity,0,0,removeWrap_params.deadline);
 
         positionManager.decreaseLiquidity(params);
 
@@ -499,15 +489,11 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         payable
         returns (uint256)
     {
-
-        if (tokenId == 0) {
-            return swap(sourceToken, destinationToken, paths[0], amount, minAmountOut, userSlippageTolerance, deadline);
-        } else {
-            removeWrapParams memory input_params = removeWrapParams(tokenId, destinationToken, paths, amount, userSlippageTolerance, deadline);
-            uint256 destAmount = removeWrap(input_params);
-            emit UnWrapV2(destAmount);
-            return destAmount;
-        }
+        require(tokenId != 0,"No Liquidity Token to unWrap");
+        removeWrapParams memory input_params = removeWrapParams(tokenId, destinationToken, paths, amount, userSlippageTolerance, deadline);
+        uint256 destAmount = removeWrap(input_params);
+        emit UnWrapV2(destAmount);
+        return destAmount;
     }
 
     /**
@@ -622,8 +608,8 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
             
         } else {
             IERC20 sToken = IERC20(input_params.sellToken);
-            if (sToken.allowance(address(this), uniAddress) < input_params.amount.mul(2)) {
-                sToken.safeIncreaseAllowance(uniAddress, input_params.amount.mul(3));
+            if (sToken.allowance(address(this), router) < input_params.amount.mul(2)) {
+                sToken.safeIncreaseAllowance(router, input_params.amount.mul(3));
             }
             (uint minAmountsOut) = getAmountOutMin(input_params.path,input_params.amount,input_params.userSlippageTolerance);
             uint256 amountOut = conductUniswapT4T(
