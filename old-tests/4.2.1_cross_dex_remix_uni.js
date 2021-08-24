@@ -136,14 +136,16 @@ describe('Re-deploying the plexus contracts for WrapperUni remix test', () => {
 
         // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in Sushi
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const unwrapPaths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
+        const unwrapPath1 = [sushiTokenAddress, wethAddress, daiTokenAddress];
+        const unwrapPath2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
         // for uni because the 2 pairs exist, the paths are straightforward
-        const wrapPaths = [[daiTokenAddress, wethAddress], [daiTokenAddress, usdcTokenAddress]];
+        const wrapPath1 = [daiTokenAddress, wethAddress];
+        const wrapPath2 = [daiTokenAddress, usdcTokenAddress];
         const outputToken = daiTokenAddress;
         const destinationTokens = [wethAddress, usdcTokenAddress];
         const crossDex = true;
         const { status, events } = await (await wrapper
-          .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, crossDex))
+          .remix({lpTokenPairAddress: tokenPairAddress, unwrapOutputToken: outputToken, destinationTokens, unwrapPath1, unwrapPath2, wrapPath1, wrapPath2, amount: amountPlaceholder, userSlippageTolerance, deadline, crossDexRemix: crossDex}))
           .wait();
 
            // Check if the txn is successful

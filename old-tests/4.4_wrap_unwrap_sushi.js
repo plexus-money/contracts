@@ -23,7 +23,7 @@ describe('Re-deploying the plexus contracts for WrapperSushi add liquidity test'
   // Deploy and setup the contracts
   before(async () => {
     const { deployedContracts } = await deployWrappersOnly();
-   
+
     wrapperSushi = deployedContracts.wrapperSushi;
     owner = deployedContracts.owner;
 
@@ -132,8 +132,9 @@ describe('Re-deploying the plexus contracts for WrapperSushi add liquidity test'
 
           // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          const paths = [[sushiTokenAddress, wethAddress, daiTokenAddress], [compoundTokenAddress, wethAddress, daiTokenAddress]];
-          const { status, events } = await (await wrapperSushi.unwrap(tokenPairAddress, daiTokenAddress, paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
+          const path1 = [sushiTokenAddress, wethAddress, daiTokenAddress];
+          const path2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
+          const { status, events } = await (await wrapperSushi.unwrap({lpTokenPairAddress: tokenPairAddress, destinationToken: daiTokenAddress, path1, path2, amount: amountPlaceholder, userSlippageTolerance, deadline})).wait();
 
           // Check if the txn is successful
           expect(status).to.equal(1);
