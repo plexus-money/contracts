@@ -142,8 +142,8 @@ describe('Re-deploying the plexus contracts for WrapperSushi swap test', () => {
 
         // Convert the 2 ETH to Pickle Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const paths = [[wethAddress, pickleTokenAddress]];
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const path1 = [wethAddress, pickleTokenAddress];
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);

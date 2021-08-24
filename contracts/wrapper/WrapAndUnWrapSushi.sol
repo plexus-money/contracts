@@ -8,11 +8,12 @@ import "../interfaces/token/IWETH.sol";
 import "../interfaces/token/ILPERC20.sol";
 import "../interfaces/sushiswap/ISushiV2.sol";
 import "../interfaces/sushiswap/ISushiSwapFactory.sol";
+import "../interfaces/IWrapper.sol";
 import "../interfaces/IRemix.sol";
 
 /// @title Plexus LP Wrapper Contract - SushiSwap
 /// @author Team Plexus
-contract WrapAndUnWrapSushi {
+contract WrapAndUnWrapSushi is IWrapper{
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -27,18 +28,6 @@ contract WrapAndUnWrapSushi {
     address public wrapperUniAddress;
     ISushiV2 private sushiExchange;
     ISushiSwapFactory private factory;
-
-    struct RemixParams {
-        address lpTokenPairAddress;
-        address unwrapOutputToken;
-        address [] destinationTokens;
-        address [][] unwrapPaths;
-        address [][] wrapPaths;
-        uint256 amount;
-        uint256 userSlippageTolerance;
-        uint256 deadline;
-        bool crossDexRemix;
-    }
 
     // events
     event WrapSushi(address lpTokenPairAddress, uint256 amount);
@@ -250,54 +239,50 @@ contract WrapAndUnWrapSushi {
     }
 
     function createWrap(
-        address sourceToken,
-        address[] memory destinationTokens,
-        address[][] memory paths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline,
+        WrapParams memory params,
         bool remixing
     ) public payable returns (address, uint256) {
-        if (sourceToken == address(0x0)) {
+        uint256 amount = params.amount;
+        if (params.sourceToken == address(0x0)) {
             IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
             amount = msg.value;
         } else {
             if(!remixing) { // only transfer when not remixing
-                IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);
+                IERC20(params.sourceToken).safeTransferFrom(msg.sender, address(this), amount);
             }
-            
+
         }
 
-        if (destinationTokens[0] == address(0x0)) {
-            destinationTokens[0] = WETH_TOKEN_ADDRESS;
+        if (params.destinationTokens[0] == address(0x0)) {
+            params.destinationTokens[0] = WETH_TOKEN_ADDRESS;
         }
-        if (destinationTokens[1] == address(0x0)) {
-            destinationTokens[1] = WETH_TOKEN_ADDRESS;
+        if (params.destinationTokens[1] == address(0x0)) {
+            params.destinationTokens[1] = WETH_TOKEN_ADDRESS;
         }
 
-        if (sourceToken != destinationTokens[0]) {
+        if (params.sourceToken != params.destinationTokens[0]) {
             conductSushiSwap(
-                sourceToken,
-                destinationTokens[0],
-                paths[0],
+                params.sourceToken,
+                params.destinationTokens[0],
+                params.path1,
                 amount.div(2),
-                userSlippageTolerance,
-                deadline
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
-        if (sourceToken != destinationTokens[1]) {
+        if (params.sourceToken != params.destinationTokens[1]) {
              conductSushiSwap(
-                sourceToken,
-                destinationTokens[1],
-                paths[1],
+                params.sourceToken,
+                params.destinationTokens[1],
+                params.path2,
                 amount.div(2),
-                userSlippageTolerance,
-                deadline
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
 
-        IERC20 dToken1 = IERC20(destinationTokens[0]);
-        IERC20 dToken2 = IERC20(destinationTokens[1]);
+        IERC20 dToken1 = IERC20(params.destinationTokens[0]);
+        IERC20 dToken2 = IERC20(params.destinationTokens[1]);
         uint256 dTokenBalance1 = dToken1.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
@@ -310,8 +295,8 @@ contract WrapAndUnWrapSushi {
         }
 
         sushiExchange.addLiquidity(
-            destinationTokens[0],
-            destinationTokens[1],
+            params.destinationTokens[0],
+            params.destinationTokens[1],
             dTokenBalance1,
             dTokenBalance2,
             1,
@@ -321,7 +306,7 @@ contract WrapAndUnWrapSushi {
         );
 
         address thisPairAddress =
-            factory.getPair(destinationTokens[0], destinationTokens[1]);
+            factory.getPair(params.destinationTokens[0], params.destinationTokens[1]);
         IERC20 lpToken = IERC20(thisPairAddress);
         uint256 thisBalance = lpToken.balanceOf(address(this));
 
@@ -353,75 +338,66 @@ contract WrapAndUnWrapSushi {
 
     /**
      * @notice Wrap a source token based on the specified
-     * destination token(s)
-     * @param sourceToken Address to the source token contract
-     * @param destinationTokens Array describing the token(s) which the source
-     * @param paths Paths for uniswap
-     * token will be wrapped into
-     * @param amount Amount of source token to be wrapped
-     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @param params params of struct WrapParams
+     * // contains following properties
+       // sourceToken Address to the source token contract
+       // destinationTokens Array describing the token(s) which the source
+       // paths Paths for uniswap
+       // amount Amount of source token to be wrapped
+       // userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Address to the token contract for the destination token and the
      * amount of wrapped tokens
      */
     function wrap(
-        address sourceToken,
-        address[] memory destinationTokens,
-        address[] memory paths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline
+        WrapParams memory params
     )
+        override
         public
         payable
         returns (address, uint256)
     {
-        address[][] memory _paths = splitPath(paths, destinationTokens[0]);
-        if (destinationTokens.length == 1) {
-            uint256 swapAmount = swap(sourceToken, destinationTokens[0], _paths[0], amount, userSlippageTolerance, deadline);
-            return (destinationTokens[0], swapAmount);
+        //address[][] memory _paths = splitPath(params.paths, params.destinationTokens[0]);
+        if (params.destinationTokens.length == 1) {
+            uint256 swapAmount = swap(params.sourceToken, params.destinationTokens[0], params.path1, params.amount, params.userSlippageTolerance, params.deadline);
+            return (params.destinationTokens[0], swapAmount);
         } else {
             bool remixing = false;
-            (address lpTokenPairAddress, uint256 lpTokenAmount) = createWrap(sourceToken, destinationTokens, _paths, amount, userSlippageTolerance, deadline, remixing);
+            (address lpTokenPairAddress, uint256 lpTokenAmount) = createWrap(params, remixing);
             emit WrapSushi(lpTokenPairAddress, lpTokenAmount);
             return (lpTokenPairAddress, lpTokenAmount);
         }
     }
 
     function removeWrap(
-        address sourceToken,
-        address destinationToken,
-        address[][] memory paths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline,
+        UnwrapParams memory params,
         bool remixing
     )
         private
         returns (uint256)
     {
-        address originalDestinationToken = destinationToken;
-      
-        IERC20 sToken = IERC20(sourceToken);
-        if (destinationToken == address(0x0)) {
-            destinationToken = WETH_TOKEN_ADDRESS;
+        address originalDestinationToken = params.destinationToken;
+
+        IERC20 sToken = IERC20(params.lpTokenPairAddress);
+        if (params.destinationToken == address(0x0)) {
+            params.destinationToken = WETH_TOKEN_ADDRESS;
         }
 
-        if (sourceToken != address(0x0)) {
-            sToken.safeTransferFrom(msg.sender, address(this), amount);
+        if (params.lpTokenPairAddress != address(0x0)) {
+            sToken.safeTransferFrom(msg.sender, address(this), params.amount);
         }
 
-        ILPERC20 thisLpInfo = ILPERC20(sourceToken);
+        ILPERC20 thisLpInfo = ILPERC20(params.lpTokenPairAddress);
         address token0 = thisLpInfo.token0();
         address token1 = thisLpInfo.token1();
 
-        if (sToken.allowance(address(this), sushiAddress) < amount.mul(2)) {
-            sToken.safeIncreaseAllowance(sushiAddress, amount.mul(3));
+        if (sToken.allowance(address(this), sushiAddress) < params.amount.mul(2)) {
+            sToken.safeIncreaseAllowance(sushiAddress, params.amount.mul(3));
         }
 
         sushiExchange.removeLiquidity(
             token0,
             token1,
-            amount,
+            params.amount,
             0,
             0,
             address(this),
@@ -431,33 +407,33 @@ contract WrapAndUnWrapSushi {
         uint256 pTokenBalance = IERC20(token0).balanceOf(address(this));
         uint256 pTokenBalance2 = IERC20(token1).balanceOf(address(this));
 
-        if (token0 != destinationToken) {
+        if (token0 != params.destinationToken) {
             conductSushiSwap(
                 token0,
-                destinationToken,
-                paths[0],
+                params.destinationToken,
+                params.path1,
                 pTokenBalance,
-                userSlippageTolerance,
-                deadline
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
 
-        if (token1 != destinationToken) {
+        if (token1 != params.destinationToken) {
             conductSushiSwap(
                 token1,
-                destinationToken,
-                paths[1],
+                params.destinationToken,
+                params.path2,
                 pTokenBalance2,
-                userSlippageTolerance,
-                deadline
+                params.userSlippageTolerance,
+                params.deadline
             );
         }
 
-        IERC20 dToken = IERC20(destinationToken);
+        IERC20 dToken = IERC20(params.destinationToken);
         uint256 destinationTokenBalance = dToken.balanceOf(address(this));
-    
+
         if (remixing) {
-            
+
             emit RemixUnwrap(destinationTokenBalance);
         }
         else { // we only transfer the tokens to the user when not remixing
@@ -486,66 +462,58 @@ contract WrapAndUnWrapSushi {
             }
 
         }
-       
+
         return destinationTokenBalance;
     }
 
-     /**
+    /**
      * @notice Unwrap a source token based to the specified destination token
-     * @param lpTokenPairAddress address for lp token
-     * @param destinationToken Address of the destination token contract
-     * @param paths Paths for uniswap
-     * @param amount Amount of source token to be unwrapped
-     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @param params params of struct UnwrapParams
+        it contains following properties
+        // param lpTokenPairAddress address for lp token
+        // destinationToken Address of the destination token contract
+        // paths Paths for uniswap
+        // amount Amount of source token to be unwrapped
+        // userSlippageTolerance Maximum permissible user slippage tolerance
      * @return Amount of the destination token returned from unwrapping the
      * source token
      */
     function unwrap(
-        address lpTokenPairAddress,
-        address destinationToken,
-        address[] calldata paths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline
+        UnwrapParams memory params
     )
+        override
         public
         payable
         returns (uint256)
     {
-       
+
         bool remixing = false; //flag indicates whether we're remixing or not
-        address[][] memory _paths = splitPath(paths, destinationToken);
-        uint256 destAmount = removeWrap(lpTokenPairAddress, destinationToken, _paths, amount, userSlippageTolerance, deadline, remixing);
+        //address[][] memory _paths = splitPath(paths, destinationToken);
+        uint256 destAmount = removeWrap(params, remixing);
         emit UnWrapSushi(destAmount);
         return destAmount;
-        
+
     }
 
      /**
-     * @notice Unwrap a source token and wrap it into a different destination token 
-     * @param lpTokenPairAddress Address for the LP pair to remix
-     * @param unwrapOutputToken Address for the initial output token of remix
-     * @param destinationTokens Address to the destination tokens to be remixed to
-     * @param unwrapPaths Paths best uniswap trade paths for doing the unwrapping
-     * @param wrapPaths Paths best uniswap trade paths for doing the wrapping to the new LP token
-     * @param amount Amount of LP Token to be remixed
-     * @param userSlippageTolerance Maximum permissible user slippage tolerance
-     * @param deadline Timeout after which the txn should revert
-     * @param crossDexRemix Indicates whether this is a cross-dex remix or not
+     * @notice Unwrap a source token and wrap it into a different destination token
+     * @param params Remix params having following properties
+        // lpTokenPairAddress Address for the LP pair to remix
+        // unwrapOutputToken Address for the initial output token of remix
+        // destinationTokens Address to the destination tokens to be remixed to
+        // unwrapPaths Paths best uniswap trade paths for doing the unwrapping
+        // wrapPaths Paths best uniswap trade paths for doing the wrapping to the new LP token
+        // amount Amount of LP Token to be remixed
+        // userSlippageTolerance Maximum permissible user slippage tolerance
+        // deadline Timeout after which the txn should revert
+        // crossDexRemix Indicates whether this is a cross-dex remix or not
      * @return Amount of the destination token returned from unwrapping the
      * source LP token
      */
     function remix(
-        address lpTokenPairAddress,
-        address unwrapOutputToken,
-        address[] memory destinationTokens,
-        address[] memory unwrapPaths,
-        address[] memory wrapPaths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline,
-        bool crossDexRemix
+        RemixParams memory params
     )
+        override
         public
         payable
         returns (uint256)
@@ -553,36 +521,50 @@ contract WrapAndUnWrapSushi {
         uint lpTokenAmount = 0;
 
         // First of all we unwrap the token
-        address[][] memory _paths = splitPath(unwrapPaths, unwrapOutputToken);
-        uint256 destinationTokenBalance = removeWrap(lpTokenPairAddress, unwrapOutputToken, _paths, amount, userSlippageTolerance, deadline, true);
+        UnwrapParams memory unwrapParams = UnwrapParams({
+            lpTokenPairAddress: params.lpTokenPairAddress,
+            destinationToken: params.unwrapOutputToken,
+            path1: params.unwrapPath1,
+            path2: params.unwrapPath2,
+            amount: params.amount,
+            userSlippageTolerance: params.userSlippageTolerance,
+            deadline: params.deadline
+        });
+        uint256 destinationTokenBalance = removeWrap(unwrapParams, true);
 
-        _paths = splitPath(wrapPaths, destinationTokens[0]);
-        if(crossDexRemix) {
+        WrapParams memory wrapParams = WrapParams({
+            sourceToken: params.unwrapOutputToken,
+            destinationTokens: params.destinationTokens,
+            path1: params.wrapPath1,
+            path2: params.wrapPath2,
+            amount: params.amount,
+            userSlippageTolerance: params.userSlippageTolerance,
+            deadline: params.deadline
+        });
+        if(params.crossDexRemix) {
 
             // send the unwrapped token to uni for remixing
-            IERC20(unwrapOutputToken).safeTransfer(wrapperUniAddress, destinationTokenBalance);
+            IERC20(params.unwrapOutputToken).safeTransfer(wrapperUniAddress, destinationTokenBalance);
 
             // then do the remix
             (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperUniAddress)
-                .createWrap(unwrapOutputToken, destinationTokens, _paths, destinationTokenBalance, userSlippageTolerance, deadline, true);  
-            lpTokenAmount = remixedLpTokenAmount;
+                .createWrap(wrapParams, true);
             // transfer the remixed lp token back to the user
             IERC20(remixedLpTokenPairAddress).safeTransfer(msg.sender, lpTokenAmount);
 
             emit RemixWrap(remixedLpTokenPairAddress, lpTokenAmount);
-                                   
+
         } else {
             // then now we create the new LP token
-            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(unwrapOutputToken, destinationTokens, 
-                _paths, destinationTokenBalance, userSlippageTolerance, deadline, true);
-            
+            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(wrapParams, true);
+
             lpTokenAmount = remixedLpTokenAmount;
 
             emit RemixWrap(remixedLpTokenPairAddress, remixedLpTokenAmount);
         }
 
         return lpTokenAmount;
-        
+
     }
 
     /**
@@ -736,35 +718,5 @@ contract WrapAndUnWrapSushi {
             deadline
         );
         return amounts;
-    }
-
-    function splitPath(
-        address[] memory paths,
-        address targetAddress
-    )
-        internal
-        returns(address[][] memory) 
-    {
-        uint splitIndex = 0;
-        for(uint i = 0; i < paths.length; i++) {
-            if(paths[i] == targetAddress) {
-                splitIndex = i;
-                break;
-            }
-        }
-        address[] memory path0 = new address[](splitIndex + 1);
-        address[] memory path1 = new address[](paths.length - splitIndex - 1);
-        for(uint i = 0; i < paths.length; i++) {
-            if(i <= splitIndex)
-                path0[i] = paths[i];
-            else 
-                path1[i - splitIndex - 1] = paths[i];
-        }
-
-        address[][] memory _paths = new address[][](2);
-        _paths[0] = path0;
-        _paths[1] = path1;
-
-        return _paths;
     }
 }
