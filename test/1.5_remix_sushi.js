@@ -58,8 +58,8 @@ describe('Deploying the plexus contracts for WrapperSushi remix test', () => {
 
           // Convert the 2 ETH to Dai Token(s)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          const paths = [wethAddress, daiTokenAddress];
-          const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+          const path1 = [wethAddress, daiTokenAddress];
+          const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
 
           // Check if the txn is successful
           expect(status).to.equal(1);
@@ -96,8 +96,9 @@ describe('Deploying the plexus contracts for WrapperSushi remix test', () => {
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           log('Sushi Token Address', sushiTokenAddress);
           log('Compound Token Address', compoundTokenAddress);
-          const paths = [daiTokenAddress, wethAddress, sushiTokenAddress, daiTokenAddress, wethAddress, compoundTokenAddress];
-          const { status, events } = await (await wrapperSushi.wrap(daiTokenAddress, [sushiTokenAddress, compoundTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline)).wait();
+          const path1 = [daiTokenAddress, wethAddress, sushiTokenAddress];
+          const path2 = [daiTokenAddress, wethAddress, compoundTokenAddress];
+          const { status, events } = await (await wrapperSushi.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageTolerance, deadline})).wait();
           // Check if the txn is successful
           expect(status).to.equal(1);
 
@@ -137,15 +138,17 @@ describe('Deploying the plexus contracts for WrapperSushi remix test', () => {
 
             // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in Sushi
             const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-            const unwrapPaths = [sushiTokenAddress, wethAddress, daiTokenAddress, compoundTokenAddress, wethAddress, daiTokenAddress];
+            const unwrapPath1 = [sushiTokenAddress, wethAddress, daiTokenAddress];
+            const unwrapPath2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
 
             // for sushi because the DAI-USDC pair has low liquidity, we have to go through WETH for the second path
-            const wrapPaths = [daiTokenAddress, wethAddress, daiTokenAddress, wethAddress, usdcTokenAddress];
+            const wrapPath1 = [daiTokenAddress, wethAddress];
+            const wrapPath2 = [daiTokenAddress, wethAddress, usdcTokenAddress];
             const outputToken = daiTokenAddress;
             const destinationTokens = [wethAddress, usdcTokenAddress];
             const crossDex = false;
             const { status, events } = await (await wrapperSushi
-                .remix(tokenPairAddress, outputToken, destinationTokens, unwrapPaths, wrapPaths, amountPlaceholder, userSlippageTolerance, deadline, crossDex))
+                .remix({lpTokenPairAddress: tokenPairAddress, unwrapOutputToken: outputToken, destinationTokens, unwrapPath1, unwrapPath2, wrapPath1, wrapPath2, amount: amountPlaceholder, userSlippageTolerance, deadline, crossDexRemix: crossDex}))
                 .wait();
 
             // Check if the txn is successful

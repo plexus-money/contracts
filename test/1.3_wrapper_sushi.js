@@ -62,8 +62,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
 
         // Convert the 2 ETH to Farm Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const paths = [wethAddress, farmTokenAddress];
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [farmTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const path1 = [wethAddress, farmTokenAddress];
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [farmTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -102,8 +102,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
 
         // Convert the 2 ETH to Dai Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const paths = [wethAddress, daiTokenAddress];
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [daiTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const path1 = [wethAddress, daiTokenAddress];
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -142,8 +142,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
 
         // Convert the 2 ETH to Pickle Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-        const paths = [wethAddress, pickleTokenAddress];
-        const { status } = await (await wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, deadline, overrides)).wait();
+        const path1 = [wethAddress, pickleTokenAddress];
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -180,8 +180,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
       };
 
       // Check if the txn reverts after it has passed
-      const paths = [wethAddress, pickleTokenAddress];
-      await expect(wrapperSushi.wrap(zeroAddress, [pickleTokenAddress], paths, amountPlaceholder, userSlippageTolerance, 10, overrides))
+      const path1 = [wethAddress, pickleTokenAddress];
+      await expect(wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline: 10}, overrides))
       .to.be.revertedWith("reverted with reason string 'UniswapV2Router: EXPIRED'");
     });
   });

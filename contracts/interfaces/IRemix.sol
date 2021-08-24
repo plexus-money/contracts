@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.8.0 <0.9.0;
-
+import "./IWrapper.sol";
 interface IRemix {
 
    function createWrap(
-        address sourceToken,
-        address[] memory destinationTokens,
-        address[][] memory paths,
-        uint256 amount,
-        uint256 userSlippageTolerance,
-        uint256 deadline,
+        IWrapper.WrapParams memory params,
         bool remixing
     )
         external
