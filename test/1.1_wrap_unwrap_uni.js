@@ -5,7 +5,7 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { deployWrappersOnly, log } = require('./helper');
+const { deployWrappersOnly, log, getAmountOutMin } = require('./helper');
 const addr = config.addresses;
 
 describe('Deploying the plexus contracts for WrapperUni adding liquidity test', () => {
@@ -58,7 +58,8 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
           // Convert the 2 ETH to Dai Token(s)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           const path1 = [wethAddress, daiTokenAddress];
-          const { status } = await (await wrapper.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
+          const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper);
+          const { status } = await (await wrapper.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline}, overrides)).wait();
 
           // Check if the txn is successful
           expect(status).to.equal(1);
@@ -97,7 +98,9 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
           log('Compound Token Address', compoundTokenAddress);
           const path1 = [daiTokenAddress, wethAddress, sushiTokenAddress]
           const path2 = [daiTokenAddress, wethAddress, compoundTokenAddress];
-          const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageTolerance, deadline})).wait();
+          const amountOutMin1 = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper);
+          const amountOutMin2 = await getAmountOutMin(path2, amountPlaceholder, userSlippageTolerance, wrapper);
+          const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin1, amountOutMin2], deadline})).wait();
           // Check if the txn is successful
           expect(status).to.equal(1);
 
@@ -134,7 +137,9 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           const path1 = [sushiTokenAddress, wethAddress, daiTokenAddress]
           const path2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
-          const { status, events } = await (await wrapper.unwrap({lpTokenPairAddress: tokenPairAddress, destinationToken: daiTokenAddress, path1, path2, amount: amountPlaceholder, userSlippageTolerance, deadline})).wait();
+          const amountOutMin1 = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper);
+          const amountOutMin2 = await getAmountOutMin(path2, amountPlaceholder, userSlippageTolerance, wrapper);
+          const { status, events } = await (await wrapper.unwrap({lpTokenPairAddress: tokenPairAddress, destinationToken: daiTokenAddress, path1, path2, amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin1, amountOutMin2], deadline})).wait();
 
           // Check if the txn is successful
           expect(status).to.equal(1);

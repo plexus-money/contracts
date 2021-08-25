@@ -226,13 +226,13 @@ contract WrapAndUnWrapSushi is IWrapper{
         address destinationToken,
         address[] memory path,
         uint256 amount,
-        uint256 userSlippageTolerance,
+        uint256 userSlippageToleranceAmount,
         uint256 deadline
     ) private returns (uint256) {
         if (sourceToken != address(0x0)) {
             IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);
         }
-        conductSushiSwap(sourceToken, destinationToken, path, amount, userSlippageTolerance, deadline);
+        conductSushiSwap(sourceToken, destinationToken, path, amount, userSlippageToleranceAmount, deadline);
         uint256 thisBalance = IERC20(destinationToken).balanceOf(address(this));
         IERC20(destinationToken).safeTransfer(msg.sender, thisBalance);
         return thisBalance;
@@ -266,7 +266,7 @@ contract WrapAndUnWrapSushi is IWrapper{
                 params.destinationTokens[0],
                 params.path1,
                 amount.div(2),
-                params.userSlippageTolerance,
+                params.userSlippageToleranceAmounts[0],
                 params.deadline
             );
         }
@@ -276,7 +276,7 @@ contract WrapAndUnWrapSushi is IWrapper{
                 params.destinationTokens[1],
                 params.path2,
                 amount.div(2),
-                params.userSlippageTolerance,
+                params.userSlippageToleranceAmounts[1],
                 params.deadline
             );
         }
@@ -358,7 +358,7 @@ contract WrapAndUnWrapSushi is IWrapper{
     {
         //address[][] memory _paths = splitPath(params.paths, params.destinationTokens[0]);
         if (params.destinationTokens.length == 1) {
-            uint256 swapAmount = swap(params.sourceToken, params.destinationTokens[0], params.path1, params.amount, params.userSlippageTolerance, params.deadline);
+            uint256 swapAmount = swap(params.sourceToken, params.destinationTokens[0], params.path1, params.amount, params.userSlippageToleranceAmounts[0], params.deadline);
             return (params.destinationTokens[0], swapAmount);
         } else {
             bool remixing = false;
@@ -413,7 +413,7 @@ contract WrapAndUnWrapSushi is IWrapper{
                 params.destinationToken,
                 params.path1,
                 pTokenBalance,
-                params.userSlippageTolerance,
+                params.userSlippageToleranceAmounts[0],
                 params.deadline
             );
         }
@@ -424,7 +424,7 @@ contract WrapAndUnWrapSushi is IWrapper{
                 params.destinationToken,
                 params.path2,
                 pTokenBalance2,
-                params.userSlippageTolerance,
+                params.userSlippageToleranceAmounts[1],
                 params.deadline
             );
         }
@@ -527,7 +527,7 @@ contract WrapAndUnWrapSushi is IWrapper{
             path1: params.unwrapPath1,
             path2: params.unwrapPath2,
             amount: params.amount,
-            userSlippageTolerance: params.userSlippageTolerance,
+            userSlippageToleranceAmounts: params.userUnWrapSlippageToleranceAmounts,
             deadline: params.deadline
         });
         uint256 destinationTokenBalance = removeWrap(unwrapParams, true);
@@ -538,7 +538,7 @@ contract WrapAndUnWrapSushi is IWrapper{
             path1: params.wrapPath1,
             path2: params.wrapPath2,
             amount: params.amount,
-            userSlippageTolerance: params.userSlippageTolerance,
+            userSlippageToleranceAmounts: params.userWrapSlippageToleranceAmounts,
             deadline: params.deadline
         });
         if(params.crossDexRemix) {
@@ -576,7 +576,7 @@ contract WrapAndUnWrapSushi is IWrapper{
      * @return amounts1 Array with maximum output token amounts for all token
      * pairs in the swap path
      */
-    function getPriceFromSushiswap(
+    function getAmountsOut(
         address[] memory theAddresses,
         uint256 amount
     )
@@ -615,7 +615,7 @@ contract WrapAndUnWrapSushi is IWrapper{
         view
         returns (uint256)
     {
-        uint256[] memory assetAmounts = getPriceFromSushiswap(
+        uint256[] memory assetAmounts = getAmountsOut(
             theAddresses,
             amount
         );
@@ -639,7 +639,7 @@ contract WrapAndUnWrapSushi is IWrapper{
      * @param sellToken Address to the token being sold as part of the swap
      * @param buyToken Address to the token being bought as part of the swap
      * @param amount Transaction amount denoted in terms of the token sold
-     * @param userSlippageTolerance Maximum permissible slippage limit
+     * @param userSlippageToleranceAmount Maximum permissible slippage limit
      * @return amounts1 Tokens received once the swap is completed
      */
     function conductSushiSwap(
@@ -647,7 +647,7 @@ contract WrapAndUnWrapSushi is IWrapper{
         address buyToken,
         address[] memory path,
         uint256 amount,
-        uint256 userSlippageTolerance,
+        uint256 userSlippageToleranceAmount,
         uint256 deadline
     )
         internal
@@ -661,9 +661,8 @@ contract WrapAndUnWrapSushi is IWrapper{
         if (sellToken == address(0x0)) {
             // addresses[0] = WETH_TOKEN_ADDRESS;
             // addresses[1] = buyToken;
-            uint256 amountOutMin = getAmountOutMin(path, amount, userSlippageTolerance);
             sushiExchange.swapExactETHForTokens{value: msg.value}(
-                amountOutMin,
+                userSlippageToleranceAmount,
                 path,
                 address(this),
                 deadline
@@ -677,7 +676,7 @@ contract WrapAndUnWrapSushi is IWrapper{
             uint256[] memory amounts = conductSushiSwapT4T(
                 path,
                 amount,
-                userSlippageTolerance,
+                userSlippageToleranceAmount,
                 deadline
             );
             uint256 resultingTokens = amounts[amounts.length - 1];
@@ -692,27 +691,22 @@ contract WrapAndUnWrapSushi is IWrapper{
      * first address is the input token and the last address is the output
      * token
      * @param amount Amount of input tokens to be swapped
-     * @param userSlippageTolerance Maximum permissible slippage tolerance
+     * @param userSlippageToleranceAmount Maximum permissible slippage tolerance
      * @return amounts1 The input token amount and all subsequent output token
      * amounts
      */
     function conductSushiSwapT4T(
         address[] memory theAddresses,
         uint256 amount,
-        uint256 userSlippageTolerance,
+        uint256 userSlippageToleranceAmount,
         uint256 deadline
     )
         internal
         returns (uint256[] memory amounts1)
     {
-        uint256 amountOutMin = getAmountOutMin(
-            theAddresses,
-            amount,
-            userSlippageTolerance
-        );
         uint256[] memory amounts = sushiExchange.swapExactTokensForTokens(
             amount,
-            amountOutMin,
+            userSlippageToleranceAmount,
             theAddresses,
             address(this),
             deadline

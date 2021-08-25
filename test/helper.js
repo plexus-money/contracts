@@ -1,5 +1,6 @@
 require("dotenv").config();
 const config = require('../config.json');
+const { BigNumber } = require("ethers");
 
 const log = (message, params) =>{
     if(process.env.CONSOLE_LOG === 'true') {
@@ -40,4 +41,13 @@ const deployWrappersOnly = async() => {
 
 }
 
-module.exports = {log, deployWrappersOnly }
+const getAmountOutMin = async(paths, amount, userSlippageTolerance, contract) => {
+  const assetAmounts = await contract.getAmountsOut(paths, amount);
+  const outputTokenIndex = assetAmounts.length - 1;
+  if (userSlippageTolerance < 100) {
+    return 0;
+  }
+  return BigNumber.div(BigNumber.mul(assetAmounts[outputTokenIndex], (100 - userSlippageTolerance)), 100);
+}
+
+module.exports = {log, deployWrappersOnly, getAmountOutMin }
