@@ -1,8 +1,7 @@
 require("dotenv").config();
 
 const config = require('../config.json');
-const { expect } = require('chai');
-const { setupContracts, log } = require('./helper');
+const { log } = require('./helper');
 const addr = config.addresses;
 const { UniswapPriceOracle } = require('../scripts/uniswapPriceOracle');
 

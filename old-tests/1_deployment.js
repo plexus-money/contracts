@@ -60,8 +60,6 @@ describe('Deploying the plexus contracts', () => {
       log('Starting ETH balance is ', ethbalance);
       expect(ethbalance).to.be.gte(100);
     });
-
-   
   });
 
 });

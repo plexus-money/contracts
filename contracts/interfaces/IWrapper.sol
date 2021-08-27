@@ -10,7 +10,7 @@ interface IWrapper {
         address [] path1;
         address [] path2;
         uint256 amount;
-        uint256 userSlippageTolerance;
+        uint256 [] userSlippageToleranceAmounts;
         uint256 deadline;
     }
 
@@ -20,7 +20,7 @@ interface IWrapper {
         address [] path1;
         address [] path2;
         uint256 amount;
-        uint256 userSlippageTolerance;
+        uint256 [] userSlippageToleranceAmounts;
         uint256 deadline;
     }
 
@@ -33,7 +33,8 @@ interface IWrapper {
         address [] wrapPath1;
         address [] wrapPath2;
         uint256 amount;
-        uint256 userSlippageTolerance;
+        uint256 [] userWrapSlippageToleranceAmounts;
+        uint256 [] userUnWrapSlippageToleranceAmounts;
         uint256 deadline;
         bool crossDexRemix;
     }
