@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const { waffle } = require("hardhat");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { deployWrappersOnly, log } = require('./helper');
+const { deployWrappersOnly, log, getAmountOutMin } = require('./helper');
 const config = require('../config.json');
 const addr = config.addresses;
 
@@ -63,7 +63,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
         // Convert the 2 ETH to Farm Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const path1 = [wethAddress, farmTokenAddress];
-        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [farmTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
+        const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapperSushi, 18);
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [farmTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -103,7 +104,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
         // Convert the 2 ETH to Dai Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const path1 = [wethAddress, daiTokenAddress];
-        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
+        const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapperSushi, 18);
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -143,7 +145,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
         // Convert the 2 ETH to Pickle Token(s)
         const deadline = Math.floor(new Date().getTime() / 1000) + 10;
         const path1 = [wethAddress, pickleTokenAddress];
-        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
+        const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapperSushi, 18);
+        const { status } = await (await wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline}, overrides)).wait();
 
         // Check if the txn is successful
         expect(status).to.equal(1);
@@ -181,7 +184,8 @@ describe('Deploying the plexus contracts for WrapperSushi Token Swap test', () =
 
       // Check if the txn reverts after it has passed
       const path1 = [wethAddress, pickleTokenAddress];
-      await expect(wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline: 10}, overrides))
+      const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapperSushi, 18);
+      await expect(wrapperSushi.wrap({sourceToken: zeroAddress, destinationTokens: [pickleTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline: 10}, overrides))
       .to.be.revertedWith("reverted with reason string 'UniswapV2Router: EXPIRED'");
     });
   });

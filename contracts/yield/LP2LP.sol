@@ -117,11 +117,11 @@ contract LP2LP is OwnableUpgradeable {
         IWrapper.UnwrapParams memory unwrapParams = IWrapper.UnwrapParams({
             lpTokenPairAddress: fromLPByAddress,
             destinationToken: ETH_TOKEN_ADDRESS,
-            path1: new address[](0),    //Todo: fix to pass path for uniswap later. 
-            path2: new address[](0),    //Todo: fix to pass path for uniswap later.
+            path1: new address[](0),            //Todo: fix to pass path for uniswap later.
+            path2: new address[](0),            //Todo: fix to pass path for uniswap later.
             amount: amountFrom,
-            userSlippageTolerance: 0,   //Todo: update to set real value later. 
-            deadline: 0                 //Todo: update to set real value later. 
+            userSlippageToleranceAmounts: new uint[](1),  //Todo: update to set real value later.
+            deadline: 0                         //Todo: update to set real value later.
         });
         fromWrapper.unwrap(unwrapParams);
 
@@ -129,11 +129,11 @@ contract LP2LP is OwnableUpgradeable {
         IWrapper.WrapParams memory wrapParams = IWrapper.WrapParams({
             sourceToken: ETH_TOKEN_ADDRESS,
             destinationTokens: toLPTokensByTokens,
-            path1: new address[](0),    //Todo: fix to pass path for uniswap later. 
-            path2: new address[](0),    //Todo: fix to pass path for uniswap later.
+            path1: new address[](0),            //Todo: fix to pass path for uniswap later.
+            path2: new address[](0),            //Todo: fix to pass path for uniswap later.
             amount: thisETHBalance,
-            userSlippageTolerance: 0,   //Todo: update to set real value later. 
-            deadline: 0                 //Todo: update to set real value later.  
+            userSlippageToleranceAmounts: new uint[](1),  //Todo: update to set real value later.
+            deadline: 0                         //Todo: update to set real value later.
         });
         (address lpRec, uint256 recAmount) = toWrapper.wrap{
             value: thisETHBalance

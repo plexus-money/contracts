@@ -3,9 +3,10 @@ require("dotenv").config();
 const config = require('../config.json');
 const { expect } = require('chai');
 const { waffle } = require("hardhat");
+const { BigNumber } = require("ethers");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { deployWrappersOnly, log } = require('./helper');
+const { deployWrappersOnly, log, getAmountOutMin } = require('./helper');
 const addr = config.addresses;
 
 describe('Deploying the plexus contracts for WrapperUni remix test', () => {
@@ -58,7 +59,8 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
           // Convert the 2 ETH to Dai Token(s)
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           const path1 = [wethAddress, daiTokenAddress];
-          const { status } = await (await wrapper.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageTolerance, deadline}, overrides)).wait();
+          const amountOutMin = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper, 18);
+          const { status } = await (await wrapper.wrap({sourceToken: zeroAddress, destinationTokens: [daiTokenAddress], path1, path2: [], amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin], deadline}, overrides)).wait();
 
           // Check if the txn is successful
           expect(status).to.equal(1);
@@ -97,7 +99,9 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
           log('Compound Token Address', compoundTokenAddress);
           const path1 = [daiTokenAddress, wethAddress, sushiTokenAddress];
           const path2 = [daiTokenAddress, wethAddress, compoundTokenAddress];
-          const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageTolerance, deadline})).wait();
+          const amountOutMin1 = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper, 18);
+          const amountOutMin2 = await getAmountOutMin(path2, amountPlaceholder, userSlippageTolerance, wrapper, 18);
+          const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin1, amountOutMin2], deadline})).wait();
           // Check if the txn is successful
           expect(status).to.equal(1);
 
@@ -139,14 +143,19 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
           const deadline = Math.floor(new Date().getTime() / 1000) + 10;
           const unwrapPath1 = [sushiTokenAddress, wethAddress, daiTokenAddress];
           const unwrapPath2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
+          const unwrapAmountOutMin1 = await getAmountOutMin(path1, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
+          const unwrapAmountOutMin2 = await getAmountOutMin(path2, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
+
           // for uni because the 2 pairs exist, the paths are straightforward
           const wrapPath1 = [daiTokenAddress, wethAddress];
           const wrapPath2 = [daiTokenAddress, usdcTokenAddress];
+          const wrapAmountOutMin1 = await getAmountOutMin(path1, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
+          const wrapAmountOutMin2 = await getAmountOutMin(path2, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
           const outputToken = daiTokenAddress;
           const destinationTokens = [wethAddress, usdcTokenAddress];
           const crossDex = false;
           const { status, events } = await (await wrapper
-            .remix({lpTokenPairAddress: tokenPairAddress, unwrapOutputToken: outputToken, destinationTokens, unwrapPath1, unwrapPath2, wrapPath1, wrapPath2, amount: amountPlaceholder, userSlippageTolerance, deadline, crossDexRemix: crossDex}))
+            .remix({lpTokenPairAddress: tokenPairAddress, unwrapOutputToken: outputToken, destinationTokens, unwrapPath1, unwrapPath2, wrapPath1, wrapPath2, amount: amountPlaceholder, userWrapSlippageToleranceAmounts: [wrapAmountOutMin1, wrapAmountOutMin2], userUnWrapSlippageToleranceAmounts:[unwrapAmountOutMin1, unwrapAmountOutMin2], deadline, crossDexRemix: crossDex}))
             .wait();
 
              // Check if the txn is successful
