@@ -85,12 +85,6 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
             deadline: deadline,
           };
           const { status } = await (await wrapper.connect(addr1).wrap(wrapParams,overrides)).wait();
-
-        //   log("tokenId - %s,liquidity - %s,amount0 - %s,amount1 - %s,",tokenId,liquidity,amount0,amount1);
-        //   const { tokenId,liquidity,amount0,amount1} = await wrapper.connect(addr1).wrap(wrapParams,overrides);
-
-        //   log("tokenId - %s,liquidity - %s,amount0 - %s,amount1 - %s,",tokenId,liquidity,amount0,amount1);
-          // Check if the txn is successful
           expect(status).to.equal(1);
 
           // Check conversion is successful

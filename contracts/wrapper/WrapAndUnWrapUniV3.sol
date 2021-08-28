@@ -3,7 +3,7 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../proxyLib/OwnableUpgradeable.sol";
@@ -331,11 +331,11 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
             INonfungiblePositionManager.MintParams(params.sourceToken,params.destinationTokens[1],params.poolFee,params.tickLower,params.tickUpper,
                 dTokenBalance11,dTokenBalance22,params.minAmounts[0], params.minAmounts[1],address(this),params.deadline
             );
-        console.log("Sender balance is %s tokens %s", dTokenBalance11,dTokenBalance22);
-        console.log("%s - %s",dToken1.allowance(address(this), address(positionManager)),dToken2.allowance(address(this), address(positionManager)));
+        console.log("Sender balance of eth %s usdt %s", dTokenBalance11,dTokenBalance22);
+        console.log("allowances for eth %s - usdt %s",dToken1.allowance(address(this), address(positionManager)),dToken2.allowance(address(this), address(positionManager)));
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
-        console.log("Sender balance is %s tokens %s", tokenId,liquidity);
-        console.log("Sender balance 2 is %s tokens %s ", amount0,amount1);
+        console.log("Sender minted tokenID %s - liquidity %s", tokenId,liquidity);
+        console.log("Sender liquidity nft contains eth %s - usdt %s ", amount0,amount1);
         positionManager.safeTransferFrom(address(this), msg.sender, tokenId);
 
         
@@ -402,7 +402,7 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         if (removeWrap_params.tokenId != 0) {
             positionManager.safeTransferFrom(msg.sender, address(this), removeWrap_params.tokenId);
         }
-        positionManager.approve(router, removeWrap_params.tokenId);
+        positionManager.approve(address(router), removeWrap_params.tokenId);
 
         // amount0Min and amount1Min are price slippage checks
         // if the amount received after burning is not greater than these minimums, transaction will fail
@@ -602,14 +602,14 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
                 sqrtPriceLimitX96
             ) ;
             uint256 amountOut = router.exactInputSingle(params);
-            console.log("amountOut %s - input_params.amount %s", amountOut, input_params.amount);
+            console.log("amountOut usdt %s - input eth amount %s", amountOut, input_params.amount);
             return amountOut;
             //router.refundETH();
             
         } else {
             IERC20 sToken = IERC20(input_params.sellToken);
-            if (sToken.allowance(address(this), router) < input_params.amount.mul(2)) {
-                sToken.safeIncreaseAllowance(router, input_params.amount.mul(3));
+            if (sToken.allowance(address(this), address(router)) < input_params.amount.mul(2)) {
+                sToken.safeIncreaseAllowance(address(router), input_params.amount.mul(3));
             }
             (uint minAmountsOut) = getAmountOutMin(input_params.path,input_params.amount,input_params.userSlippageTolerance);
             uint256 amountOut = conductUniswapT4T(
