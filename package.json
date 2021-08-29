@@ -34,7 +34,9 @@
   "homepage": "https://github.com/plexus-money/contracts#README",
   "dependencies": {
     "@openzeppelin/contracts": "^4.1.0",
-    "@uniswap/v3-periphery": "^1.1.1"
+    "@uniswap/sdk-core": "^3.0.1",
+    "@uniswap/v3-periphery": "^1.1.1",
+    "@uniswap/v3-sdk": "^3.3.2"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
