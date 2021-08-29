@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -9,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../proxyLib/OwnableUpgradeable.sol";
 import "../interfaces/token/IWETH.sol";
-import "../interfaces/token/ILPERC20.sol";
-import "../interfaces/uniswap/IUniswapV2.sol";
 import "../interfaces/uniswap/IUniswapV3Factory.sol";
 import "../interfaces/uniswap/IUniswapV3Router.sol";
 import "../interfaces/uniswap/INonfungiblePositionManager.sol";
@@ -23,7 +20,11 @@ import "hardhat/console.sol";
 
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
-contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswapV3SwapCallback {
+contract WrapAndUnWrapUniV3 is
+    IERC721Receiver,
+    IUniswapV3MintCallback,
+    IUniswapV3SwapCallback
+{
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Contract state variables
@@ -33,14 +34,16 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
     uint256 public fee;
     uint256 public maxfee;
     address public owner;
-    IUniswapV2 private uniswapExchange;
     IUniswapV3Factory private factory;
     ISwapRouter private router;
     address private routerAddress;
     INonfungiblePositionManager private positionManager;
     IQuoter private quoter;
-    event WrapV2(address lpTokenPairAddress, uint256 amount);
-    event UnWrapV2(uint256 amount);
+    event WrapV3(uint256 tokenId,
+            uint128 liquidity,
+            uint256 amount0,
+            uint256 amount1);
+    event UnWrapV3(uint256 amount);
 
     constructor(
         address _weth,
@@ -62,9 +65,9 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         owner = msg.sender;
     }
 
-    modifier onlyOwner {
-      require(msg.sender == owner, "Not contract owner!");
-      _;
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not contract owner!");
+        _;
     }
 
     /**
@@ -72,15 +75,13 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
      * functions match the given function signature, or if no data was
      * supplied at all and there is no receive Ether function
      */
-    fallback() external payable {
-    }
+    fallback() external payable {}
 
     /**
      * @notice Function executed on plain ether transfers and on a call to the
      * contract with empty calldata
      */
-    receive() external payable {
-    }
+    receive() external payable {}
 
     struct ReturnParams {
         uint256 tokenId;
@@ -89,29 +90,29 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 amount1;
     }
 
-     struct WrapParams {
+    struct WrapParams {
         address sourceToken;
         address[] destinationTokens;
-        bytes []  paths;
+        bytes[] paths;
         uint256 amount;
         uint256[] minAmounts;
         uint24 poolFee;
         int24 tickLower;
-        int24 tickUpper;  
+        int24 tickUpper;
         uint256 userSlippageTolerance;
         uint256 deadline;
-     }
+    }
 
-     struct removeWrapParams {
+    struct removeWrapParams {
         uint256 tokenId;
         address destinationToken;
-        bytes [] paths;
+        bytes[] paths;
         uint256 amount;
         uint256 userSlippageTolerance;
         uint256 deadline;
-     }
+    }
 
-     struct conductUniswapParams {
+    struct conductUniswapParams {
         address sellToken;
         address buyToken;
         bytes path;
@@ -119,8 +120,7 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 minAmount;
         uint256 userSlippageTolerance;
         uint256 deadline;
-     }
-
+    }
 
     /**
      * @notice Allow owner to collect a small fee from trade imbalances on
@@ -128,9 +128,7 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
      * @param changeRecpientIsOwnerBool If set to true, allows owner to collect
      * fees from pair imbalances
      */
-    function updateChangeRecipientBool(
-        bool changeRecpientIsOwnerBool
-    )
+    function updateChangeRecipientBool(bool changeRecpientIsOwnerBool)
         external
         onlyOwner
         returns (bool)
@@ -139,33 +137,72 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         return true;
     }
 
-
     /**
      * @notice Update the Uniswap factory contract address
      * @param newAddress Uniswap factory contract address to be updated
      */
-    function updateUniswapFactory(address newAddress) external onlyOwner returns (bool) {
+    function updateUniswapFactory(address newAddress)
+        external
+        onlyOwner
+        returns (bool)
+    {
         factory = IUniswapV3Factory(newAddress);
         uniFactoryAddress = newAddress;
         return true;
     }
 
     /**
-    * @notice Allow admins to withdraw accidentally deposited tokens
-    * @param token Address to the token to be withdrawn
-    * @param amount Amount of specified token to be withdrawn
-    * @param destination Address where the withdrawn tokens should be
-    * transferred
-    */
+     * @notice Update the Uniswap Router contract address
+     * @param newAddress Uniswap Router contract address to be updated
+     */
+    function updateUniswapRouter(address newAddress)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        router = ISwapRouter(newAddress);
+        routerAddress = newAddress;
+        return true;
+    }
+
+    /**
+     * @notice Update the Uniswap Quoter contract address
+     * @param newAddress Uniswap Quoter contract address to be updated
+     */
+    function updateUniswapQuoter(address newAddress)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        quoter = IQuoter(newAddress);
+        return true;
+    }
+
+    /**
+     * @notice Update the Uniswap Position Manager contract address
+     * @param newAddress Uniswap Position Manager contract address to be updated
+     */
+    function updatePositionManager(address newAddress)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        positionManager = INonfungiblePositionManager(newAddress);
+        return true;
+    }
+
+    /**
+     * @notice Allow admins to withdraw accidentally deposited tokens
+     * @param token Address to the token to be withdrawn
+     * @param amount Amount of specified token to be withdrawn
+     * @param destination Address where the withdrawn tokens should be
+     * transferred
+     */
     function adminEmergencyWithdrawTokens(
         address token,
         uint256 amount,
         address payable destination
-    )
-        public
-        onlyOwner
-        returns (bool)
-    {
+    ) public onlyOwner returns (bool) {
         if (address(token) == address(0x0)) {
             destination.transfer(amount);
         } else {
@@ -213,18 +250,7 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
-    ) external override {
-        // require(msg.sender == address(positionManager));
-        // address payer = abi.decode(data, (address));
-
-        // if (payer == address(this)) {
-        //     if (amount0 > 0) token0.safeTransfer(msg.sender, amount0);
-        //     if (amount1 > 0) token1.safeTransfer(msg.sender, amount1);
-        // } else {
-        //     if (amount0 > 0) token0.safeTransferFrom(payer, msg.sender, amount0);
-        //     if (amount1 > 0) token1.safeTransferFrom(payer, msg.sender, amount1);
-        // }
-    }
+    ) external override {}
 
     function uniswapV3SwapCallback(
         int256 amount0Delta,
@@ -233,9 +259,17 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
     ) external override {
         address sender = abi.decode(data, (address));
         if (amount0Delta > 0) {
-            IERC20(IUniswapV3Pool(msg.sender).token0()).transferFrom(sender, msg.sender, uint256(amount0Delta));
+            IERC20(IUniswapV3Pool(msg.sender).token0()).transferFrom(
+                sender,
+                msg.sender,
+                uint256(amount0Delta)
+            );
         } else if (amount1Delta > 0) {
-            IERC20(IUniswapV3Pool(msg.sender).token1()).transferFrom(sender, msg.sender, uint256(amount1Delta));
+            IERC20(IUniswapV3Pool(msg.sender).token1()).transferFrom(
+                sender,
+                msg.sender,
+                uint256(amount1Delta)
+            );
         }
     }
 
@@ -249,24 +283,46 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 deadline
     ) private returns (uint256) {
         if (sourceToken != address(0x0)) {
-            IERC20(sourceToken).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(sourceToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amount
+            );
         }
 
-        conductUniswapParams memory input_params = conductUniswapParams(sourceToken, destinationToken, path, amount, minAmount, userSlippageTolerance, deadline);
+        conductUniswapParams memory input_params = conductUniswapParams(
+            sourceToken,
+            destinationToken,
+            path,
+            amount,
+            minAmount,
+            userSlippageTolerance,
+            deadline
+        );
         conductUniswap(input_params);
         uint256 thisBalance = IERC20(destinationToken).balanceOf(address(this));
         IERC20(destinationToken).safeTransfer(msg.sender, thisBalance);
         return thisBalance;
     }
 
-    function createWrap(
-        WrapParams memory params
-    ) private returns (uint256, uint128, uint256, uint256) {
+    function createWrap(WrapParams memory params)
+        private
+        returns (
+            uint256,
+            uint128,
+            uint256,
+            uint256
+        )
+    {
         if (params.sourceToken == address(0x0)) {
             //IWETH(WETH_TOKEN_ADDRESS).deposit{value: msg.value}();
             // params.amount = msg.value;
         } else {
-            IERC20(params.sourceToken).safeTransferFrom(msg.sender, address(this), params.amount);
+            IERC20(params.sourceToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                params.amount
+            );
         }
 
         if (params.destinationTokens[0] == address(0x0)) {
@@ -277,16 +333,28 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         }
 
         if (params.sourceToken != params.destinationTokens[0]) {
-        conductUniswapParams memory swapParams0 = conductUniswapParams(params.sourceToken,params.destinationTokens[0],params.paths[0],
-                                                                params.amount.div(2),params.minAmounts[0],params.userSlippageTolerance,params.deadline
-                                                            );
-         conductUniswap(swapParams0);
+            conductUniswapParams memory swapParams0 = conductUniswapParams(
+                params.sourceToken,
+                params.destinationTokens[0],
+                params.paths[0],
+                params.amount.div(2),
+                params.minAmounts[0],
+                params.userSlippageTolerance,
+                params.deadline
+            );
+            conductUniswap(swapParams0);
         }
         if (params.sourceToken != params.destinationTokens[1]) {
-            conductUniswapParams memory swapParams1 = conductUniswapParams(params.sourceToken,params.destinationTokens[1],params.paths[1],
-                                                                params.amount.div(2),params.minAmounts[1],params.userSlippageTolerance,params.deadline
-                                                            );
-        conductUniswap(swapParams1);
+            conductUniswapParams memory swapParams1 = conductUniswapParams(
+                params.sourceToken,
+                params.destinationTokens[1],
+                params.paths[1],
+                params.amount.div(2),
+                params.minAmounts[1],
+                params.userSlippageTolerance,
+                params.deadline
+            );
+            conductUniswap(swapParams1);
         }
 
         IERC20 dToken1 = IERC20(params.destinationTokens[0]);
@@ -294,12 +362,24 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 dTokenBalance1 = dToken1.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-        if (dToken1.allowance(address(this), address(positionManager)) < dTokenBalance1.mul(2)) {
-            dToken1.safeIncreaseAllowance(address(positionManager), dTokenBalance1.mul(3));
+        if (
+            dToken1.allowance(address(this), address(positionManager)) <
+            dTokenBalance1.mul(2)
+        ) {
+            dToken1.safeIncreaseAllowance(
+                address(positionManager),
+                dTokenBalance1.mul(3)
+            );
         }
 
-        if (dToken2.allowance(address(this), address(positionManager)) < dTokenBalance2.mul(2)) {
-            dToken2.safeIncreaseAllowance(address(positionManager), dTokenBalance2.mul(3));
+        if (
+            dToken2.allowance(address(this), address(positionManager)) <
+            dTokenBalance2.mul(2)
+        ) {
+            dToken2.safeIncreaseAllowance(
+                address(positionManager),
+                dTokenBalance2.mul(3)
+            );
         }
 
         // Transfer any change to changeRecipient
@@ -327,27 +407,67 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
 
         // dToken1.safeApprove(address(positionManager), dTokenBalance11);
         // dToken2.safeApprove(address(positionManager), dTokenBalance22);
-        if(params.sourceToken == address(0x0)) params.sourceToken = WETH_TOKEN_ADDRESS;
-        INonfungiblePositionManager.MintParams memory mint_params =
-            INonfungiblePositionManager.MintParams(params.sourceToken,params.destinationTokens[1],params.poolFee,params.tickLower,params.tickUpper,
-                dTokenBalance11,dTokenBalance22,params.minAmounts[0], params.minAmounts[1],address(this),params.deadline
+        if (params.sourceToken == address(0x0))
+            params.sourceToken = WETH_TOKEN_ADDRESS;
+        INonfungiblePositionManager.MintParams
+            memory mint_params = INonfungiblePositionManager.MintParams(
+                params.sourceToken,
+                params.destinationTokens[1],
+                params.poolFee,
+                params.tickLower,
+                params.tickUpper,
+                dTokenBalance11,
+                dTokenBalance22,
+                params.minAmounts[0],
+                params.minAmounts[1],
+                address(this),
+                params.deadline
             );
-        console.log("Sender balance of eth %s usdt %s", dTokenBalance11,dTokenBalance22);
-        console.log("allowances for eth %s - usdt %s",dToken1.allowance(address(this), address(positionManager)),dToken2.allowance(address(this), address(positionManager)));
-        (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
-        console.log("Sender minted tokenID %s - liquidity %s", tokenId,liquidity);
-        console.log("Sender liquidity nft contains eth %s - usdt %s ", amount0,amount1);
-        console.log("balance of usdt after mint",dToken2.balanceOf(address(this)));
+        console.log(
+            "Sender balance of eth %s usdt %s",
+            dTokenBalance11,
+            dTokenBalance22
+        );
+        console.log(
+            "allowances for eth %s - usdt %s",
+            dToken1.allowance(address(this), address(positionManager)),
+            dToken2.allowance(address(this), address(positionManager))
+        );
+        (
+            uint256 tokenId,
+            uint128 liquidity,
+            uint256 amount0,
+            uint256 amount1
+        ) = positionManager.mint(mint_params);
+        console.log(
+            "Sender minted tokenID %s - liquidity %s",
+            tokenId,
+            liquidity
+        );
+        console.log(
+            "Sender liquidity nft contains eth %s - usdt %s ",
+            amount0,
+            amount1
+        );
+        console.log(
+            "balance of usdt after mint",
+            dToken2.balanceOf(address(this))
+        );
         positionManager.safeTransferFrom(address(this), msg.sender, tokenId);
 
-        
         if (dToken1.balanceOf(address(this)) > 0) {
-            dToken1.safeTransfer(changeRecipient, dToken1.balanceOf(address(this)));
+            dToken1.safeTransfer(
+                changeRecipient,
+                dToken1.balanceOf(address(this))
+            );
         }
         if (dToken2.balanceOf(address(this)) > 0) {
-            dToken2.safeTransfer(changeRecipient, dToken2.balanceOf(address(this)));
+            dToken2.safeTransfer(
+                changeRecipient,
+                dToken2.balanceOf(address(this))
+            );
         }
-        return (tokenId,liquidity,amount0,amount1);
+        return (tokenId, liquidity, amount0, amount1);
     }
 
     /**
@@ -357,83 +477,145 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
      * @return Address to the token contract for the destination token and the
      * amount of wrapped tokens
      */
-    function wrap(
-        WrapParams memory params
-    )
+    function wrap(WrapParams memory params)
         public
         payable
-        returns (uint256, uint128, uint256, uint256)
+        returns (
+            uint256,
+            uint128,
+            uint256,
+            uint256
+        )
     {
         if (params.destinationTokens.length == 1) {
-            uint256 swapAmount = swap(params.sourceToken, params.destinationTokens[0], params.paths[0], params.amount, params.minAmounts[0],
-             params.userSlippageTolerance, params.deadline);
-            return (0,0,0,swapAmount);
+            uint256 swapAmount = swap(
+                params.sourceToken,
+                params.destinationTokens[0],
+                params.paths[0],
+                params.amount,
+                params.minAmounts[0],
+                params.userSlippageTolerance,
+                params.deadline
+            );
+            return (0, 0, 0, swapAmount);
         } else {
             ReturnParams memory returnParams;
-            (returnParams.tokenId,returnParams.liquidity,returnParams.amount0,returnParams.amount1) = createWrap(params);
-            //emit WrapV2(lpTokenPairAddress, lpTokenAmount);
-            return (returnParams.tokenId,returnParams.liquidity,returnParams.amount0,returnParams.amount1);
+            (
+                returnParams.tokenId,
+                returnParams.liquidity,
+                returnParams.amount0,
+                returnParams.amount1
+            ) = createWrap(params);
+            emit WrapV3(returnParams.tokenId,
+                returnParams.liquidity,
+                returnParams.amount0,
+                returnParams.amount1);
+            return (
+                returnParams.tokenId,
+                returnParams.liquidity,
+                returnParams.amount0,
+                returnParams.amount1
+            );
         }
     }
 
-    function removeWrap(
-        removeWrapParams memory removeWrap_params
-    )
+    function removeWrap(removeWrapParams memory removeWrap_params)
         private
         returns (uint256)
     {
         address originalDestinationToken = removeWrap_params.destinationToken;
 
         (
-        ,
-        ,
-        address token0,
-        address token1,
-        ,
-        ,
-        ,
-        uint128 liquidity,
-        ,
-        ,
-        ,
+            ,
+            ,
+            address token0,
+            address token1,
+            ,
+            ,
+            ,
+            uint128 liquidity,
+            ,
+            ,
+            ,
+
         ) = positionManager.positions(removeWrap_params.tokenId);
         if (removeWrap_params.destinationToken == address(0x0)) {
             removeWrap_params.destinationToken = WETH_TOKEN_ADDRESS;
         }
 
         if (removeWrap_params.tokenId != 0) {
-            positionManager.safeTransferFrom(msg.sender, address(this), removeWrap_params.tokenId);
+            positionManager.safeTransferFrom(
+                msg.sender,
+                address(this),
+                removeWrap_params.tokenId
+            );
         }
         positionManager.approve(address(router), removeWrap_params.tokenId);
 
         // amount0Min and amount1Min are price slippage checks
         // if the amount received after burning is not greater than these minimums, transaction will fail
-        INonfungiblePositionManager.DecreaseLiquidityParams memory params =
-            INonfungiblePositionManager.DecreaseLiquidityParams(removeWrap_params.tokenId,liquidity,0,0,removeWrap_params.deadline);
+        INonfungiblePositionManager.DecreaseLiquidityParams
+            memory params = INonfungiblePositionManager.DecreaseLiquidityParams(
+                removeWrap_params.tokenId,
+                liquidity,
+                0,
+                0,
+                removeWrap_params.deadline
+            );
 
         positionManager.decreaseLiquidity(params);
 
-        INonfungiblePositionManager.CollectParams memory collectParams =
-            INonfungiblePositionManager.CollectParams(removeWrap_params.tokenId,address(this),type(uint128).max,type(uint128).max);
+        INonfungiblePositionManager.CollectParams
+            memory collectParams = INonfungiblePositionManager.CollectParams(
+                removeWrap_params.tokenId,
+                address(this),
+                type(uint128).max,
+                type(uint128).max
+            );
 
         positionManager.collect(collectParams);
-        console.log("token0 - %s, token1 - %s",token0,token1);
+        console.log("token0 - %s, token1 - %s", token0, token1);
         uint256 pTokenBalance = IERC20(token0).balanceOf(address(this));
         uint256 pTokenBalance2 = IERC20(token1).balanceOf(address(this));
-        console.log("token0 Balance - %s, token1 Balance - %s",pTokenBalance,pTokenBalance2);
+        console.log(
+            "token0 Balance - %s, token1 Balance - %s",
+            pTokenBalance,
+            pTokenBalance2
+        );
         if (token0 != removeWrap_params.destinationToken) {
-            
-            (uint amountsOut0) = getAmountOutMin(removeWrap_params.paths[0],pTokenBalance,removeWrap_params.userSlippageTolerance);
-            conductUniswapParams memory swapParams0 = conductUniswapParams(token0,removeWrap_params.destinationToken,removeWrap_params.paths[0],pTokenBalance,amountsOut0,removeWrap_params.userSlippageTolerance,removeWrap_params.deadline); 
+            uint256 amountsOut0 = getAmountOutMin(
+                removeWrap_params.paths[0],
+                pTokenBalance,
+                removeWrap_params.userSlippageTolerance
+            );
+            conductUniswapParams memory swapParams0 = conductUniswapParams(
+                token0,
+                removeWrap_params.destinationToken,
+                removeWrap_params.paths[0],
+                pTokenBalance,
+                amountsOut0,
+                removeWrap_params.userSlippageTolerance,
+                removeWrap_params.deadline
+            );
             conductUniswap(swapParams0);
         }
 
         if (token1 != removeWrap_params.destinationToken) {
-
-            //(uint amountsOut1) = getAmountOutMin(removeWrap_params.paths[1],pTokenBalance2,removeWrap_params.userSlippageTolerance);
-            conductUniswapParams memory swapParams1 = conductUniswapParams(token1,removeWrap_params.destinationToken,removeWrap_params.paths[1],pTokenBalance2,0,removeWrap_params.userSlippageTolerance,removeWrap_params.deadline); 
+            uint256 amountsOut1 = getAmountOutMin(
+                removeWrap_params.paths[1],
+                pTokenBalance2,
+                removeWrap_params.userSlippageTolerance
+            );
+            conductUniswapParams memory swapParams1 = conductUniswapParams(
+                token1,
+                removeWrap_params.destinationToken,
+                removeWrap_params.paths[1],
+                pTokenBalance2,
+                amountsOut1,
+                removeWrap_params.userSlippageTolerance,
+                removeWrap_params.deadline
+            );
             conductUniswap(swapParams1);
-            
         }
 
         IERC20 dToken = IERC20(removeWrap_params.destinationToken);
@@ -452,7 +634,9 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
             }
         } else {
             if (fee > 0) {
-                uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
+                uint256 totalFee = (destinationTokenBalance.mul(fee)).div(
+                    10000
+                );
                 if (totalFee > 0) {
                     dToken.safeTransfer(msg.sender, totalFee);
                 }
@@ -467,67 +651,19 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
 
     /**
      * @notice Unwrap a source token based to the specified destination token
-     * @param removeWrap_params unwrap struct params 
+     * @param removeWrap_params unwrap struct params
      * @return Amount of the destination token returned from unwrapping the
      * source token
      */
-    function unwrap(
-        removeWrapParams memory removeWrap_params
-    )
+    function unwrap(removeWrapParams memory removeWrap_params)
         public
         payable
         returns (uint256)
     {
-        require(removeWrap_params.tokenId != 0,"No Liquidity Token to unWrap");
+        require(removeWrap_params.tokenId != 0, "No Liquidity Token to unWrap");
         uint256 destAmount = removeWrap(removeWrap_params);
-        emit UnWrapV2(destAmount);
+        emit UnWrapV3(destAmount);
         return destAmount;
-    }
-
-    /**
-     * @notice Given an input asset amount and an array of token addresses,
-     * calculates all subsequent maximum output token amounts for each pair of
-     * token addresses in the path.
-     * @param theAddresses Array of addresses that form the Routing swap path
-     * @param amount Amount of input asset token
-     * @return amounts1 Array with maximum output token amounts for all token
-     * pairs in the swap path
-     */
-    function getPriceFromUniswap(address[] memory theAddresses, uint256 amount)
-        public
-        view
-        returns (uint256[] memory amounts1) {
-
-        try uniswapExchange.getAmountsOut(
-            amount,
-            theAddresses
-        ) returns (uint256[] memory amounts) {
-            return amounts;
-        } catch {
-            uint256[] memory amounts2 = new uint256[](2);
-            amounts2[0] = 0;
-            amounts2[1] = 0;
-            return amounts2;
-        }
-    }
-
-    /**
-     * @notice Retrieve the balance of a given token for a specified user
-     * @param userAddress Address to the user's wallet
-     * @param tokenAddress Address to the token for which the balance is to be
-     * retrieved
-     * @return Balance of the given token in the specified user wallet
-     */
-    function getUserTokenBalance(
-        address userAddress,
-        address tokenAddress
-    )
-        public
-        view
-        returns (uint256)
-    {
-        IERC20 token = IERC20(tokenAddress);
-        return token.balanceOf(userAddress);
     }
 
     /**
@@ -543,16 +679,17 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         bytes memory theAddresses,
         uint256 amount,
         uint256 userSlippageTolerance
-    )
-        public
-        returns (uint256)
-    {
-        (uint minAmountsOut) = quoter.quoteExactInput(
-                theAddresses,
-                amount
-                );
-        require(userSlippageTolerance <= 100, "userSlippageTolerance can not be larger than 100");
-        return SafeMath.div(SafeMath.mul(minAmountsOut, (100 - userSlippageTolerance)), 100);
+    ) public returns (uint256) {
+        uint256 minAmountsOut = quoter.quoteExactInput(theAddresses, amount);
+        require(
+            userSlippageTolerance <= 100,
+            "userSlippageTolerance can not be larger than 100"
+        );
+        return
+            SafeMath.div(
+                SafeMath.mul(minAmountsOut, (100 - userSlippageTolerance)),
+                100
+            );
     }
 
     /**
@@ -561,13 +698,14 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
      * @param input_params Address to the token being sold as part of the swap
      * @return amountRecieved Tokens received once the swap is completed
      */
-    function conductUniswap(
-        conductUniswapParams memory input_params
-    )
+    function conductUniswap(conductUniswapParams memory input_params)
         internal
         returns (uint256 amountRecieved)
     {
-        if (input_params.sellToken == address(0x0) && input_params.buyToken == WETH_TOKEN_ADDRESS) {
+        if (
+            input_params.sellToken == address(0x0) &&
+            input_params.buyToken == WETH_TOKEN_ADDRESS
+        ) {
             IWETH(input_params.buyToken).deposit{value: input_params.amount}();
             return input_params.amount;
         }
@@ -575,37 +713,53 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         if (input_params.sellToken == address(0x0)) {
             // addresses[0] = WETH_TOKEN_ADDRESS;
             // addresses[1] = buyToken;
-        uint24 poolFee = 3000;
-        uint160 sqrtPriceLimitX96 = 0;
+            uint24 poolFee = 3000;
+            uint160 sqrtPriceLimitX96 = 0;
             IWETH(WETH_TOKEN_ADDRESS).deposit{value: input_params.amount}();
-            IERC20(WETH_TOKEN_ADDRESS).safeApprove(address(router), input_params.amount);
-            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams(
-                WETH_TOKEN_ADDRESS,
-                input_params.buyToken,
-                poolFee,
-                address(this),
-                input_params.deadline,
-                input_params.amount,
-                input_params.minAmount,
-                sqrtPriceLimitX96
-            ) ;
+            IERC20(WETH_TOKEN_ADDRESS).safeApprove(
+                address(router),
+                input_params.amount
+            );
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+                .ExactInputSingleParams(
+                    WETH_TOKEN_ADDRESS,
+                    input_params.buyToken,
+                    poolFee,
+                    address(this),
+                    input_params.deadline,
+                    input_params.amount,
+                    input_params.minAmount,
+                    sqrtPriceLimitX96
+                );
             uint256 amountOut = router.exactInputSingle(params);
-            console.log("amountOut usdt %s - input eth amount %s", amountOut, input_params.amount);
+            console.log(
+                "amountOut usdt %s - input eth amount %s",
+                amountOut,
+                input_params.amount
+            );
             return amountOut;
             //router.refundETH();
-            
         } else {
-            console.log("sell token of conduct",input_params.sellToken);
+            console.log("sell token of conduct", input_params.sellToken);
             IERC20 sToken = IERC20(input_params.sellToken);
-            if (sToken.allowance(address(this), address(router)) < input_params.amount.mul(2)) {
-                sToken.safeIncreaseAllowance(address(router), input_params.amount.mul(3));
+            if (
+                sToken.allowance(address(this), address(router)) <
+                input_params.amount.mul(2)
+            ) {
+                sToken.safeIncreaseAllowance(
+                    address(router),
+                    input_params.amount.mul(3)
+                );
             }
-            console.log("allowance for the sell token ",sToken.allowance(address(this), address(router)));
+            console.log(
+                "allowance for the sell token ",
+                sToken.allowance(address(this), address(router))
+            );
             //(uint minAmountsOut) = getAmountOutMin(input_params.path,input_params.amount,input_params.userSlippageTolerance);
             uint256 amountOut = conductUniswapT4T(
                 input_params.path,
                 input_params.amount,
-                0,
+                input_params.minAmount,
                 input_params.deadline
             );
             return amountOut;
@@ -628,20 +782,11 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         uint256 amount,
         uint256 minAmount,
         uint256 deadline
-    )
-        internal
-        returns (uint256 amountOut)
-    {
-        
-        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams(
-                path,
-                address(this),
-                deadline,
-                amount,
-                0
-            );
-            console.log("amount %s",amount);
-           uint256 amountRecieved =  router.exactInput(params);
+    ) internal returns (uint256 amountOut) {
+        ISwapRouter.ExactInputParams memory params = ISwapRouter
+            .ExactInputParams(path, address(this), deadline, amount, minAmount);
+        console.log("amount %s", amount);
+        uint256 amountRecieved = router.exactInput(params);
         return amountRecieved;
     }
 }

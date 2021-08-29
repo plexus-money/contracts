@@ -122,13 +122,9 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
         state.tick
       );
       console.log(poolExample);
-      const tickLower = nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing  * 2;
+      const tickLower = nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing * 2;
       const tickUpper = nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2;
-      console.log("tick lower %s - tick Upper %s",tickLower,tickUpper);
-      // const position = new Position(poolExample, state.liquidity, -195960 , -195720);
-      // const [amountOut_for_token1, amountOut_for_token2] = position.burnAmountsWithSlippage(1);
-      // console.log("amountOut_for_token1 %s - amountOut_for_token2 %s",amountOut_for_token1,amountOut_for_token1);
-      //       // calculate incentiveId
+      console.log("tick lower %s - tick Upper %s", tickLower, tickUpper);
       const types = ['address', 'uint24', 'address']
       const values = [
         wethAddress,
@@ -174,38 +170,42 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
         log("User USDT Token balance AFTER ETH conversion: ", daiTokenBalance);
         expect(daiTokenBalance).to.be.gt(0);
         // Check that the users ETH balance has reduced regardless of the conversion status
-      const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
-      log('User ETH balance AFTER ETH conversion is: ', ethBalance);
+        const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
+        log('User ETH balance AFTER ETH conversion is: ', ethBalance);
       }
       const valuesForUnwrap2 = [
         usdtTokenAddress,
         3000,
         wethAddress]
       const valuesForUnwrap1 = [
-          wethAddress,
-          3000,
-          wethAddress]
+        wethAddress,
+        3000,
+        wethAddress]
       const encodedKey2 = ethers.utils.defaultAbiCoder.encode(types, valuesForUnwrap2)
       const incentiveId2 = ethers.utils.keccak256(encodedKey2)
       console.log(incentiveId2);
       const encodedKey1 = ethers.utils.defaultAbiCoder.encode(types, valuesForUnwrap1)
       const incentiveId1 = ethers.utils.keccak256(encodedKey1)
+      await hre.network.provider.send("hardhat_setBalance", [wrapper.address, "0xDE0B6B3A7640000",]);
       let unwrapParams = {
         tokenId: 108575,
         destinationToken: zeroAddress,
-        paths: [incentiveId1,"0xdac17f958d2ee523a2206206994597c13d831ec7000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"],
+        paths: [incentiveId1, "0xdac17f958d2ee523a2206206994597c13d831ec7000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"],
         amount: amountPlaceholder,
         userSlippageTolerance: userSlippageTolerance,
         deadline: deadline,
       };
-      await positionManager_contract.connect(addr1).approve(wrapper.address,108575);
+      await positionManager_contract.connect(addr1).approve(wrapper.address, 108575);
       const { status1 } = await (await wrapper.connect(addr1).unwrap(unwrapParams)).wait();
+        // Check the usdt token balance in the contract account
+        const daiTokenBalance = Number(ethers.utils.formatUnits(await daiToken.balanceOf(owner.address), `ether`));
 
-      // Check that the users ETH balance has reduced regardless of the conversion status
-      const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
-      log('User ETH balance AFTER unwraping to ETH is: ', ethBalance);
-      expect(ethBalance).to.be.lt(10000);
-
+        // Check if the conversion is successful and the user has some usdt tokens in their wallet
+        log("User USDT Token balance AFTER unwrap to ETH conversion: ", daiTokenBalance);
+        // Check that the users ETH balance has reduced regardless of the conversion status
+        const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
+        log('User ETH balance AFTER unwraping to ETH is: ', ethBalance);
+        expect(ethBalance).to.be.lt(10001);
     });
 
   });
