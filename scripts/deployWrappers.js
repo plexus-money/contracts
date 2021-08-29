@@ -16,6 +16,7 @@ const deployWrappersOnly = async() => {
     // get the contract factories
     const Wrapper = await ethers.getContractFactory('WrapAndUnWrap');
     const WrapperSushi = await ethers.getContractFactory('WrapAndUnWrapSushi');
+	const WrapperUniV3 = await ethers.getContractFactory('WrapAndUnWrapUniV3');
 
     // get the signers
     let owner, addr1;
@@ -27,6 +28,13 @@ const deployWrappersOnly = async() => {
 
 	await writeAddress('WrapAndUnWrap', wrapper.address, network,
 		[addr.tokens.WETH[network], addr.swaps.uniswapRouter[network], addr.swaps.uniswapFactory[network]]);
+
+	let wrapperUniV3 = await (await WrapperUniV3
+		.deploy(addr.tokens.WETH[network], addr.swaps.uniswapRouterV3[network], addr.swaps.uniswapFactoryV3[network], addr.swaps.positionManager[network], addr.swaps.quoter[network]))
+		.deployed();
+
+	await writeAddress('WrapperUniV3', wrapperUniV3.address, network,
+		[addr.tokens.WETH[network], addr.swaps.uniswapRouterV3[network], addr.swaps.uniswapFactoryV3[network], addr.swaps.positionManager[network], addr.swaps.quoter[network]]);
 
     let wrapperSushi = await (await WrapperSushi
         .deploy(addr.tokens.WETH[network], addr.swaps.sushiswapRouter[network], addr.swaps.sushiswapFactory[network]))

@@ -8,9 +8,10 @@ const abi = require('human-standard-token-abi');
 const { deployWrappersOnly, log } = require('./helper');
 const { toUtf8Bytes } = require("ethers/lib/utils");
 const addr = config.addresses;
-const { Pool, nearestUsableTick } = require('@uniswap/v3-sdk');
+const { Pool, nearestUsableTick, Position } = require('@uniswap/v3-sdk');
 const { Token } = require('@uniswap/sdk-core');
 const abi_uniswap = require('./abis/uniswapV3Pool.json');
+const abi_position_manager = require('./abis/positionManager.json');
 const poolAddress = "0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36";
 const poolImmutablesAbi = [
   "function factory() external view returns (address)",
@@ -89,7 +90,7 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
 
   describe('Test Uni V2 liquidity pool', () => {
 
-    it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
+    it('Should convert 2 ETH to USDT Token(s) from MakerDao via Uniswap', async () => {
 
       const zeroAddress = process.env.ZERO_ADDRESS;
       const userSlippageTolerance = config.userSlippageTolerance;
@@ -99,13 +100,18 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
         abi_uniswap,
         provider
       );
+      const positionManager_contract = new ethers.Contract(
+        addr.swaps.positionManager.mainnet,
+        abi_position_manager,
+        provider
+      );
       const [immutables, state] = await Promise.all([
         getPoolImmutables(poolContract),
         getPoolState(poolContract),
       ]);
-      const TokenA = new Token(3, immutables.token0, 6, "USDT", "USD Tether");
+      const TokenB = new Token(3, immutables.token0, 6, "USDT", "USD Tether");
 
-      const TokenB = new Token(3, immutables.token1, 18, "WETH", "Wrapped Ether");
+      const TokenA = new Token(3, immutables.token1, 18, "WETH", "Wrapped Ether");
 
       const poolExample = new Pool(
         TokenA,
@@ -119,7 +125,9 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
       const tickLower = nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing  * 2;
       const tickUpper = nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2;
       console.log("tick lower %s - tick Upper %s",tickLower,tickUpper);
-
+      // const position = new Position(poolExample, state.liquidity, -195960 , -195720);
+      // const [amountOut_for_token1, amountOut_for_token2] = position.burnAmountsWithSlippage(1);
+      // console.log("amountOut_for_token1 %s - amountOut_for_token2 %s",amountOut_for_token1,amountOut_for_token1);
       //       // calculate incentiveId
       const types = ['address', 'uint24', 'address']
       const values = [
@@ -163,13 +171,39 @@ describe('Deploying the plexus contracts for WrapperUni adding liquidity test', 
         const daiTokenBalance = Number(ethers.utils.formatUnits(await daiToken.balanceOf(owner.address), `ether`));
 
         // Check if the conversion is successful and the user has some dai tokens in their wallet
-        log("User DAI Token balance AFTER ETH conversion: ", daiTokenBalance);
+        log("User USDT Token balance AFTER ETH conversion: ", daiTokenBalance);
         expect(daiTokenBalance).to.be.gt(0);
-
-      }
-      // Check that the users ETH balance has reduced regardless of the conversion status
+        // Check that the users ETH balance has reduced regardless of the conversion status
       const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
       log('User ETH balance AFTER ETH conversion is: ', ethBalance);
+      }
+      const valuesForUnwrap2 = [
+        usdtTokenAddress,
+        3000,
+        wethAddress]
+      const valuesForUnwrap1 = [
+          wethAddress,
+          3000,
+          wethAddress]
+      const encodedKey2 = ethers.utils.defaultAbiCoder.encode(types, valuesForUnwrap2)
+      const incentiveId2 = ethers.utils.keccak256(encodedKey2)
+      console.log(incentiveId2);
+      const encodedKey1 = ethers.utils.defaultAbiCoder.encode(types, valuesForUnwrap1)
+      const incentiveId1 = ethers.utils.keccak256(encodedKey1)
+      let unwrapParams = {
+        tokenId: 108575,
+        destinationToken: zeroAddress,
+        paths: [incentiveId1,"0xdac17f958d2ee523a2206206994597c13d831ec7000bb8c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"],
+        amount: amountPlaceholder,
+        userSlippageTolerance: userSlippageTolerance,
+        deadline: deadline,
+      };
+      await positionManager_contract.connect(addr1).approve(wrapper.address,108575);
+      const { status1 } = await (await wrapper.connect(addr1).unwrap(unwrapParams)).wait();
+
+      // Check that the users ETH balance has reduced regardless of the conversion status
+      const ethBalance = Number(ethers.utils.formatEther(await addr1.getBalance()));
+      log('User ETH balance AFTER unwraping to ETH is: ', ethBalance);
       expect(ethBalance).to.be.lt(10000);
 
     });

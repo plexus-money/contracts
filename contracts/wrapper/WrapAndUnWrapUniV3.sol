@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
+
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -336,6 +337,7 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
         (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1) = positionManager.mint(mint_params);
         console.log("Sender minted tokenID %s - liquidity %s", tokenId,liquidity);
         console.log("Sender liquidity nft contains eth %s - usdt %s ", amount0,amount1);
+        console.log("balance of usdt after mint",dToken2.balanceOf(address(this)));
         positionManager.safeTransferFrom(address(this), msg.sender, tokenId);
 
         
@@ -415,10 +417,10 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
             INonfungiblePositionManager.CollectParams(removeWrap_params.tokenId,address(this),type(uint128).max,type(uint128).max);
 
         positionManager.collect(collectParams);
-
+        console.log("token0 - %s, token1 - %s",token0,token1);
         uint256 pTokenBalance = IERC20(token0).balanceOf(address(this));
         uint256 pTokenBalance2 = IERC20(token1).balanceOf(address(this));
-        
+        console.log("token0 Balance - %s, token1 Balance - %s",pTokenBalance,pTokenBalance2);
         if (token0 != removeWrap_params.destinationToken) {
             
             (uint amountsOut0) = getAmountOutMin(removeWrap_params.paths[0],pTokenBalance,removeWrap_params.userSlippageTolerance);
@@ -428,8 +430,8 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
 
         if (token1 != removeWrap_params.destinationToken) {
 
-            (uint amountsOut1) = getAmountOutMin(removeWrap_params.paths[1],pTokenBalance2,removeWrap_params.userSlippageTolerance);
-            conductUniswapParams memory swapParams1 = conductUniswapParams(token1,removeWrap_params.destinationToken,removeWrap_params.paths[1],pTokenBalance2,amountsOut1,removeWrap_params.userSlippageTolerance,removeWrap_params.deadline); 
+            //(uint amountsOut1) = getAmountOutMin(removeWrap_params.paths[1],pTokenBalance2,removeWrap_params.userSlippageTolerance);
+            conductUniswapParams memory swapParams1 = conductUniswapParams(token1,removeWrap_params.destinationToken,removeWrap_params.paths[1],pTokenBalance2,0,removeWrap_params.userSlippageTolerance,removeWrap_params.deadline); 
             conductUniswap(swapParams1);
             
         }
@@ -465,33 +467,19 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
 
     /**
      * @notice Unwrap a source token based to the specified destination token
-     * @param sourceToken Address to the source token contract
-     * @param destinationToken Address to the destination token contract
-     * @param paths Paths for uniswap
-     * @param tokenId Id of the position for Uniswap V3
-     * @param amount Amount of source token to be unwrapped
-     * @param minAmountOut Amount of destination token minimum expected
-     * @param userSlippageTolerance Maximum permissible user slippage tolerance
+     * @param removeWrap_params unwrap struct params 
      * @return Amount of the destination token returned from unwrapping the
      * source token
      */
     function unwrap(
-        address sourceToken,
-        address destinationToken,
-        uint256 tokenId,
-        bytes [] memory paths,
-        uint256 amount,
-        uint256 minAmountOut,
-        uint256 userSlippageTolerance,
-        uint256 deadline
+        removeWrapParams memory removeWrap_params
     )
         public
         payable
         returns (uint256)
     {
-        require(tokenId != 0,"No Liquidity Token to unWrap");
-        removeWrapParams memory input_params = removeWrapParams(tokenId, destinationToken, paths, amount, userSlippageTolerance, deadline);
-        uint256 destAmount = removeWrap(input_params);
+        require(removeWrap_params.tokenId != 0,"No Liquidity Token to unWrap");
+        uint256 destAmount = removeWrap(removeWrap_params);
         emit UnWrapV2(destAmount);
         return destAmount;
     }
@@ -607,15 +595,17 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
             //router.refundETH();
             
         } else {
+            console.log("sell token of conduct",input_params.sellToken);
             IERC20 sToken = IERC20(input_params.sellToken);
             if (sToken.allowance(address(this), address(router)) < input_params.amount.mul(2)) {
                 sToken.safeIncreaseAllowance(address(router), input_params.amount.mul(3));
             }
-            (uint minAmountsOut) = getAmountOutMin(input_params.path,input_params.amount,input_params.userSlippageTolerance);
+            console.log("allowance for the sell token ",sToken.allowance(address(this), address(router)));
+            //(uint minAmountsOut) = getAmountOutMin(input_params.path,input_params.amount,input_params.userSlippageTolerance);
             uint256 amountOut = conductUniswapT4T(
                 input_params.path,
                 input_params.amount,
-                minAmountsOut,
+                0,
                 input_params.deadline
             );
             return amountOut;
@@ -648,8 +638,9 @@ contract WrapAndUnWrapUniV3 is IERC721Receiver, IUniswapV3MintCallback, IUniswap
                 address(this),
                 deadline,
                 amount,
-                minAmount
+                0
             );
+            console.log("amount %s",amount);
            uint256 amountRecieved =  router.exactInput(params);
         return amountRecieved;
     }
