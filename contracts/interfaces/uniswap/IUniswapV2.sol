@@ -3,6 +3,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 interface IUniswapV2 {
+    
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -13,24 +14,6 @@ interface IUniswapV2 {
         address to,
         uint256 deadline
     ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity);
-
-    function addLiquidityETH(
-        address token,
-        uint256 amountTokenDesired,
-        uint256 amountTokenMin,
-        uint256 amountETHMin,
-        address to,
-        uint256 deadline
-    ) external returns (uint256 amountToken, uint256 amountETH, uint256 liquidity);
-
-    function removeLiquidityETH(
-        address token,
-        uint256 liquidity,
-        uint256 amountTokenMin,
-        uint256 amountETHMin,
-        address to,
-        uint256 deadline
-    ) external returns (uint256 amountToken, uint256 amountETH);
 
     function removeLiquidity(
         address tokenA,
