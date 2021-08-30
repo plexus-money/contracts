@@ -5,7 +5,7 @@ const { log } = require('./helper');
 const addr = config.addresses;
 const { UniswapPriceOracle } = require('../scripts/uniswapPriceOracle');
 
-describe('Re-deploying the plexus contracts for PriceOracleUni test', () => {
+describe('Re-deploying the plexus contracts for Price Oracle for Uni test', () => {
   let usdtTokenAddress;
   let daiTokenAddress;
   let wethTokenAddress;
@@ -38,7 +38,7 @@ describe('Re-deploying the plexus contracts for PriceOracleUni test', () => {
       const denominationDecimals = 6;
       const decimals = (wethDecimals - denominationDecimals);
       price = (Number(price) / 2**112) * 10**decimals;
-      log('price', price);
+      log('ETH price from WETH/USDT pair is ', price);
     })
   });
 

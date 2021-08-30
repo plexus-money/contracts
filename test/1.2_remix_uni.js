@@ -6,19 +6,23 @@ const { waffle } = require("hardhat");
 const { BigNumber } = require("ethers");
 const provider = waffle.provider;
 const abi = require('human-standard-token-abi');
-const { deployWrappersOnly, log, getAmountOutMin } = require('./helper');
+const { deployWrappersOnly, log, getAmountOutMin, getUnwrapAmounts, 
+  getUnwrapMinAmounts, numberToWei, numberFromWei } 
+= require('./helper');
+const { getLPTokenDetails } = require('./subgraphs');
 const addr = config.addresses;
+const DEX = "Uniswap";
 
-describe('Deploying the plexus contracts for WrapperUni remix test', () => {
+describe('Deploying the plexus contracts for WrapperUni SAME-DEX remix test', () => {
   let wrapper, owner;
   let netinfo;
   let network = 'unknown';
   let tokenPairAddress = '';
   let daiTokenAddress;
-  let sushiTokenAddress;
-  let compoundTokenAddress;
   let wethAddress;
   let usdcTokenAddress;
+  let feiTokenAddress;
+  let tribeTokenAddress;
 
   const unitAmount = "2";
 
@@ -33,11 +37,13 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
     netinfo.chainId === 42 ? "kovan" :
     netinfo.chainId === 56 ? "binance" :
     netinfo.chainId === 137 ? "matic" : 'mainnet';
+    
     daiTokenAddress = addr.tokens.DAI[network];
     usdcTokenAddress = addr.tokens.USDC[network];
-    sushiTokenAddress = addr.tokens.SUSHI[network];
-    compoundTokenAddress = addr.tokens.COMP[network];
     wethAddress = addr.tokens.WETH[network];
+
+    feiTokenAddress = "0x956f47f50a910163d8bf957cf5846d573e7f87ca";
+    tribeTokenAddress = "0xc7283b66eb1eb5fb86327f08e1b5816b0720212b";
   });
 
   describe('Testing Uni V2 remixing liquidity', () => {
@@ -45,7 +51,7 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
       it('Should convert 2 ETH to DAI Token(s) from MakerDao via Uniswap', async () => {
 
           const zeroAddress = process.env.ZERO_ADDRESS;
-          const userSlippageTolerance = config.userSlippageTolerance;
+          const userSlippageTolerance = 8;
           const daiToken = new ethers.Contract(daiTokenAddress, abi, provider);
 
           // Please note, the number of dai tokens we want to get doesn't matter, so the unit amount is just a placeholder
@@ -83,106 +89,152 @@ describe('Deploying the plexus contracts for WrapperUni remix test', () => {
 
       });
 
-      it('Should create pool(SUSHI-COMPOUND) with DAI via UniswapV2', async () => {
-          const userSlippageTolerance = config.userSlippageTolerance;
-          let daiToken = new ethers.Contract(daiTokenAddress, abi, provider);
+      it('Should add liquidity to the (ETH-USDC) uniswap pool from DAI in Uniswap V2', async () => {
+        // we get the slippage tolerance from the config
+        const userSlippageTolerance = config.userSlippageTolerance;
 
-          const initDaiBalance = Number(ethers.utils.formatUnits(await daiToken.balanceOf(owner.address), `ether`));
-          log('init DAI balance is: ', initDaiBalance);
-          // Please note, the number of pickle tokens we want to get doesn't matter, so the unit amount is just a placeholder
-          const amountPlaceholder = await daiToken.balanceOf(owner.address);
-          daiToken = await daiToken.connect(owner);
-          await daiToken.approve(wrapper.address, amountPlaceholder);
-          // Convert the 1000 DAI to SUSHI and COMPOUND, create pool with token pair(SUSHI-COMPOUND)
-          const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          log('Sushi Token Address', sushiTokenAddress);
-          log('Compound Token Address', compoundTokenAddress);
-          const path1 = [daiTokenAddress, wethAddress, sushiTokenAddress];
-          const path2 = [daiTokenAddress, wethAddress, compoundTokenAddress];
-          const amountOutMin1 = await getAmountOutMin(path1, amountPlaceholder, userSlippageTolerance, wrapper, 18);
-          const amountOutMin2 = await getAmountOutMin(path2, amountPlaceholder, userSlippageTolerance, wrapper, 18);
-          const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [sushiTokenAddress, compoundTokenAddress], path1, path2, amount: amountPlaceholder, userSlippageToleranceAmounts: [amountOutMin1, amountOutMin2], deadline})).wait();
-          // Check if the txn is successful
-          expect(status).to.equal(1);
+        // initialize the DAI contract
+        let daiToken = new ethers.Contract(daiTokenAddress, abi, provider);
+      
+        // check the users initial DAI balance
+        const initDaiBalance = Number(ethers.utils.formatUnits(await daiToken.balanceOf(owner.address), `ether`));
+        log('init DAI balance is: ', initDaiBalance);
 
-          // Check conversion is successful
-          if (status === 1) {
-              const event = events.find((item)=>{
-                  return item.event === "WrapV2";
-              })
-              tokenPairAddress = event.args.lpTokenPairAddress;
-              log("lpToken pair address: ", tokenPairAddress);
+        // Then we get the DAI balance for the user
+        const initDaiBalanceInWei = await daiToken.balanceOf(owner.address);
+        log('Init Dai Balance in WEI is : ', initDaiBalanceInWei.toString());
+ 
+        // for this conversion we use the approve function to make sure the contract is approved to do the wrap
+        daiToken = await daiToken.connect(owner);
+        await daiToken.approve(wrapper.address, initDaiBalanceInWei);
 
-              const lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
-              const lpTokenBalance = Number(ethers.utils.formatUnits(await lpToken.balanceOf(owner.address), `ether`));
-              log("lpToken balance: ", lpTokenBalance);
-              expect(lpTokenBalance).to.be.gt(0);
+        // Convert the 1000 DAI to ETH-USDC, create pool with token pair(ETH-USDC)
+        const deadline =  Date.now() + 1000 * 60 * 10; //10 minutes
+        log('WETH Token Address', wethAddress);
+        log('USDC Token Address', usdcTokenAddress);
 
-              // Check that the users DAI balance has reduced regardless of the conversion status
-              const daiBalance = Number(ethers.utils.formatEther(await daiToken.balanceOf(owner.address)), `ether`);
-              log('User DAI balance AFTER create pool is: ', daiBalance);
-              expect(daiBalance).to.be.lt(initDaiBalance);
-          }
+        // The wrap conversion paths
+        const path1 = [daiTokenAddress, wethAddress];
+        const path2 = [daiTokenAddress, wethAddress, usdcTokenAddress];
 
-      });
+        // The slippage tolerance amounts
+        const amountOutMin1 = await getAmountOutMin(path1, BigNumber.from(initDaiBalanceInWei).div(2), userSlippageTolerance, wrapper, 18);
+        const amountOutMin2 = await getAmountOutMin(path2, BigNumber.from(initDaiBalanceInWei).div(2), userSlippageTolerance, wrapper, 6);
 
-      it('Should a same-dex remix for the (SUSHI-COMPOUND) LP Token to the (ETH-USDC) LP Token in UNI V2', async () => {
-          const userSlippageTolerance = config.userSlippageTolerance;
-          let lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
-          lpToken = await lpToken.connect(owner);
-          const amountPlaceholder = await lpToken.balanceOf(owner.address);
-          await lpToken.approve(wrapper.address, amountPlaceholder);
+        // Then we do the actual wrap
+        const { status, events } = await (await wrapper.wrap({sourceToken: daiTokenAddress, destinationTokens: [wethAddress, usdcTokenAddress], path1, path2, amount: initDaiBalanceInWei, userSlippageToleranceAmounts: [amountOutMin1, amountOutMin2], deadline})).wait();
+       
+        // Check if the txn is successful
+        expect(status).to.equal(1);
 
-           // Check that the users initial LP Token balance is greater than zero
-          const initialLpToken = new ethers.Contract(tokenPairAddress, abi, provider);
-          let initialLpTokenBalance = Number(ethers.utils.formatUnits(await initialLpToken.balanceOf(owner.address), `ether`));
-          log("Initial LP Token balance for (SUSHI-COMPOUND) is greater than zero: ", initialLpTokenBalance);
-          expect(initialLpTokenBalance).to.be.gte(0);
+        // Check conversion is successful
+        if (status === 1) {
 
-          // Remix the (SUSHI-COMPOUND) LP Token to (ETH-USDC) in uni v2
-          const deadline = Math.floor(new Date().getTime() / 1000) + 10;
-          const unwrapPath1 = [sushiTokenAddress, wethAddress, daiTokenAddress];
-          const unwrapPath2 = [compoundTokenAddress, wethAddress, daiTokenAddress];
-          const unwrapAmountOutMin1 = await getAmountOutMin(path1, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
-          const unwrapAmountOutMin2 = await getAmountOutMin(path2, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
+          // check if the wrap event has been returned
+          const event = events.find((item)=>{
+              return item.event === "WrapV2";
+          })
 
-          // for uni because the 2 pairs exist, the paths are straightforward
-          const wrapPath1 = [daiTokenAddress, wethAddress];
-          const wrapPath2 = [daiTokenAddress, usdcTokenAddress];
-          const wrapAmountOutMin1 = await getAmountOutMin(path1, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
-          const wrapAmountOutMin2 = await getAmountOutMin(path2, BigNumber.from(amountPlaceholder).div(2), userSlippageTolerance, wrapper, 18);
-          const outputToken = daiTokenAddress;
-          const destinationTokens = [wethAddress, usdcTokenAddress];
-          const crossDex = false;
-          const { status, events } = await (await wrapper
-            .remix({lpTokenPairAddress: tokenPairAddress, unwrapOutputToken: outputToken, destinationTokens, unwrapPath1, unwrapPath2, wrapPath1, wrapPath2, amount: amountPlaceholder, userWrapSlippageToleranceAmounts: [wrapAmountOutMin1, wrapAmountOutMin2], userUnWrapSlippageToleranceAmounts:[unwrapAmountOutMin1, unwrapAmountOutMin2], deadline, crossDexRemix: crossDex}))
-            .wait();
+          // we get the LP token address
+          tokenPairAddress = event.args.lpTokenPairAddress;
+          log("LP Token/Pair Address: ", tokenPairAddress);
 
-             // Check if the txn is successful
-             expect(status).to.equal(1);
+          // init the LP Token contract
+          const lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
 
-            // Check conversion is successful
-            if (status === 1) {
-                const event = events.find((item)=>{
-                    return item.event === "RemixWrap";
-                })
-                const remixedTokenPairAddress = event.args.lpTokenPairAddress;
-                log("Remixed LP Token pair address for (ETH-USDC): ", remixedTokenPairAddress);
+          // Then get the balance
+          const lpTokenBalance = Number(ethers.utils.formatUnits(await lpToken.balanceOf(owner.address), `ether`));
+          log("lpToken balance: ", lpTokenBalance);
+          expect(lpTokenBalance).to.be.gt(0);
 
-                const lpToken = new ethers.Contract(remixedTokenPairAddress, abi, provider);
-                const lpTokenBalance = Number(ethers.utils.formatUnits(await lpToken.balanceOf(owner.address), `ether`));
-                log("Remixed LP Token balance for (ETH-USDC): ", lpTokenBalance);
-                expect(lpTokenBalance).to.be.gt(0);
+          // Check that the users DAI balance has reduced if the conversion is successful
+          const daiBalance = Number(ethers.utils.formatEther(await daiToken.balanceOf(owner.address)), `ether`);
+          log('User DAI balance AFTER create pool is: ', daiBalance);
+          expect(daiBalance).to.be.lt(initDaiBalance);
+        }
 
-                // Check that the users initial LP Token balance is zero
-                initialLpTokenBalance = Number(ethers.utils.formatUnits(await initialLpToken.balanceOf(owner.address), `ether`));
-                log("Final LP Token balance for (SUSHI-COMPOUND) should be zero after remix: ", initialLpTokenBalance);
-                expect(initialLpTokenBalance).to.be.lte(0);
-            }
+    });
+     
+    it('Should do a SAME-DEX remix from the (ETH-USDC) LP Token to the (FEI-TRIBE) LP Token in UNI V2', async () => {
+        let lpToken = new ethers.Contract(tokenPairAddress, abi, provider);
+        lpToken = await lpToken.connect(owner);
+        const lpTokenBalanceinWei = await lpToken.balanceOf(owner.address);
+        await lpToken.approve(wrapper.address, lpTokenBalanceinWei);
 
-      });
+          // Check that the users initial LP Token balance is greater than zero
+        const initialLpToken = new ethers.Contract(tokenPairAddress, abi, provider);
+        let initialLpTokenBalance = Number(ethers.utils.formatUnits(await initialLpToken.balanceOf(owner.address), `ether`));
+        log("Initial LP Token balance for (ETH-USDC) LP Token is greater than zero: ", initialLpTokenBalance);
+        expect(initialLpTokenBalance).to.be.gte(0);
 
 
+        // first of all we get the LP token price details using the address of a known whale
+        const lpTokenDetails = await getLPTokenDetails(DEX, 0.5);
+        const lpTokenBalance = Number(ethers.utils.formatUnits(await lpToken.balanceOf(owner.address), `ether`));
+        const lpTokenBalanceInUSD = lpTokenBalance * lpTokenDetails.lpTokenPrice;
+
+        log("ETH-USDC LP TOKEN Balance in USD is : ", lpTokenBalanceInUSD);
+
+        // The token ordering MATTERS alot otherwise you'll get alot of funny errors, 
+        // when unwrapping because the token ordering is off
+
+        // we get the token prices based on their coingecko id's and their order in the pool
+        const token0 = { symbol : 'usd-coin'};
+        const token1 = { symbol : 'ethereum'};
+
+        const unwrapAmounts  = await getUnwrapAmounts(lpTokenBalanceInUSD, token0, token1);
+
+        log("Unwrap amounts: ", unwrapAmounts);
+        
+        // The remix wrap conversion paths
+        const wrapPath1 = [usdcTokenAddress, wethAddress, feiTokenAddress];
+        const wrapPath2 = [wethAddress, tribeTokenAddress];
+
+        // The estimated amounts we expect to get from the unwrap
+        const { amount1, amount2 } = unwrapAmounts;
+
+        // the minimum amounts we expect from the remove liquidity operation of (USDC-ETH) pool or the txn reverts
+        const { amount1Min, amount2Min } = getUnwrapMinAmounts(amount1, amount2, 6, 18);
+        const deadline =  Date.now() + 1000 * 60 * 10; //10 minutes
+   
+        // The wrap slippage tolerance amounts for the constituent tokens in the LP Token
+        const slippageAmount1 = numberToWei("0", 18);
+        const slippageAmount2 = numberToWei("0", 18);
+
+        // the FEI & TRIBE token addresses respectively
+        const destinationTokens = [feiTokenAddress, tribeTokenAddress];
+
+        // Then we do the actual remix from the (ETH-USDC) LP Token to the (FEI-TRIBE) LP Token
+        const { status, events } = await (await wrapper
+          .remix({lpTokenPairAddress: tokenPairAddress, destinationTokens, wrapPath1, wrapPath2, 
+                  amount: lpTokenBalanceinWei, remixWrapSlippageToleranceAmounts: [slippageAmount1, slippageAmount2],
+                  minUnwrapAmounts: [amount1Min, amount2Min], deadline, crossDexRemix: false }))
+          .wait();
+
+        // Check if the txn is successful
+        expect(status).to.equal(1);
+
+        // Check if remix is successful
+        if (status === 1) {
+
+          // check if the wrap event has been returned
+          const event = events.find((item)=>{
+              return item.event === "LpTokenRemixWrap";
+          });
+          const newLpTokenAddress = event.args.lpTokenPairAddress;
+          const remixedLpTokenAmount = event.args.amount;
+
+          log("New LP TOKEN address is: ", newLpTokenAddress);
+          log("Remixed amount in wei is: ", remixedLpTokenAmount.toString());
+          log("(FEI-TRIBE) LP Token Balance is: ",  Number(numberFromWei(remixedLpTokenAmount, 18)));
+
+          // Check that the user has the (FEI-TRIBE) LP Token and the balance is greater than zero
+          expect(tokenPairAddress).is.not.equal(newLpTokenAddress);
+          expect(Number(numberFromWei(remixedLpTokenAmount, 18))).to.be.gt( 0);
+         
+        }
+          
+    });
 
   });
 
