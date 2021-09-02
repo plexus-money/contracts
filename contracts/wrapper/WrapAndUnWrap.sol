@@ -3,31 +3,29 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../interfaces/token/IWETH.sol";
 import "../interfaces/token/ILPERC20.sol";
-import "../interfaces/uniswap/IUniswapV2.sol";
-import "../interfaces/uniswap/IUniswapFactory.sol";
 import "../interfaces/IRemix.sol";
 import "../interfaces/IWrapper.sol";
+import "../interfaces/IRouter.sol";
+import "../interfaces/IFactory.sol";
 
 /// @title Plexus LP Wrapper Contract
 /// @author Team Plexus
 contract WrapAndUnWrap is IWrapper {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // Contract state variables
     bool public changeRecpientIsOwner;
     address public WETH_TOKEN_ADDRESS; // Contract address for WETH tokens
-    address private uniAddress;
-    address private uniFactoryAddress;
+    address public uniAddress;
+    address public sushiAddress;
+    address public uniFactoryAddress;
     address public owner;
-    address public wrapperSushiAddress;
     uint256 public fee;
     uint256 public maxfee;
-    IUniswapV2 private uniswapExchange;
-    IUniswapFactory private factory;
+    IRouter public uniswapExchange;
+    IFactory public factory;
 
     // events
     event WrapV2(address lpTokenPairAddress, uint256 amount);
@@ -38,15 +36,17 @@ contract WrapAndUnWrap is IWrapper {
     constructor(
         address _weth,
         address _uniAddress,
+        address _sushiAddress,
         address _uniFactoryAddress
     )
         payable
     {
         WETH_TOKEN_ADDRESS = _weth;
         uniAddress = _uniAddress;
-        uniswapExchange = IUniswapV2(uniAddress);
+        sushiAddress = _sushiAddress;
+        uniswapExchange = IRouter(uniAddress);
         uniFactoryAddress = _uniFactoryAddress;
-        factory = IUniswapFactory(uniFactoryAddress);
+        factory = IFactory(uniFactoryAddress);
         fee = 0;
         maxfee = 0;
         changeRecpientIsOwner = false;
@@ -73,16 +73,6 @@ contract WrapAndUnWrap is IWrapper {
     receive() external payable {
     }
 
-     /**
-     * @notice Set the WrapperSushi contract address
-     * @param newAddress WrapperSushi contract address to be updated
-     */
-    function setWrapperSushiAddress(address newAddress) external onlyOwner returns (bool) {
-        wrapperSushiAddress = newAddress;
-        return true;
-    }
-
-
     /**
      * @notice Allow owner to collect a small fee from trade imbalances on
      * LP conversions
@@ -105,7 +95,7 @@ contract WrapAndUnWrap is IWrapper {
      * @param newAddress Uniswap exchange contract address to be updated
      */
     function updateUniswapExchange(address newAddress) external onlyOwner returns (bool) {
-        uniswapExchange = IUniswapV2(newAddress);
+        uniswapExchange = IRouter(newAddress);
         uniAddress = newAddress;
         return true;
     }
@@ -115,7 +105,7 @@ contract WrapAndUnWrap is IWrapper {
      * @param newAddress Uniswap factory contract address to be updated
      */
     function updateUniswapFactory(address newAddress) external onlyOwner returns (bool) {
-        factory = IUniswapFactory(newAddress);
+        factory = IFactory(newAddress);
         uniFactoryAddress = newAddress;
         return true;
     }
@@ -214,7 +204,7 @@ contract WrapAndUnWrap is IWrapper {
                 params.sourceToken,
                 params.destinationTokens[0],
                 params.path1,
-                amount.div(2),
+                (amount / 2),
                 params.userSlippageToleranceAmounts[0],
                 params.deadline
             );
@@ -224,7 +214,7 @@ contract WrapAndUnWrap is IWrapper {
                 params.sourceToken,
                 params.destinationTokens[1],
                 params.path2,
-                amount.div(2),
+                (amount / 2),
                 params.userSlippageToleranceAmounts[1],
                 params.deadline
             );
@@ -235,12 +225,12 @@ contract WrapAndUnWrap is IWrapper {
         uint256 dTokenBalance1 = dToken1.balanceOf(address(this));
         uint256 dTokenBalance2 = dToken2.balanceOf(address(this));
 
-        if (dToken1.allowance(address(this), uniAddress) < dTokenBalance1.mul(2)) {
-            dToken1.safeIncreaseAllowance(uniAddress, dTokenBalance1.mul(3));
+        if (dToken1.allowance(address(this), uniAddress) < dTokenBalance1 * 2) {
+            dToken1.safeIncreaseAllowance(uniAddress, dTokenBalance1 * 3);
         }
 
-        if (dToken2.allowance(address(this), uniAddress) < dTokenBalance2.mul(2)) {
-            dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2.mul(3));
+        if (dToken2.allowance(address(this), uniAddress) < dTokenBalance2 * 2) {
+            dToken2.safeIncreaseAllowance(uniAddress, dTokenBalance2 * 3);
         }
 
         uniswapExchange.addLiquidity(
@@ -260,7 +250,7 @@ contract WrapAndUnWrap is IWrapper {
         uint256 thisBalance = lpToken.balanceOf(address(this));
 
         if (fee > 0) {
-            uint256 totalFee = (thisBalance.mul(fee)).div(10000);
+            uint256 totalFee = (thisBalance * fee) / 10000;
             if (totalFee > 0) {
                 lpToken.safeTransfer(owner, totalFee);
             }
@@ -339,8 +329,8 @@ contract WrapAndUnWrap is IWrapper {
         address token0 = thisLpInfo.token0();
         address token1 = thisLpInfo.token1();
 
-        if (sToken.allowance(address(this), uniAddress) < params.amount.mul(2)) {
-            sToken.safeIncreaseAllowance(uniAddress, params.amount.mul(3));
+        if (sToken.allowance(address(this), uniAddress) < params.amount * 2) {
+            sToken.safeIncreaseAllowance(uniAddress, params.amount * 3);
         }
 
         uniswapExchange.removeLiquidity(
@@ -388,7 +378,7 @@ contract WrapAndUnWrap is IWrapper {
             if (originalDestinationToken == address(0x0)) {
                 IWETH(WETH_TOKEN_ADDRESS).withdraw(destinationTokenBalance);
                 if (fee > 0) {
-                    uint256 totalFee = (address(this).balance.mul(fee)).div(10000);
+                    uint256 totalFee = (address(this).balance * fee) / 10000;
                     if (totalFee > 0) {
                         payable(owner).transfer(totalFee);
                     }
@@ -398,7 +388,7 @@ contract WrapAndUnWrap is IWrapper {
                 }
             } else {
                 if (fee > 0) {
-                    uint256 totalFee = (destinationTokenBalance.mul(fee)).div(10000);
+                    uint256 totalFee = (destinationTokenBalance * fee) / 10000;
                     if (totalFee > 0) {
                         dToken.safeTransfer(owner, totalFee);
                     }
@@ -467,54 +457,7 @@ contract WrapAndUnWrap is IWrapper {
         payable
         returns (uint256)
     {
-        uint lpTokenAmount = 0;
-
-        // First of all we unwrap the token
-
-        UnwrapParams memory unwrapParams = UnwrapParams({
-            lpTokenPairAddress: params.lpTokenPairAddress,
-            destinationToken: params.unwrapOutputToken,
-            path1: params.unwrapPath1,
-            path2: params.unwrapPath2,
-            amount: params.amount,
-            userSlippageToleranceAmounts: params.userUnWrapSlippageToleranceAmounts,
-            deadline: params.deadline
-        });
-
-        uint256 destinationTokenBalance = removeWrap(unwrapParams, true);
-
-        WrapParams memory wrapParams = WrapParams({
-            sourceToken: params.unwrapOutputToken,
-            destinationTokens: params.destinationTokens,
-            path1: params.wrapPath1,
-            path2: params.wrapPath2,
-            amount: params.amount,
-            userSlippageToleranceAmounts: params.userWrapSlippageToleranceAmounts,
-            deadline: params.deadline
-        });
-        if(params.crossDexRemix) {
-            // send the unwrapped token to sushi for remixing
-            IERC20(params.unwrapOutputToken).safeTransfer(wrapperSushiAddress, destinationTokenBalance);
-
-            // then do the remix
-            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = IRemix(wrapperSushiAddress)
-                .createWrap(wrapParams, true);
-            lpTokenAmount = remixedLpTokenAmount;
-            // transfer the remixed lp token back to the user
-            IERC20(remixedLpTokenPairAddress).safeTransfer(msg.sender, lpTokenAmount);
-
-            emit RemixWrap(remixedLpTokenPairAddress, lpTokenAmount);
-
-        } else {
-            // then now we create the new LP token
-            (address remixedLpTokenPairAddress, uint256 remixedLpTokenAmount) = createWrap(wrapParams, true);
-
-            lpTokenAmount = remixedLpTokenAmount;
-
-            emit RemixWrap(remixedLpTokenPairAddress, remixedLpTokenAmount);
-        }
-
-        return lpTokenAmount;
+        return 0;
 
     }
 
@@ -584,33 +527,6 @@ contract WrapAndUnWrap is IWrapper {
     }
 
     /**
-     * @notice Retrieve minimum output amount required based on uniswap routing
-     * path and maximum permissible slippage
-     * @param paths Array list describing the Uniswap router swap path
-     * @param amount Amount of input tokens to be swapped
-     * @param userSlippageTolerance Maximum permissible user slippage tolerance
-     * @return Minimum amount of output tokens the input token can be swapped
-     * for, based on the Uniswap prices and Slippage tolerance thresholds
-     */
-    function getAmountOutMin(
-        address[] memory paths,
-        uint256 amount,
-        uint256 userSlippageTolerance
-    )
-        public
-        view
-        returns (uint256)
-    {
-        uint256[] memory assetAmounts = getAmountsOut(paths, amount);
-
-
-        // this is the index of the output token we're swapping to based on the paths
-        uint outputTokenIndex = assetAmounts.length - 1;
-        require(userSlippageTolerance <= 100, "userSlippageTolerance can not be larger than 100");
-        return SafeMath.div(SafeMath.mul(assetAmounts[outputTokenIndex], (100 - userSlippageTolerance)), 100);
-    }
-
-    /**
      * @notice Perform a Uniswap transaction to swap between a given pair of
      * tokens of the specified amount
      * @param sellToken Address to the token being sold as part of the swap
@@ -647,8 +563,8 @@ contract WrapAndUnWrap is IWrapper {
             );
         } else {
             IERC20 sToken = IERC20(sellToken);
-            if (sToken.allowance(address(this), uniAddress) < amount.mul(2)) {
-                sToken.safeIncreaseAllowance(uniAddress, amount.mul(3));
+            if (sToken.allowance(address(this), uniAddress) < amount * 2) {
+                sToken.safeIncreaseAllowance(uniAddress, amount * 3);
             }
 
             uint256[] memory amounts = conductUniswapT4T(
