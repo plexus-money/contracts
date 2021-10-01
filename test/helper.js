@@ -1,5 +1,6 @@
 require("dotenv").config();
 const config = require('../config.json');
+const { getTokenPricesFromCoingecko } = require('./api')
 
 const log = (message, params) =>{
     if(process.env.CONSOLE_LOG === 'true') {
@@ -12,7 +13,7 @@ const deployWrappersOnly = async() => {
     const addr = config.addresses;
     const netinfo = await ethers.provider.getNetwork();
 
-	const network = netinfo.chainId === 1 ? "mainnet" :
+	  const network = netinfo.chainId === 1 ? "mainnet" :
 			  netinfo.chainId === 42 ? "kovan" :
 			  netinfo.chainId === 56 ? "binance" :
 			  netinfo.chainId === 137 ? "matic" : 'mainnet';
@@ -21,41 +22,32 @@ const deployWrappersOnly = async() => {
     // get the contract factories
     const Wrapper = await ethers.getContractFactory('WrapAndUnWrap');
     const WrapperSushi = await ethers.getContractFactory('WrapAndUnWrapSushi');
-    const WrapperUniV3 = await ethers.getContractFactory('WrapAndUnWrapUniV3');
 
     // get the signers
     let owner, addr1;
     [owner, addr1, ...addrs] = await ethers.getSigners();
 
     let wrapper = await (await Wrapper
-        .deploy(addr.tokens.WETH[network], addr.swaps.uniswapRouter[network], addr.swaps.uniswapFactory[network]))
+        .deploy(addr.tokens.WETH[network], 
+          addr.swaps.uniswapRouter[network], 
+          addr.swaps.sushiswapRouter[network], 
+          addr.swaps.uniswapFactory[network],  
+          addr.swaps.sushiswapFactory[network]))
         .deployed();
     let wrapperSushi = await (await WrapperSushi
-        .deploy(addr.tokens.WETH[network], addr.swaps.sushiswapRouter[network], addr.swaps.sushiswapFactory[network]))
+        .deploy(addr.tokens.WETH[network], 
+          addr.swaps.uniswapRouter[network], 
+          addr.swaps.sushiswapRouter[network], 
+          addr.swaps.uniswapFactory[network],  
+          addr.swaps.sushiswapFactory[network]))
         .deployed();
-    let wrapperUniV3 = await (await WrapperUniV3
-        .deploy(addr.tokens.WETH[network], addr.swaps.uniswapRouterV3[network], addr.swaps.uniswapFactoryV3[network], addr.swaps.positionManager[network], addr.swaps.quoter[network]))
-        .deployed();
-        console.log(wrapperUniV3.address);
-        
-    await (await wrapper.setWrapperSushiAddress(wrapperSushi.address)).wait();
-    await (await wrapperSushi.setWrapperUniAddress(wrapper.address)).wait();
 
-    return { deployedContracts: { wrapper, wrapperSushi, wrapperUniV3, owner, addr1, addrs } };
+    return { deployedContracts: { wrapper, wrapperSushi, owner, addr1, addrs } };
 
-}
-
-const getAmountOutMin = async(paths, amount, userSlippageTolerance, contract, decimals) => {
-  const assetAmounts = await contract.getAmountsOut(paths, amount);
-  const outputTokenIndex = assetAmounts.length - 1;
-  const assetAmount = numberFromWei(assetAmounts[outputTokenIndex].toString(), decimals);
-  const getAmountOut = assetAmount * (100 - userSlippageTolerance) / 100;
-  const getAmountOutMin = numberToWei(getAmountOut.toString(), decimals);
-
-  return getAmountOutMin;
 }
 
 const numberToWei = (number, decimals) => {
+
   let numberToWei = undefined;
   switch (decimals) {
     case 18:
@@ -114,4 +106,39 @@ const numberFromWei = (number, decimals) => {
   return numberFromWei;
 }
 
-module.exports = {log, deployWrappersOnly, getAmountOutMin }
+const getAmountOutMin = async(paths, amount, userSlippageTolerance, contract, decimals) => {
+ 
+  const assetAmounts = await contract.getAmountsOut(paths, amount);
+  const outputTokenIndex = assetAmounts.length - 1;
+  const assetAmount = numberFromWei(assetAmounts[outputTokenIndex].toString(), decimals);
+  const amountOut = (assetAmount * (100 - userSlippageTolerance) / 100).toFixed(3);
+  const amountOutMin = numberToWei(amountOut.toString(), decimals);
+
+  return amountOutMin;
+}
+
+const getUnwrapAmounts = async(lpTokenBalanceInUSD, token1, token2) => {
+
+  // first we get the token price from coingecko via their api
+  const tokens = token1.symbol + ',' + token2.symbol;
+  const tokenPrices = await getTokenPricesFromCoingecko(tokens);
+  const unwrapAmountUSD = lpTokenBalanceInUSD / 2;
+  const amount1 = (unwrapAmountUSD / tokenPrices[token1.symbol].usd).toFixed(6);
+  const amount2 = (unwrapAmountUSD / tokenPrices[token2.symbol].usd).toFixed(6);
+
+  return { amount1, amount2 };
+}
+
+const getUnwrapMinAmounts = (amount1, amount2, decimals1, decimals2) => {
+  // we set a default 15% minimum amount that can be returned for both pool tokens
+  const a1 = (amount1 * (100 - 15) / 100).toFixed(4);
+  const a2 = (amount2 * (100 - 15) / 100).toFixed(4);
+
+  const amount1Min = numberToWei(a1, decimals1);
+  const amount2Min = numberToWei(a2, decimals2);
+
+  return { amount1Min, amount2Min};
+
+}
+
+module.exports = {log, deployWrappersOnly, getAmountOutMin, getUnwrapAmounts, numberToWei, numberFromWei, getUnwrapMinAmounts  }
