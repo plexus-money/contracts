@@ -125,4 +125,5 @@ coverage.json
 # solidity-docgen documentation output
 docs/
 
-addresses.json
+# hardhat deployments
+deployments/

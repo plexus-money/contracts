@@ -13,10 +13,8 @@
     "hint": "solhint \"contracts/**/*.sol\"",
     "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
     "upgrade-checks": "npx hardhat run scripts/upgradeChecks.js",
-    "deploy:all": "npx hardhat run scripts/deployAll.js",
-    "deploy:wrappers": "npx hardhat run scripts/deployWrappers.js",
-    "verify:all": "npx hardhat run scripts/verifyAll.js",
-    "verify:wrappers": "npx hardhat run scripts/verifyWrappers.js",
+    "deploy:wrappers:mainnet": "npx hardhat deploy --network mainnet --tags Wrappers",
+    "verify:wrappers:mainnet": "npx hardhat --network mainnet etherscan-verify",
     "generate-docs": "node node_modules/solidity-docgen/dist/cli.js --solc-module=solc"
   },
   "repository": {
@@ -48,6 +46,8 @@
     "graphql": "^15.5.2",
     "graphql-request": "^3.5.0",
     "hardhat": "^2.6.4",
+    "hardhat-deploy": "^0.9.2",
+    "hardhat-deploy-ethers": "^0.3.0-beta.11",
     "human-standard-token-abi": "^2.0.0",
     "isomorphic-fetch": "^3.0.0",
     "prettier": "^2.2.1",
