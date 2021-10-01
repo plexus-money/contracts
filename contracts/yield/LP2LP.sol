@@ -121,6 +121,7 @@ contract LP2LP is OwnableUpgradeable {
             path2: new address[](0),            //Todo: fix to pass path for uniswap later.
             amount: amountFrom,
             userSlippageToleranceAmounts: new uint[](1),  //Todo: update to set real value later.
+            minUnwrapAmounts: new uint[](1),  //Todo: update to set real value later.
             deadline: 0                         //Todo: update to set real value later.
         });
         fromWrapper.unwrap(unwrapParams);

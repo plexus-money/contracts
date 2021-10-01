@@ -22,7 +22,7 @@
      hardhat: {
        forking: {
          url: process.env.RPC_NODE_URL,
-         blockNumber: 12996867,
+         blockNumber: 13327183,
        }
      },
 

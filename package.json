@@ -18,7 +18,6 @@
     "verify:all": "npx hardhat run scripts/verifyAll.js",
     "verify:wrappers": "npx hardhat run scripts/verifyWrappers.js",
     "generate-docs": "node node_modules/solidity-docgen/dist/cli.js --solc-module=solc"
-   
   },
   "repository": {
     "type": "git",
@@ -38,16 +37,19 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.4",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-solhint": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "chai": "^4.3.3",
+    "chai": "^4.3.4",
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.4.0",
     "ethereumjs-util": "^7.1.0",
-    "ethers": "^5.4.4",
-    "hardhat": "^2.6.0",
+    "ethers": "^5.4.7",
+    "graphql": "^15.5.2",
+    "graphql-request": "^3.5.0",
+    "hardhat": "^2.6.4",
     "human-standard-token-abi": "^2.0.0",
+    "isomorphic-fetch": "^3.0.0",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
     "solc": "^0.8.6",
