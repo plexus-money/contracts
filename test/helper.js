@@ -34,6 +34,7 @@ const deployWrappersOnly = async() => {
           addr.swaps.uniswapFactory[network],  
           addr.swaps.sushiswapFactory[network]))
         .deployed();
+        
     let wrapperSushi = await (await WrapperSushi
         .deploy(addr.tokens.WETH[network], 
           addr.swaps.uniswapRouter[network], 
