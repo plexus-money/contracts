@@ -22,6 +22,7 @@ const deployWrappersOnly = async() => {
     // get the contract factories
     const Wrapper = await ethers.getContractFactory('WrapAndUnWrap');
     const WrapperSushi = await ethers.getContractFactory('WrapAndUnWrapSushi');
+    const WrapperUniV3 = await ethers.getContractFactory('WrapAndUnWrapUniV3');
 
     // get the signers
     let owner, addr1;
@@ -43,7 +44,14 @@ const deployWrappersOnly = async() => {
           addr.swaps.sushiswapFactory[network]))
         .deployed();
 
-    return { deployedContracts: { wrapper, wrapperSushi, owner, addr1, addrs } };
+  let wrapperUniV3 = await (await WrapperUniV3
+    .deploy(addr.tokens.WETH[network],
+       addr.swaps.uniswapRouterV3[network],
+       addr.swaps.uniswapFactoryV3[network],
+       addr.swaps.positionManager[network],
+       addr.swaps.quoter[network]))
+      .deployed();
+    return { deployedContracts: { wrapper, wrapperSushi, wrapperUniV3, owner, addr1, addrs } };
 
 }
 
