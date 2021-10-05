@@ -1,0 +1,62 @@
+{
+  "name": "plexuscontracts",
+  "version": "1.0.0",
+  "description": "Yield Farming Aggregator and Plexus Rewards Ecosystem",
+  "main": "hardhat.config.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "build": "hardhat compile",
+    "console": "hardhat console",
+    "fork": "npx hardhat node",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn prettier -c './**/*.js'",
+    "format": "yarn prettier --write contracts/*.sol && yarn prettier --write test/*.js",
+    "hint": "solhint \"contracts/**/*.sol\"",
+    "coverage": "yarn hardhat coverage  --testfiles \"test/*.js\"",
+    "upgrade-checks": "npx hardhat run scripts/upgradeChecks.js",
+    "deploy:wrappers:mainnet": "npx hardhat deploy --network mainnet --tags Wrappers",
+    "verify:wrappers:mainnet": "npx hardhat --network mainnet etherscan-verify",
+    "generate-docs": "node node_modules/solidity-docgen/dist/cli.js --solc-module=solc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stimuluspackage/PlexusContracts.git"
+  },
+  "keywords": [
+    "Plexus"
+  ],
+  "author": "terminator0x",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/plexus-money/contracts/issues"
+  },
+  "homepage": "https://github.com/plexus-money/contracts#README",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.1.0",
+    "@uniswap/sdk-core": "^3.0.1",
+    "@uniswap/v3-periphery": "^1.1.1",
+    "@uniswap/v3-sdk": "^3.3.2"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
+    "@nomiclabs/hardhat-solhint": "^2.0.0",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "dotenv": "^8.2.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethereumjs-util": "^7.1.0",
+    "ethers": "^5.4.7",
+    "graphql": "^15.5.2",
+    "graphql-request": "^3.5.0",
+    "hardhat": "^2.6.4",
+    "hardhat-deploy": "^0.9.2",
+    "hardhat-deploy-ethers": "^0.3.0-beta.11",
+    "human-standard-token-abi": "^2.0.0",
+    "isomorphic-fetch": "^3.0.0",
+    "prettier": "^2.2.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.6",
+    "solc": "^0.8.6",
+    "solidity-coverage": "^0.7.16",
+    "solidity-docgen": "^0.5.13"
+  }
+}
